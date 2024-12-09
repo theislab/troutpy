@@ -1,0 +1,30 @@
+{
+  "template": "https://github.com/scverse/cookiecutter-scverse",
+  "commit": "5d44c58df427f884585ae9772cae81f1b6638f80",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "troutpy",
+      "package_name": "troutpy",
+      "project_description": "Package for the analysis of transcripts outside segmented cells in python",
+      "author_full_name": "Sergio Marco Salas",
+      "author_email": "sergio.salas@helmholtz-munich.de",
+      "github_user": "sergiomarco25",
+      "github_repo": "troutpy",
+      "license": "BSD 3-Clause License",
+      "ide_integration": true,
+      "_copy_without_render": [
+        ".github/workflows/build.yaml",
+        ".github/workflows/test.yaml",
+        "docs/_templates/autosummary/**.rst"
+      ],
+      "_render_devdocs": false,
+      "_jinja2_env_vars": {
+        "lstrip_blocks": true,
+        "trim_blocks": true
+      },
+      "_template": "https://github.com/scverse/cookiecutter-scverse"
+    }
+  },
+  "directory": null
+}
