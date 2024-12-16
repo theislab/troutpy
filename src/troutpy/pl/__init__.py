@@ -1,4 +1,14 @@
-from .plotting import sorted_heatmap,coupled_scatter,heatmap,plot_crosstab,pie_of_positive,genes_over_noise
-from .plotting import moranI_histogram,proportion_above_threshold,nmf_factors_exrna_cells_W
-from .plotting import apply_exrnaH_to_cellular_to_create_cellularW,W
 from .plotting import *
+from .plotting import (
+    W,
+    apply_exrnaH_to_cellular_to_create_cellularW,
+    coupled_scatter,
+    genes_over_noise,
+    heatmap,
+    moranI_histogram,
+    nmf_factors_exrna_cells_W,
+    pie_of_positive,
+    plot_crosstab,
+    proportion_above_threshold,
+    sorted_heatmap,
+)
