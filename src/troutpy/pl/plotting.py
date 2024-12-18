@@ -5,7 +5,7 @@ import scanpy as sc
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from exrna.pp.compute import compute_crosstab
+from troutpy.pp.compute import compute_crosstab
 from typing import Optional, Union, Sequence, Tuple
 from anndata import AnnData
 from matplotlib.colors import Colormap, Normalize
