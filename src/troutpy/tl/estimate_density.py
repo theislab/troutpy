@@ -10,13 +10,13 @@ def colocalization_proportion(
 ):
     """
     Calculate the proportion of colocalized transcripts for each gene in the provided AnnData object.
-    
+
     Parameters:
     - sdata: AnnData object with `.X` matrix containing the density of transcripts per gene.
     - outpath: The directory path where the output file should be saved.
     - threshold_colocalized: The threshold for considering a transcript colocalized (default is 1).
     - filename: The name of the output file (default is 'proportion_of_grouped_exRNA.parquet').
-    
+
     Returns:
     - coloc: DataFrame containing the proportion of colocalized transcripts for each gene.
     """

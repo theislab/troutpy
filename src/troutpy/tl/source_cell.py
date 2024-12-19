@@ -95,8 +95,7 @@ def compute_source_cells(
     copy=False
 ):
     """
-    Compute the source of extracellular RNA by linking detected extracellular transcripts 
-    to specific cell types in the spatial data.
+    Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
 
     Parameters:
     ----------
@@ -150,27 +149,55 @@ def distance_to_source_cell(
     ycoord='y',
     xcellcoord='x_centroid', 
     ycellcoord='y_centroid',
-    gene_id_column='feature_name',copy=False):
+    gene_id_column='feature_name',
+    copy=False
+):
+    """Calculates the distance between extracellular RNA transcripts and their closest source cells.
+
+    This function computes the distance from each extracellular RNA transcript to the nearest source cell based on their spatial coordinates. The function uses a KDTree to efficiently find the closest cell to each transcript, storing the results in the `sdata` object.
+
+    Parameters:
+    sdata (AnnData): The AnnData object containing both transcript and cellular data.
+    layer (str, optional): The layer in `sdata` containing the transcript data. Default is 'transcripts'.
+    xcoord (str, optional): The column name in the transcript data for the x-coordinate. Default is 'x'.
+    ycoord (str, optional): The column name in the transcript data for the y-coordinate. Default is 'y'.
+    xcellcoord (str, optional): The column name in the cellular data for the x-coordinate of cell centroids. Default is 'x_centroid'.
+    ycellcoord (str, optional): The column name in the cellular data for the y-coordinate of cell centroids. Default is 'y_centroid'.
+    gene_id_column (str, optional): The column name for the gene identifier. Default is 'feature_name'.
+    copy (bool, optional): Whether to return a copy of the `sdata` object with updated distances, or modify in place. Default is False.
+
+    Returns:
+    AnnData or None: If `copy` is True, returns the updated `sdata` object. Otherwise, modifies `sdata` in place and returns None.
+
+    Notes:
+    The function assumes that the transcript data contains a column `transcript_id` and that the cellular data contains 
+    cell centroids for spatial coordinates. The KDTree algorithm is used to compute the closest cell for each transcript.
+    The resulting distances are stored in the `distance_to_source_cell` column of the `sdata` object's transcript layer, 
+    and the closest source cell is stored in the `closest_source_cell` column.
+    The median distance for each gene is also added to the `xrna_metadata` in the `var` attribute of `sdata`.
+    """
     
-    # transcripts
+    # Extract transcript and cellular data
     adata_bin = sdata['table'].copy()
     adata_bin.X = sdata['table'].layers['raw']
     adata_bin.obs['x_centroid'] = [sp[0] for sp in adata_bin.obsm['spatial']]
     adata_bin.obs['y_centroid'] = [sp[1] for sp in adata_bin.obsm['spatial']]
     transcripts = sdata.points[layer].compute()
     extracellular_transcripts = transcripts[transcripts['extracellular']]
-    # Filter extracellular transcripts to those in adata_bin
-    #extracellular_transcripts = extracellular_transcripts[extracellular_transcripts["feature_name"].isin(adata_bin.var_names)]
+    
+    # Initialize lists to store results
     tranid = []
     dist = []
-    cellids=[]
+    cellids = []
 
+    # Loop through each gene in the cellular data
     for gene_of_interest in tqdm(adata_bin.var_names):
         gene_idx = np.where(adata_bin.var_names == gene_of_interest)[0][0]
-        adata_filtered = adata_bin[adata_bin.X[:, gene_idx] > 0]#.copy()
+        adata_filtered = adata_bin[adata_bin.X[:, gene_idx] > 0]
         extracellular_transcripts_filtered = extracellular_transcripts[extracellular_transcripts[gene_id_column] == gene_of_interest].copy()
-        # Only proceed if there are positive cells for the gene of interests
-        if (adata_filtered.n_obs > 0) & (extracellular_transcripts_filtered.shape[0]>0) :
+
+        # Only proceed if there are positive cells for the gene of interest
+        if (adata_filtered.n_obs > 0) & (extracellular_transcripts_filtered.shape[0] > 0):
             # Extract coordinates of cells and transcripts
             cell_coords = np.array([adata_filtered.obs[xcellcoord], adata_filtered.obs[ycellcoord]]).T
             transcript_coords = np.array([extracellular_transcripts_filtered[xcoord], extracellular_transcripts_filtered[ycoord]]).T
@@ -178,30 +205,32 @@ def distance_to_source_cell(
             # Compute KDTree for nearest cell
             tree = KDTree(cell_coords)
             distances, closest_cells_indices = tree.query(transcript_coords, k=1)
+
             # Append results to lists
             tranid.extend(extracellular_transcripts_filtered['transcript_id'])
-            dist.extend([d[0]for d in distances])
+            dist.extend([d[0] for d in distances])
             cell_ids = adata_filtered.obs['cell_id'].values[closest_cells_indices.flatten()]
             cellids.extend(c[0] for c in cell_ids.reshape(closest_cells_indices.shape))
-    # Create a dictionary to map transcript IDs to distances
+
+    # Create a dictionary to map transcript IDs to distances and cell IDs
     id2dist = dict(zip(tranid, dist))
-    id2closeid = dict(zip(tranid,cellids))
+    id2closeid = dict(zip(tranid, cellids))
+
     # Store the results in the DataFrame
     transcripts['distance_to_source_cell'] = transcripts['transcript_id'].map(id2dist)
     transcripts['closest_source_cell'] = transcripts['transcript_id'].map(id2closeid)
     sdata.points[layer] = sd.models.PointsModel.parse(transcripts)
 
-    # add median distance_to_source_cell
-    dist_to_source=transcripts.loc[:,[gene_id_column,'distance_to_source_cell']].groupby(gene_id_column).median()
-    dist_to_source.columns=['median_distance_to_source_cell']
-    sdata['xrna_metadata'].var=sdata['xrna_metadata'].var.join(dist_to_source)
+    # Add median distance_to_source_cell
+    dist_to_source = transcripts.loc[:, [gene_id_column, 'distance_to_source_cell']].groupby(gene_id_column).median()
+    dist_to_source.columns = ['median_distance_to_source_cell']
+    sdata['xrna_metadata'].var = sdata['xrna_metadata'].var.join(dist_to_source)
 
     return sdata.copy() if copy else None
 
 def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='feature_name', threshold=30,copy=False):
     """
-    Compute the proportion of transcripts for each gene that are located beyond a specified distance 
-    from their closest source cell, and add the result to the metadata of the SpatialData object.
+    Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
 
     Parameters
     ----------
@@ -212,19 +241,16 @@ def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='featu
     gene_id_column : str, optional
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
     threshold : float, optional
-        The distance threshold (in micrometers) to calculate the proportion of transcripts farther away 
-        from their closest source cell. Default is 30.
+        The distance threshold (in micrometers) to calculate the proportion of transcripts farther away from their closest source cell. Default is 30.
 
     Returns
     -------
     None
-        The function modifies the `sdata` object in place, adding the computed proportions as a new 
-        column in `sdata['xrna_metadata'].var`.
+        The function modifies the `sdata` object in place, adding the computed proportions as a new column in `sdata['xrna_metadata'].var`.
 
     Notes
     -----
-    - This function assumes that `sdata.points[layer]` contains a column `distance_to_source_cell` 
-      with distances between transcripts and their closest source cells.
+    - This function assumes that `sdata.points[layer]` contains a column `distance_to_source_cell` with distances between transcripts and their closest source cells.
     - The resulting column is named `frac_beyond_<threshold>_from_source`.
 
     Example

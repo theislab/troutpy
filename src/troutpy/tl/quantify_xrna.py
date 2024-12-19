@@ -188,9 +188,7 @@ def quantify_overexpression(
     percentile_threshold: float = 100,
     copy=False
 ) -> Tuple[pd.DataFrame, pd.DataFrame, float]:
-    """Compare counts per gene with counts per non-gene feature. We define a threshold as the 'percentile_threshold' 
-    counts of non-gene counts (e.g. 'percentile_threshold = 100' corresponds to the maximum number of counts observed 
-    in any non-gene feature). Any gene whose counts are above the threshold are considered overexpressed.
+    """Compare counts per gene with counts per non-gene feature. We define a threshold as the 'percentile_threshold' counts of non-gene counts (e.g. 'percentile_threshold = 100' corresponds to the maximum number of counts observed in any non-gene feature). Any gene whose counts are above the threshold are considered overexpressed.
 
     Args:
         sdata (pd.DataFrame): The spatial data object holding points and transcript data.
@@ -244,9 +242,7 @@ def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: 
     """
     Calculate the proportion of extracellular and intracellular transcripts for each gene and integrate results into the AnnData object.
 
-    This function computes the proportion of transcripts classified as extracellular or intracellular for each gene 
-    and calculates additional metrics, including log fold change of extracellular to intracellular proportions. 
-    The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
+    This function computes the proportion of transcripts classified as extracellular or intracellular for each gene and calculates additional metrics, including log fold change of extracellular to intracellular proportions. The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
 
     Parameters:
     -----------
