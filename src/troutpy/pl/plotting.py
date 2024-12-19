@@ -42,13 +42,9 @@ def sorted_heatmap(celltype_by_feature, output_path:str='',filename:str="Heatmap
 def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str='', transcript_group='distance_to_source_cell', 
     save=True, format='pdf', xcoord='x', ycoord='y', xcellcoord='x_centroid', ycellcoord='y_centroid', 
     colormap='Blues', size=2, color_cells='red', figsize=(10, 7), vmax=None):
-    """
-    Plots a scatter plot of transcript locations and cell centroids, coloring the transcripts by a specific feature 
-    (e.g., distance to the closest cell) and optionally saving the plot to a file.
+    """Plots a scatter plot of transcript locations and cell centroids, coloring the transcripts by a specific feature (e.g., distance to the closest cell) and optionally saving the plot to a file.
 
-    This function creates a scatter plot where transcripts are plotted according to their spatial coordinates (x, y), 
-    and their color represents a feature, such as the distance to the nearest cell. Cell centroids are overlaid on the 
-    plot with a specified color. The plot can be saved to a specified file path.
+    This function creates a scatter plot where transcripts are plotted according to their spatial coordinates (x, y), and their color represents a feature, such as the distance to the nearest cell. Cell centroids are overlaid on the plot with a specified color. The plot can be saved to a specified file path.
 
     Parameters:
     ----------
@@ -59,47 +55,32 @@ def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str=''
 
     layer : str, optional
         The key for the layer in `sdata.points` that contains transcript data (default: 'extracellular_transcripts').
-
     output_path : str, optional
         The directory path where the plot will be saved. If not provided, the plot will not be saved (default: '').
-
     transcript_group : str, optional
-        The key in the transcript data (e.g., distance to the source cell) to be used for coloring the scatter plot 
-        (default: 'distance_to_source_cell').
-
+        The key in the transcript data (e.g., distance to the source cell) to be used for coloring the scatter plot (default: 'distance_to_source_cell').
     save : bool, optional
         Whether to save the plot to a file. If `True`, the plot is saved to `output_path` (default: True).
-
     format : str, optional
         The format for saving the plot (e.g., 'pdf', 'png'). This is only used if `save=True` (default: 'pdf').
-
     xcoord : str, optional
         The column name in the transcript data representing the x-coordinate (default: 'x').
-
     ycoord : str, optional
         The column name in the transcript data representing the y-coordinate (default: 'y').
-
     xcellcoord : str, optional
         The column name in the cell data representing the x-coordinate of cell centroids (default: 'x_centroid').
-
     ycellcoord : str, optional
         The column name in the cell data representing the y-coordinate of cell centroids (default: 'y_centroid').
-
     colormap : str, optional
         The colormap to use for coloring the transcripts based on the `transcript_group` values (default: 'Blues').
-
     size : float, optional
         The size of the scatter points for cells and transcripts. Transcripts are scaled down by 0.1 (default: 2).
-
     color_cells : str, optional
         The color to use for the cell centroids (default: 'red').
-
     figsize : tuple, optional
         The size of the figure in inches (width, height). This controls the dimensions of the plot (default: (10, 7)).
-
     vmax : float, optional
         The upper limit for the colormap. If provided, this limits the color scale to values below `vmax` (default: None).
-
     Returns:
     -------
     None
@@ -145,17 +126,63 @@ def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str=''
     if save:
         plt.savefig(os.path.join(figures_path, f"Scatter_{transcript_group}_{colormap}.{format}"))
   
-def heatmap(data,output_path:str='',save=False,figsize=None,tag='',title=None, cmap="RdBu_r", annot=False, cbar=True,vmax=None,vmin=0,
-                 row_cluster=True,col_cluster=True):
-    if figsize==None:
-        figsize=(data.shape[1]/3,(data.shape[0]/7)+2)
-    g=sns.clustermap(data, cmap=cmap, annot=annot, figsize=figsize,vmax=vmax,vmin=vmin,col_cluster=col_cluster,row_cluster=row_cluster)
-    #plt.tight_layout()
+def heatmap(data, output_path: str = '', save: bool = False, figsize=None, tag: str = '', title: str = None, 
+            cmap: str = "RdBu_r", annot: bool = False, cbar: bool = True, vmax=None, vmin=0,
+            row_cluster: bool = True, col_cluster: bool = True):
+    """Generate a clustered heatmap from the given data and optionally save it to a file.
+
+    Parameters:
+    -----------
+    data : pandas.DataFrame or numpy.ndarray
+        The data to visualize as a heatmap. Rows and columns will be clustered if specified.
+    output_path : str, optional
+        Directory where the heatmap should be saved if `save` is True. Defaults to an empty string.
+    save : bool, optional
+        Whether to save the generated heatmap to a file. Defaults to False.
+    figsize : tuple, optional
+        Size of the figure as (width, height). If None, the size is calculated based on the data dimensions. Defaults to None.
+    tag : str, optional
+        A tag to append to the saved file name. Defaults to an empty string.
+    title : str, optional
+        Title of the heatmap. Defaults to None.
+    cmap : str, optional
+        Colormap to use for the heatmap. Defaults to "RdBu_r".
+    annot : bool, optional
+        Whether to annotate the heatmap cells with their values. Defaults to False.
+    cbar : bool, optional
+        Whether to display a color bar in the heatmap. Defaults to True.
+    vmax : float, optional
+        Maximum value for the colormap. Defaults to None.
+    vmin : float, optional
+        Minimum value for the colormap. Defaults to 0.
+    row_cluster : bool, optional
+        Whether to perform hierarchical clustering on rows. Defaults to True.
+    col_cluster : bool, optional
+        Whether to perform hierarchical clustering on columns. Defaults to True.
+
+    Returns:
+    --------
+    None
+        Displays the heatmap and optionally saves it to a file.
+
+    Notes:
+    ------
+    - If `save` is True, the heatmap will be saved as a PDF file in the `output_path/figures` directory.
+    - Clustering is performed using seaborn's `clustermap` function.
+
+    Example:
+    --------
+    >>> heatmap(data=df, output_path="results", save=True, tag="example", title="Heatmap Example")
+    """
+    if figsize is None:
+        figsize = (data.shape[1] / 3, (data.shape[0] / 7) + 2)
+    g = sns.clustermap(data, cmap=cmap, annot=annot, figsize=figsize, vmax=vmax, vmin=vmin, 
+                       col_cluster=col_cluster, row_cluster=row_cluster)
     g.fig.suptitle(title) 
-    if save==True:
+    if save:
         figures_path = os.path.join(output_path, 'figures')
         os.makedirs(figures_path, exist_ok=True)
-        plt.savefig(os.path.join(figures_path, "heatmap_"+tag+".pdf"))
+        plt.savefig(os.path.join(figures_path, "heatmap_" + tag + ".pdf"))
     plt.show()
 
 def plot_crosstab(data, xvar: str = '', yvar: str = '', normalize=True, axis=1, kind='barh', 
@@ -463,7 +490,7 @@ def nmf_gene_contributions(sdata,nmf_adata_key='nmf_data', save=True, vmin=0.0, 
     # Heatmap plot
     plt.figure(figsize=figsize)
     sns.heatmap(loadings_filtered, cmap=cmap, vmax=1)
-    if save==True:
+    if save:
         plt.savefig(os.path.join(figures_path, "loadings_NMF.pdf"))
     plt.show()
     plt.close()  # Close the figure to avoid memory issues
