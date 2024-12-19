@@ -15,6 +15,7 @@ def get_number_of_communication_genes(
     target_proportion_threshold: float = 0.2
     ) -> pd.DataFrame:
     """Compute the number of exchanged genes between any two cell types
+    
     Args:
         source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with 
         proportion of cells per cell type expressing corresponding gene 

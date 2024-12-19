@@ -267,8 +267,7 @@ def plot_crosstab(data, xvar: str = '', yvar: str = '', normalize=True, axis=1, 
 
 def pie_of_positive(data, groupby: str = '', figures_path: str = '', save: bool = True):
     """
-    Generates a pie chart showing the proportion of positive and negative values 
-    for a specified categorical variable in the data.
+    Generates a pie chart showing the proportion of positive and negative values for a specified categorical variable in the data.
 
     Parameters
     ----------
@@ -284,8 +283,7 @@ def pie_of_positive(data, groupby: str = '', figures_path: str = '', save: bool 
     Returns
     -------
     None
-        The function generates and either saves or displays a pie chart, 
-        depending on the value of the `save` parameter.
+        The function generates and either saves or displays a pie chart, depending on the value of the `save` parameter.
     """
     
     plt.figure()
@@ -300,8 +298,7 @@ def pie_of_positive(data, groupby: str = '', figures_path: str = '', save: bool 
         plt.savefig(os.path.join(figures_path, plot_filename))
 
 def genes_over_noise(sdata, scores_by_genes,layer='extracellular_transcripts', output_path:str='',save=True,format:str='pdf'):
-    """
-    This function plots log fold change per gene over noise using a boxplot.
+    """This function plots log fold change per gene over noise using a boxplot.
     
     Parameters:
     - data_quantified: DataFrame containing the extracellular transcript data, including feature names and codeword categories.
@@ -333,8 +330,7 @@ def genes_over_noise(sdata, scores_by_genes,layer='extracellular_transcripts', o
     plt.show()
 
 def moranI_histogram(svg_df, save=True, figures_path: str = '', bins: int = 200, format: str = 'pdf'):
-    """
-    Plots the distribution of Moran's I scores from a DataFrame.
+    """Plots the distribution of Moran's I scores from a DataFrame.
 
     Parameters:
     -----------

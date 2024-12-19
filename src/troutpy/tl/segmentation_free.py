@@ -4,7 +4,6 @@ from points2regions import Points2Regions
 import pandas as pd
 
 
-
 def segmentation_free_clustering(
     sdata, 
     params: dict = {}, 

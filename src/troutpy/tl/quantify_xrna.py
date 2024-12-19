@@ -303,7 +303,6 @@ def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: 
 
     return sdata if copy else None
 
-
 def spatial_colocalization(
     sdata, 
     coords_keys=['x', 'y'], 

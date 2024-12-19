@@ -107,9 +107,6 @@ def calculate_target_cells(
     # Return a copy of the modified SpatialData object if requested
     return sdata.copy() if copy else None
 
-
-
-
 def define_target_by_celltype(sdata, layer='transcripts', closest_celltype_key='closest_target_cell_type', feature_key='feature_name'):
     """
     Computes the proportion of features (e.g., transcripts) associated with each cell type in the spatial dataset.
