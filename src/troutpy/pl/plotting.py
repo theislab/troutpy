@@ -36,7 +36,7 @@ def sorted_heatmap(celltype_by_feature, output_path:str='',filename:str="Heatmap
     plt.ylabel(f'{celltype_by_feature.index.name}')
     plt.xlabel(f'{celltype_by_feature.columns.name}')
     plt.title(filename)
-    if save==True:
+    if save:
         plt.savefig(os.path.join(figures_path, f'{filename}.{format}'))
 
 def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str='', transcript_group='distance_to_source_cell', 
@@ -88,7 +88,7 @@ def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str=''
 
     Notes:
     -----
-    - The transcript data and cell centroid data are extracted from `sdata`. 
+    - The transcript data and cell centroid data are extracted from `sdata`.
     - The `vmax` parameter allows control over the maximum value of the color scale for better visualization control.
     - The plot is saved in the specified format and at the specified output path if `save=True`.
     """
@@ -195,47 +195,47 @@ def plot_crosstab(data, xvar: str = '', yvar: str = '', normalize=True, axis=1, 
     -----------
     data : pd.DataFrame
         Input dataset containing the variables for the cross-tabulation.
-        
+       
     xvar : str, optional (default: '')
         The variable to use on the x-axis for the cross-tabulation.
         
     yvar : str, optional (default: '')
         The variable to use on the y-axis for the cross-tabulation.
-        
+       
     normalize : bool, optional (default: True)
         Whether to normalize the cross-tabulated data (percentages). If True, the data will be normalized.
-        
+      
     axis : int, optional (default: 1)
         The axis to normalize across. Use `1` for row normalization and `0` for column normalization.
-        
+    
     kind : str, optional (default: 'barh')
         The kind of plot to generate. Options include:
         - 'barh': Horizontal bar plot
         - 'bar': Vertical bar plot
         - 'heatmap': Heatmap visualization
         - 'clustermap': Clustermap visualization
-        
+    
     save : bool, optional (default: True)
         If True, the plot will be saved to a file.
-        
+    
     figures_path : str, optional (default: '')
         The directory path where the figure should be saved. If not specified, the plot will be saved in the current directory.
-        
+    
     stacked : bool, optional (default: True)
         If True, the bar plots will be stacked. Only applicable for 'barh' and 'bar' plot kinds.
-        
+    
     figsize : tuple, optional (default: (6, 10))
         The size of the figure for the plot (width, height).
-        
+    
     cmap : str, optional (default: 'viridis')
         The colormap to use for the plot, especially for heatmap and clustermap visualizations.
-        
+    
     saving_format : str, optional (default: 'pdf')
         The format to save the plot in. Options include 'png', 'pdf', etc.
-        
+    
     sortby : str, optional (default: None)
         The column or row to sort the cross-tabulated data by before plotting.
-
+    
     Returns:
     --------
     None
@@ -350,7 +350,7 @@ def genes_over_noise(sdata, scores_by_genes,layer='extracellular_transcripts', o
     )
     # Plot the reference line at x = 0
     plt.plot([0, 0], [*plt.gca().get_ylim()], "r--")
-    if save==True:
+    if save:
     # Save the figure
         plt.savefig(os.path.join(PATH_FIGURES, f"boxplot_log_fold_change_per_gene{format}"), bbox_inches="tight", pad_inches=0)
     # Show the plot
@@ -456,7 +456,7 @@ def proportion_above_threshold(
     figures_path = os.path.join(output_path, 'figures')
     os.makedirs(figures_path, exist_ok=True)
     filename=f'barplot_distant_from_source_min{bottom_percentile}_max{top_percentile}_{bar_color}'
-    if save==True:
+    if save:
         plt.savefig(os.path.join(figures_path, f'{filename}.{format}'))
     plt.show()
 
@@ -604,8 +604,7 @@ def paired_nmf_factors(
             title=f'NMF Factor cell-red/exRNa-blue {factor + 1}', 
             ax=axs, show=False, spot_size=spot_size_cells, vmax=vmax_cells
         )
-        if save==True:
-         if save:
+        if save:
             figures_path = os.path.join(output_path, 'figures')
             os.makedirs(figures_path, exist_ok=True)
             file_name = os.path.join(figures_path, f'Spatial_NMF Factor {factor + 1}.{format}')

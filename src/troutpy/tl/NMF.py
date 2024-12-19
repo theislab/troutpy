@@ -33,7 +33,7 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0,save=Fal
     # Add NMF results to the AnnData object
     adata.obsm['W_nmf'] = W  # Add the cell factors to the AnnData object
     adata.uns['H_nmf'] = H 
-    if save==True:
+    if save:
         H=pd.DataFrame(adata.uns['H_nmf'],columns=adata.var.index)
         H.to_parquet(os.path.join(output_path,'factor_loadings_H_per_gene.parquet'))
         W=pd.DataFrame(adata.obsm['W_nmf'],index=adata.obs.index)

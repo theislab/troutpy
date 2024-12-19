@@ -51,7 +51,7 @@ def colocalization_proportion(
     os.makedirs(outpath, exist_ok=True)
     
     # Save the DataFrame as a Parquet file
-    if save==True:
+    if save:
         filepath = os.path.join(outpath, filename)
         coloc.to_parquet(filepath)
     
