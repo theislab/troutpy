@@ -55,7 +55,8 @@
 
     pl.sorted_heatmap
     pl.coupled_scatter
-    pl.heatmap,plot_crosstab
+    pl.heatmap
+    pl.plot_crosstab
     pl.pie_of_positive
     pl.genes_over_noise
     pl.moranI_histogram

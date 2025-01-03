@@ -220,16 +220,12 @@ def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: 
     This function computes the proportion of transcripts classified as extracellular or intracellular for each gene and calculates additional metrics, including log fold change of extracellular to intracellular proportions. The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
 
     Parameters:
-    sdata : AnnData
-        An AnnData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_id_column`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
-    gene_id_column : str, optional
-        The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'feature_name'.
-    copy : bool, optional
-        Whether to return a modified copy of the input `sdata` object. If `False`, the input object is modified in place. Defaults to `False`.
+    sdata (AnnData): An AnnData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_id_column`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
+    gene_id_column (str, optional):The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'feature_name'.
+    copy (bool, optional):Whether to return a modified copy of the input `sdata` object. If `False`, the input object is modified in place. Defaults to `False`.
 
     Returns:
-    AnnData or None
-        If `copy=True`, returns a modified copy of the input `sdata` object with updated metadata. Otherwise, modifies `sdata` in place and returns `None`.
+    If `copy=True`, returns a modified copy of the input `sdata` object with updated metadata. Otherwise, modifies `sdata` in place and returns `None`.
 
     Notes:
     - The function assumes that the `sdata` object has a 'points' layer containing a 'transcripts' DataFrame.
