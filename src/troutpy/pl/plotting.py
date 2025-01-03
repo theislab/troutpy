@@ -410,7 +410,7 @@ def proportion_above_threshold(
     output_path:str='',format='pdf'
 ):
     """ Plot top and bottom percentile of features
-    
+ 
     Plots the top and bottom percentiles of features with the highest and lowest proportions above a threshold, or visualizes a specific list of transcripts.
 
     Parameters:
@@ -578,8 +578,7 @@ def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, a
     Parameters:
     -----------
     adata_extracellular_with_nmf : AnnData
-        An AnnData object containing the extracellular RNA data with the NMF results. 
-        The H matrix is expected to be stored in `adata.uns['H_nmf']`.
+        An AnnData object containing the extracellular RNA data with the NMF results. The H matrix is expected to be stored in `adata.uns['H_nmf']`.
     adata_annotated_cellular : AnnData
         An AnnData object containing the cellular RNA data with annotated gene expression values.
 
@@ -901,35 +900,35 @@ def interactions_with_arrows(
     save: Optional[Union[str, Path]] = None,
     **kwargs
 ):
-    """
-    Visualizes interactions between source and target cells using arrows, along with transcript locations.
+    """Visualizes interactions between source and target cells using arrows, along with transcript locations.
 
     The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot. 
 
     Parameters:
-    sdata (AnnData): The AnnData object containing the spatial omics data.
-    layer (str, optional): The key in `sdata` for the extracellular transcript layer to analyze. Default is 'extracellular_transcripts_enriched'.
-    gene (str, optional): The gene of interest. Default is 'Arc'.
-    gene_key (str, optional): The key for gene names in the data. Default is 'feature_name'.
-    cell_id_key (str, optional): The key for cell IDs. Default is 'cell_id'.
-    color_target (str, optional): Color for the target cells. Default is 'blue'.
-    color_source (str, optional): Color for the source cells. Default is 'red'.
-    color_transcript (str, optional): Color for the transcript locations. Default is 'green'.
-    spatial_key (str, optional): The key for spatial coordinates in `sdata`. Default is 'spatial'.
-    img (Optional[Union[bool, Sequence]], optional): Optional background image (e.g., tissue section) to display behind the plot.
-    img_alpha (Optional[float], optional): Transparency level for the background image. Default is None (no image).
-    image_cmap (Optional[Colormap], optional): Colormap for the image. Default is None.
-    size (Optional[Union[float, Sequence[float]]], optional): Size of the plotted points (cells and transcripts). Default is 8.
-    alpha (float, optional): Transparency level for plotted points. Default is 0.6.
-    title (Optional[Union[str, Sequence[str]]], optional): Title of the plot. Default is the gene name.
-    legend_loc (Optional[str], optional): Location of the legend on the plot. Default is 'best'.
-    figsize (Tuple[float, float], optional): Size of the plot. Default is (10, 10).
-    dpi (Optional[int], optional): Resolution of the plot. Default is 100.
-    save (Optional[Union[str, Path]], optional): If provided, the path where the plot will be saved.
-    **kwargs: Additional arguments passed to the `scatter` and `imshow` functions for customization.
+    ----------
+    - sdata (AnnData): The AnnData object containing the spatial omics data.
+    - layer (str, optional): The key in `sdata` for the extracellular transcript layer to analyze. Default is 'extracellular_transcripts_enriched'.
+    - gene (str, optional): The gene of interest. Default is 'Arc'.
+    - gene_key (str, optional): The key for gene names in the data. Default is 'feature_name'.
+    - cell_id_key (str, optional): The key for cell IDs. Default is 'cell_id'.
+    - color_target (str, optional): Color for the target cells. Default is 'blue'.
+    - color_source (str, optional): Color for the source cells. Default is 'red'.
+    - color_transcript (str, optional): Color for the transcript locations. Default is 'green'.
+    - spatial_key (str, optional): The key for spatial coordinates in `sdata`. Default is 'spatial'.
+    - img (Optional[Union[bool, Sequence]], optional): Optional background image (e.g., tissue section) to display behind the plot.
+    - img_alpha (Optional[float], optional): Transparency level for the background image. Default is None (no image).
+    - image_cmap (Optional[Colormap], optional): Colormap for the image. Default is None.
+    - size (Optional[Union[float, Sequence[float]]], optional): Size of the plotted points (cells and transcripts). Default is 8.
+    - alpha (float, optional): Transparency level for plotted points. Default is 0.6.
+    - title (Optional[Union[str, Sequence[str]]], optional): Title of the plot. Default is the gene name.
+    - legend_loc (Optional[str], optional): Location of the legend on the plot. Default is 'best'.
+    - figsize (Tuple[float, float], optional): Size of the plot. Default is (10, 10).
+    - dpi (Optional[int], optional): Resolution of the plot. Default is 100.
+    - save (Optional[Union[str, Path]], optional): If provided, the path where the plot will be saved.
+    - **kwargs: Additional arguments passed to the `scatter` and `imshow` functions for customization.
 
     Returns:
-    None: The function displays or saves a plot of interactions between cells and transcripts.
+    - None: The function displays or saves a plot of interactions between cells and transcripts.
 
     Notes:
     The plot will show arrows from source to target cells, with different colors for source, target, and transcript points.

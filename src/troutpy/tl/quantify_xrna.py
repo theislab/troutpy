@@ -309,31 +309,30 @@ def spatial_colocalization(
     n_threads=1, 
     threshold_colocalized=1,copy=False
 ):
-    """
-    Computes spatial variability of extracellular RNA using Moran's I.
+    """Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
     -----------
-    sdata : SpatialData
+    - sdata : SpatialData
         The spatial transcriptomics dataset in SpatialData format.
-    coords_keys : list of str, optional
+    - coords_keys : list of str, optional
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    gene_id_key : str, optional
+    - gene_id_key : str, optional
         The key for gene identifiers in the dataset (default: 'feature_name').
-    n_neighbors : int, optional
+    - n_neighbors : int, optional
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    resolution : int, optional
+    - resolution : int, optional
         The resolution for kernel density estimation (default: 1000).
-    binsize : int, optional
+    - binsize : int, optional
         The binsize for kernel density estimation (default: 20).
-    n_threads : int, optional
+    - n_threads : int, optional
         The number of threads for LazyKDE processing (default: 1).
-    spatial_autocorr_mode : str, optional
+    - spatial_autocorr_mode : str, optional
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns:
     --------
-    pd.DataFrame
+    - pd.DataFrame
         A DataFrame containing Moran's I values for each gene, indexed by gene names.
     """
     # Step 1: Extract and preprocess data

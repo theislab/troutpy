@@ -48,35 +48,28 @@ def nmf(
 
     Parameters:
     ----------
-    sdata : spatial data object
+    - sdata : spatial data object 
         Input spatial data containing transcript and bin data.
-  
-    layer : str, optional
+    - layer : str, optional
         Layer name of the data that contains extracellular transcripts (default: 'extracellular_transcripts_enriched').
-    
-    feature_key : str, optional
+    - feature_key : str, optional
         Column name for the transcript feature (default: 'feature_name').
-    
-    bin_key : str, optional
+    - bin_key : str, optional
         Column name for bin IDs (default: 'bin_id').
-    
-    density_table_key : str, optional
+    - density_table_key : str, optional
         Key to retrieve the density table from sdata (default: 'segmentation_free_table').
-    
-    n_components : int, optional
+    - n_components : int, optional
         Number of components for NMF (default: 20).
-   
-    subsample_percentage : float, optional
+    - subsample_percentage : float, optional
         Percentage of data to use for NMF (default: 0.1).
-   
-    random_state : int, optional
+    - random_state : int, optional
         Random state for NMF initialization for reproducibility (default: None).
 
     Returns:
     -------
-    sdata : Updated spatial data object with NMF components stored.
+    - sdata : Updated spatial data object with NMF components stored.
     """
-    if all==False:
+    if not all:
     # Extract the DataFrame with feature_name and bin_id
          df = sdata.points[layer][[feature_key, bin_key]].compute()
          # Filter the density table to include only the relevant bin_ids and feature_names
@@ -110,10 +103,10 @@ def apply_exrna_factors_to_cells(sdata, layer_factors='nmf_data'):
     Parameters:
     sdata (AnnData): The AnnData object containing both extracellular and cellular data.
     layer_factors (str, optional): The key in `sdata` that contains the extracellular RNA data with NMF factors. Default is 'nmf_data'.
-    
+  
     Returns:
     AnnData: The updated `sdata` object with annotated cellular data that includes the applied exRNA factors as new columns.
-    
+
     Notes:
     The function assumes that the extracellular RNA data is stored in `sdata[layer_factors]` and that the NMF factor loadings are stored in the `uns` attribute of the extracellular dataset as 'H_nmf'. The factor scores are added to the `obs` attribute of the cellular data.
     """
