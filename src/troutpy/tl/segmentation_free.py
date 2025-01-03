@@ -2,10 +2,11 @@ import spatialdata_io
 import spatialdata as sd
 from points2regions import Points2Regions
 import pandas as pd
+from spatialdata import SpatialData
 
 
 def segmentation_free_clustering(
-    sdata, 
+    sdata:SpatialData, 
     params: None, 
     x: str = 'x', 
     y: str = 'y', 

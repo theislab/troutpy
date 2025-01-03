@@ -56,7 +56,7 @@ def create_xrna_metadata(
     return sdata if copy else None
 
 def compute_source_cells(
-    sdata,
+    sdata:SpatialData,
     expression_threshold=1,
     gene_id_column='feature_name',
     layer='transcripts',
@@ -102,7 +102,7 @@ def compute_source_cells(
     return sdata.copy() if copy else None
 
 def distance_to_source_cell(
-    sdata, 
+    sdata:SpatialData, 
     layer='transcripts', 
     xcoord='x', 
     ycoord='y',
@@ -182,7 +182,7 @@ def distance_to_source_cell(
 
     return sdata.copy() if copy else None
 
-def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='feature_name', threshold=30,copy=False):
+def compute_distant_cells_prop(sdata:SpatialData, layer='transcripts', gene_id_column='feature_name', threshold=30,copy=False):
     """
     Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
 
@@ -215,7 +215,7 @@ def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='featu
 
     return sdata.copy() if copy else None
 
-def get_proportion_expressed_per_cell_type(adata, cell_type_key='cell type'):
+def get_proportion_expressed_per_cell_type(adata:SpatialData, cell_type_key='cell type'):
     """
     Calculate the proportion of expression for each feature (gene) per cell type.
 

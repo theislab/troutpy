@@ -10,6 +10,7 @@ from typing import Optional, Union, Sequence, Tuple
 from anndata import AnnData
 from matplotlib.colors import Colormap, Normalize
 from pathlib import Path
+from spatialdata import SpatialData
 
 def sorted_heatmap(celltype_by_feature, output_path:str='',filename:str="Heatmap_target_cells_by_gene",format='pdf',cmap='viridis',vmax=None,save=False,figsize=(10, 10)):
     """
@@ -583,7 +584,7 @@ def plot_nmf_factors_spatial(adata, n_factors, save=True):
         )
 
 def spatial_interactions(
-    sdata: AnnData,
+    sdata: SpatialData,
     layer: str = 'extracellular_transcripts_enriched',
     gene: str = 'Arc',
     gene_key: str = 'feature_name',
@@ -660,7 +661,7 @@ def spatial_interactions(
     plt.show()
 
 def interactions_with_arrows(
-    sdata: AnnData,
+    sdata: SpatialData,
     layer: str = 'extracellular_transcripts_enriched',
     gene: str = 'Arc',
     gene_key: str = 'feature_name',

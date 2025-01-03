@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import scanpy as sc
 import spatialdata as sd
 from typing import List, Union, Tuple
+from spatialdata import SpatialData
 
 def compute_extracellular_counts(data_extracell): # would be good to change the name of this function
     """
@@ -31,7 +32,7 @@ def compute_extracellular_counts(data_extracell): # would be good to change the 
     return extracellular_counts
 
 def define_extracellular(
-    sdata, 
+    sdata:SpatialData, 
     layer: str = 'transcripts', 
     method: str = 'segmentation_free',
     min_prop_of_extracellular: float = 0.8, 

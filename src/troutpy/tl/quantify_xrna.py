@@ -135,7 +135,7 @@ def create_xrna_metadata(
     return sdata if copy else None
 
 def quantify_overexpression(
-    sdata: pd.DataFrame,
+    sdata: SpatialData,
     codeword_column: str,
     control_codewords: Union[List[str], str],
     gene_id_column: str='feature_name',
@@ -194,7 +194,7 @@ def quantify_overexpression(
 
     return sdata if copy else None
 
-def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: bool = False):
+def extracellular_enrichment(sdata:SpatialData, gene_id_column: str = 'feature_name', copy: bool = False):
     """
     This function computes the proportion of transcripts classified as extracellular or intracellular for each gene and calculates additional metrics, including log fold change of extracellular to intracellular proportions. The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
 
@@ -236,7 +236,7 @@ def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: 
     return sdata if copy else None
 
 def spatial_colocalization(
-    sdata, 
+    sdata:SpatialData, 
     coords_keys=None, 
     gene_id_key='feature_name', 
     

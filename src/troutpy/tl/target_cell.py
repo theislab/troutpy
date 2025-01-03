@@ -14,9 +14,10 @@ import numpy as np
 from tqdm import tqdm
 import scanpy as sc
 import spatialdata as sd
+from spatialdata import SpatialData
 
 def calculate_target_cells(
-    sdata: sd.SpatialData,
+    sdata: SpatialData,
     layer: str = 'transcripts',
     xcoord: str = 'x',
     ycoord: str = 'y',
@@ -25,7 +26,7 @@ def calculate_target_cells(
     celltype_key: str = 'cell type',
     gene_id_key:str='feature_name',
     copy: bool = False
-) -> Optional[sd.SpatialData]:
+) -> Optional[SpatialData]:
     """
     This function identifies the nearest cell to each transcript based on spatial coordinates and annotates the transcript data with the ID, cell type, and distance to the closest cell.
 
@@ -91,7 +92,7 @@ def calculate_target_cells(
     # Return a copy of the modified SpatialData object if requested
     return sdata.copy() if copy else None
 
-def define_target_by_celltype(sdata, layer='transcripts', closest_celltype_key='closest_target_cell_type', feature_key='feature_name'):
+def define_target_by_celltype(sdata:SpatialData, layer='transcripts', closest_celltype_key='closest_target_cell_type', feature_key='feature_name'):
     """
     This function calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,and then normalizes the result to provide the proportion of each feature associated with each cell type.
 
