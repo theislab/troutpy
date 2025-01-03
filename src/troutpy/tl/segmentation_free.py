@@ -18,19 +18,19 @@ def segmentation_free_clustering(
     This function clusters transcriptomic data without relying on pre-defined cell or tissue segmentations.It supports multiple clustering methods, with Points2Regions being the default.
 
     Parameters:
-    - sdata (SpatialData): A spatial data object containing transcriptomic information.
-    - params (dict): A dictionary of parameters for the selected clustering method.For `points2regions`:
-        - 'num_clusters' (int): Number of clusters (default: 300).
-        - 'pixel_width' (float): Pixel width parameter (default: 0.4).
-        - 'pixel_smoothing' (float): Pixel smoothing parameter (default: 3.5).
-    - x (str): Column name for the x-coordinates of transcripts.
-    - y (str): Column name for the y-coordinates of transcripts.
-    - feature_name (str): Column name for the feature names.
-    - method (str, optional): Clustering method to use. Options:
-        - 'points2regions': Uses the Points2Regions algorithm for clustering.
-        - 'sainsc': Placeholder for another clustering method.
-    - transcript_id (str, optional): Column name for the transcript IDs.
-    - copy (bool): If True, returns a copy of the clustering results. If False, updates `sdata` in-place.
+    sdata (SpatialData): A spatial data object containing transcriptomic information.
+    params (dict): A dictionary of parameters for the selected clustering method.For `points2regions`:
+    - 'num_clusters' (int): Number of clusters (default: 300).
+    - 'pixel_width' (float): Pixel width parameter (default: 0.4).
+    - 'pixel_smoothing' (float): Pixel smoothing parameter (default: 3.5).
+    x (str): Column name for the x-coordinates of transcripts.
+    y (str): Column name for the y-coordinates of transcripts.
+    feature_name (str): Column name for the feature names.
+    method (str, optional): Clustering method to use. Options:
+    - 'points2regions': Uses the Points2Regions algorithm for clustering.
+    - 'sainsc': Placeholder for another clustering method.
+    transcript_id (str, optional): Column name for the transcript IDs.
+    copy (bool): If True, returns a copy of the clustering results. If False, updates `sdata` in-place.
 
     Returns:
     Optional[anndata.AnnData]: If `copy` is True, returns an AnnData object containing the clustering results.Otherwise, updates the `sdata` object in-place and returns None.

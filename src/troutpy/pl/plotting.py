@@ -627,7 +627,7 @@ def spatial_interactions(
     figsize (Tuple[float, float]): The dimensions of the plot in inches.
     dpi (Optional[int]): The resolution (dots per inch) for the plot.
     save (Optional[Union[str, Path]]): The path to save the plot image. If `None`, the plot is displayed but not saved.
-    **kwargs : Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
+    kwargs : Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
 
     Returns:
     None
@@ -683,7 +683,7 @@ def interactions_with_arrows(
 ):
     """
     The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot.
-    
+
     Parameters:
     - sdata (AnnData): The AnnData object containing the spatial omics data.
     - layer (str, optional): The key in `sdata` for the extracellular transcript layer to analyze. Default is 'extracellular_transcripts_enriched'.
@@ -704,13 +704,11 @@ def interactions_with_arrows(
     - figsize (Tuple[float, float], optional): Size of the plot. Default is (10, 10).
     - dpi (Optional[int], optional): Resolution of the plot. Default is 100.
     - save (Optional[Union[str, Path]], optional): If provided, the path where the plot will be saved.
-    - **kwargs: Additional arguments passed to the `scatter` and `imshow` functions for customization.
+    - kwargs: Additional arguments passed to the `scatter` and `imshow` functions for customization.
 
     Returns:
     - None: The function displays or saves a plot of interactions between cells and transcripts.
 
-    Notes:
-    The plot will show arrows from source to target cells, with different colors for source, target, and transcript points.
     """ 
     # Extract relevant data
     transcripts = sdata.points[layer]
