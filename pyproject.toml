@@ -23,24 +23,19 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "anndata>=0.9",
-  # for debug logging (referenced from the issue template)
+  "spatialdata",
+  "squidpy",
   "session-info",
   "docutils>=0.8,!=0.18.*,!=0.19.*",
   "ipykernel",
   "ipython",
-  "pandas",
-  "scanpy",
   "scvelo",
-  "squidpy",
-  "spatialdata",
   "seaborn",
   "matplotlib",
   "scikit-image",
   "scikit-learn",
   "statsmodels",
   "tifffile",
-  "numpy",
   "sainsc",
   "sympy"]
 
