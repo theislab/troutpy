@@ -26,7 +26,23 @@ dependencies = [
   "anndata",
   # for debug logging (referenced from the issue template)
   "session-info",
-]
+  "docutils>=0.8,!=0.18.*,!=0.19.*",
+  "ipykernel",
+  "ipython",
+  "pandas",
+  "scanpy",
+  "scvelo",
+  "squidpy",
+  "spatialdata",
+  "seaborn",
+  "matplotlib",
+  "scikit-image",
+  "scikit-learn",
+  "statsmodels",
+  "tifffile",
+  "numpy",
+  "sympy"]
+
 optional-dependencies.dev = [
   "pre-commit",
   "twine>=4.0.2",
