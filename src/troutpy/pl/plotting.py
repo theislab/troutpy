@@ -39,9 +39,8 @@ def sorted_heatmap(celltype_by_feature, output_path:str='',filename:str="Heatmap
 def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str='', transcript_group='distance_to_source_cell', 
     save=True, format='pdf', xcoord='x', ycoord='y', xcellcoord='x_centroid', ycellcoord='y_centroid', 
     colormap='Blues', size=2, color_cells='red', figsize=(10, 7), vmax=None):
-    """Plots a scatter plot of transcript locations and cell centroids, coloring the transcripts by a specific feature (e.g., distance to the closest cell) and optionally saving the plot to a file.
-
-    This function creates a scatter plot where transcripts are plotted according to their spatial coordinates (x, y), and their color represents a feature, such as the distance to the nearest cell. Cell centroids are overlaid on the plot with a specified color. The plot can be saved to a specified file path.
+    """
+    Plots a scatter plot of transcript locations and cell centroids, coloring the transcripts by a specific feature (e.g., distance to the closest cell) and optionally saving the plot to a file.
 
     Parameters:
     ----------
@@ -126,7 +125,8 @@ def coupled_scatter(sdata, layer='extracellular_transcripts', output_path:str=''
 def heatmap(data, output_path: str = '', save: bool = False, figsize=None, tag: str = '', title: str = None, 
             cmap: str = "RdBu_r", annot: bool = False, cbar: bool = True, vmax=None, vmin=0,
             row_cluster: bool = True, col_cluster: bool = True):
-    """Generate a clustered heatmap from the given data and optionally save it to a file.
+    """
+    Generate a clustered heatmap from the given data and optionally save it to a file.
 
     Parameters:
     -----------
@@ -322,7 +322,8 @@ def pie_of_positive(data, groupby: str = '', figures_path: str = '', save: bool 
         plt.savefig(os.path.join(figures_path, plot_filename))
 
 def genes_over_noise(sdata, scores_by_genes,layer='extracellular_transcripts', output_path:str='',save=True,format:str='pdf'):
-    """Function that plots log fold change per gene over noise using a boxplot.
+    """
+    Function that plots log fold change per gene over noise using a boxplot.
 
     Parameters:
     - data_quantified: DataFrame containing the extracellular transcript data, including feature names and codeword categories.
@@ -354,7 +355,8 @@ def genes_over_noise(sdata, scores_by_genes,layer='extracellular_transcripts', o
     plt.show()
 
 def moranI_histogram(svg_df, save=True, figures_path: str = '', bins: int = 200, format: str = 'pdf'):
-    """Plots the distribution of Moran's I scores from a DataFrame.
+    """
+    Plots the distribution of Moran's I scores from a DataFrame.
 
     Parameters:
     -----------
@@ -409,8 +411,7 @@ def proportion_above_threshold(
     save=False,
     output_path:str='',format='pdf'
 ):
-    """ Plot top and bottom percentile of features
-
+    """
     Plots the top and bottom percentiles of features with the highest and lowest proportions above a threshold, or visualizes a specific list of transcripts.
 
     Parameters:
@@ -459,8 +460,7 @@ def proportion_above_threshold(
 
 def nmf_factors_exrna_cells_W(sdata, nmf_adata_key: str = 'nmf_data', save: bool = True, saving_path: str = '', 
                               spot_size: int = 30, cmap: str = 'viridis'):
-    """Plot NMF factors for each cell in a spatial transcriptomics dataset.
-
+    """
     This function extracts the NMF (Non-negative Matrix Factorization) factors from the specified AnnData object within the spatial data (`sdata`) and creates spatial plots for each factor. The plots can be displayed or saved to disk.
 
     Parameters:
@@ -512,8 +512,7 @@ def nmf_factors_exrna_cells_W(sdata, nmf_adata_key: str = 'nmf_data', save: bool
 
 def nmf_gene_contributions(sdata, nmf_adata_key: str = 'nmf_data', save: bool = True, vmin: float = 0.0, vmax: float = 0.02, 
                            saving_path: str = '', cmap: str = 'viridis', figsize: tuple = (5, 5)):
-    """Plot a heatmap of gene contributions to NMF factors.
-
+    """
     This function extracts the NMF (Non-negative Matrix Factorization) gene loadings matrix from the specified AnnData object within the spatial data (`sdata`), filters genes based on their maximum loading value, and plots a heatmap of the filtered loadings.
 
     Parameters:
@@ -571,8 +570,7 @@ def nmf_gene_contributions(sdata, nmf_adata_key: str = 'nmf_data', save: bool = 
     plt.close()  # Close the figure to avoid memory issues
 
 def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, adata_annotated_cellular):
-    """Apply extracellular RNA NMF loadings (H) to cellular data to generate cellular NMF factors (W).
-
+    """
     This function transfers the gene loadings (H matrix) derived from extracellular RNA analysis to a cellular dataset. It calculates the new W matrix for cellular data by multiplying the gene expression values of the cellular dataset with the filtered H matrix.
 
     Parameters:
@@ -642,37 +640,28 @@ def paired_nmf_factors(
     output_path:str='',
     format='pdf'
 ):
-    """Plots the spatial distribution of NMF factors for extracellular transcripts and cells.
+    """
+    Plots the spatial distribution of NMF factors for extracellular transcripts and cells.
 
     Parameters:
-    ----------
     sdata : spatial data object
         The spatial data object containing both extracellular and cell data.
-
     layer : str, optional
         Layer in sdata to extract the NMF data from (default: 'nmf_data').
-
     n_factors : int, optional
         Number of NMF factors to plot (default: 5).
-
     figsize : tuple, optional
         Size of the figure for each subplot (default: (12, 6)).
-
     spot_size_exrna : float, optional
         Size of the spots for extracellular transcript scatter plot (default: 5).
-
     spot_size_cells : float, optional
         Size of the spots for cell scatter plot (default: 10).
-
     cmap_exrna : str, optional
         Colormap for the extracellular transcript NMF factors (default: 'YlGnBu').
-
     cmap_cells : str, optional
         Colormap for the cell NMF factors (default: 'Reds').
-
     vmax_exrna : str or float, optional
         Maximum value for extracellular transcript color scale (default: 'p99').
-
     vmax_cells : str or float, optional
         Maximum value for cell color scale (default: None).
     """
@@ -720,8 +709,7 @@ def paired_nmf_factors(
         plt.show()
 
 def plot_nmf_factors_spatial(adata, n_factors, save=True):
-    """Plot spatial maps of cells colored by NMF factors.
-
+    """
     This function visualizes the spatial distribution of cells, colored by their corresponding NMF factor values, stored in `adata.obs`. It iterates over all specified NMF factors and generates spatial plots for each factor.
 
     Parameters:
@@ -780,8 +768,7 @@ def spatial_interactions(
     save: Optional[Union[str, Path]] = None,
     **kwargs
 ):
-    """Visualizes the spatial interactions of extracellular RNA and associated cells.
-
+    """
     This function generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
 
     Parameters:
@@ -900,9 +887,9 @@ def interactions_with_arrows(
     save: Optional[Union[str, Path]] = None,
     **kwargs
 ):
-    """Visualizes interactions between source and target cells using arrows, along with transcript locations.
-
+    """
     The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot.
+    
     Parameters:
     ----------
     - sdata (AnnData): The AnnData object containing the spatial omics data.

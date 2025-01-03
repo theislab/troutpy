@@ -10,18 +10,44 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
-def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0,save=False,output_path:str='',random_state=None):
+def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0, save=False, output_path: str = '', random_state=None):
     """
-    Applies Non-Negative Matrix Factorization (NMF) to an AnnData object.
+    Applies Non-Negative Matrix Factorization (NMF) to an AnnData object to reduce the dimensionality of gene expression data.
 
-    This function performs NMF on the expression matrix (`adata.X`) to extract a reduced number of latent factors that describe the gene expression profiles of cells. The number of factors is specified by `n_components`. Optionally, the data can be subsampled before applying NMF.
+    Parameters:
+    -----------
+    adata : AnnData
+        The AnnData object containing the gene expression matrix (`adata.X`) along with cell and gene annotations.
+    n_components : int, optional, default: 20
+        The number of components (latent factors) to extract from the NMF model.
+    subsample_percentage : float, optional, default: 1.0
+        The percentage of cells to sample before applying NMF. A value of 1.0 means no subsampling.
+    save : bool, optional, default: False
+        If True, the factor loadings (`H`) and factor scores (`W`) will be saved as Parquet files to the specified output path.
+    output_path : str, optional, default: ''
+        The directory where the factor loadings and scores will be saved if `save` is True.
+    random_state : int, optional, default: None
+        The random seed used for initializing the NMF model. If None, the random seed is not fixed.
+
+    Returns:
+    --------
+    adata : AnnData
+        The input AnnData object with the NMF results added:
+        - `adata.obsm['W_nmf']` contains the cell factors (factor scores for each cell).
+        - `adata.uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
+
+    Notes:
+    ------
+    - The NMF algorithm is initialized using a random method for factorization (`init='random'`).
+    - The function assumes that the expression matrix (`adata.X`) contains raw gene expression counts.
     """
     
     # Extract the cell count matrix (X) from AnnData object
     # Assuming that adata.X contains the raw counts for cells
     sc.pp.subsample(adata, subsample_percentage)
     counts = adata.X.copy()
-    # Perform NMF with 20 factors
+    
+    # Perform NMF with the specified number of components
     nmf_model = NMF(n_components=n_components, init='random', random_state=42)
     W = nmf_model.fit_transform(counts)  # Cell factors
     H = nmf_model.components_  # Gene loadings
@@ -29,12 +55,16 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0,save=Fal
     # Add NMF results to the AnnData object
     adata.obsm['W_nmf'] = W  # Add the cell factors to the AnnData object
     adata.uns['H_nmf'] = H 
+    
+    # Optionally save the factor loadings and scores to disk
     if save:
-        H=pd.DataFrame(adata.uns['H_nmf'],columns=adata.var.index)
-        H.to_parquet(os.path.join(output_path,'factor_loadings_H_per_gene.parquet'))
-        W=pd.DataFrame(adata.obsm['W_nmf'],index=adata.obs.index)
-        W.to_parquet(os.path.join(output_path,'factor_scores_W_per_cell.parquet')) 
+        H = pd.DataFrame(adata.uns['H_nmf'], columns=adata.var.index)
+        H.to_parquet(os.path.join(output_path, 'factor_loadings_H_per_gene.parquet'))
+        W = pd.DataFrame(adata.obsm['W_nmf'], index=adata.obs.index)
+        W.to_parquet(os.path.join(output_path, 'factor_scores_W_per_cell.parquet')) 
+    
     return adata
+
 
 def nmf(
     sdata, layer='extracellular_transcripts_enriched', 
@@ -43,8 +73,7 @@ def nmf(
     n_components=20, subsample_percentage=0.1,
     random_state=None,all=False):
 
-    """
-    Applies Non-negative Matrix Factorization (NMF) on filtered data based on feature_name and bin_id.
+    """Applies Non-negative Matrix Factorization (NMF) on filtered data based on feature_name and bin_id.
 
     Parameters:
     ----------

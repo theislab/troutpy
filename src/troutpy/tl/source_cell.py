@@ -16,7 +16,8 @@ def create_xrna_metadata(
     gene_key: str = 'feature_name',
     copy: bool = False
 ) -> SpatialData | None:
-    """Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
+    """
+    Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
     Parameters:
     ----------
@@ -82,7 +83,8 @@ def compute_source_cells(
     layer='transcripts',
     copy=False
 ):
-    """Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
+    """
+    Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
 
     - Parameters:
     ----------
@@ -138,8 +140,7 @@ def distance_to_source_cell(
     gene_id_column='feature_name',
     copy=False
 ):
-    """Calculates the distance between extracellular RNA transcripts and their closest source cells.
-
+    """
     This function computes the distance from each extracellular RNA transcript to the nearest source cell based on their spatial coordinates. The function uses a KDTree to efficiently find the closest cell to each transcript, storing the results in the `sdata` object.
 
     Parameters:
@@ -211,7 +212,8 @@ def distance_to_source_cell(
     return sdata.copy() if copy else None
 
 def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='feature_name', threshold=30,copy=False):
-    """Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
+    """
+    Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
 
     Parameters
     ----------
@@ -256,7 +258,8 @@ def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='featu
     return sdata.copy() if copy else None
 
 def get_proportion_expressed_per_cell_type(adata, cell_type_key='cell type'):
-    """Calculate the proportion of expression for each feature (gene) per cell type.
+    """
+    Calculate the proportion of expression for each feature (gene) per cell type.
 
     Parameters
     ----------

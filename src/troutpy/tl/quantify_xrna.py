@@ -22,7 +22,8 @@ def spatial_variability(
     n_threads=1, 
     spatial_autocorr_mode="moran",copy=False
 ):
-    """Computes spatial variability of extracellular RNA using Moran's I.
+    """
+    Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
     -----------
@@ -106,7 +107,8 @@ def create_xrna_metadata(
     gene_key: str = 'feature_name',
     copy: bool = False
 ) -> SpatialData | None:
-    """Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
+    """
+    Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
     Parameters:
     ----------
@@ -167,9 +169,10 @@ def quantify_overexpression(
     percentile_threshold: float = 100,
     copy=False
 ) -> Tuple[pd.DataFrame, pd.DataFrame, float]:
-    """Compare counts per gene with counts per non-gene feature. We define a threshold as the 'percentile_threshold' counts of non-gene counts (e.g. 'percentile_threshold = 100' corresponds to the maximum number of counts observed in any non-gene feature). Any gene whose counts are above the threshold are considered overexpressed.
+    """
+    Compare counts per gene with counts per non-gene feature. We define a threshold as the 'percentile_threshold' counts of non-gene counts (e.g. 'percentile_threshold = 100' corresponds to the maximum number of counts observed in any non-gene feature). Any gene whose counts are above the threshold are considered overexpressed.
 
-    Args:
+    Parameters:
     - sdata (pd.DataFrame): The spatial data object holding points and transcript data.
     - codeword_column (str): Column name that holds codeword category.
     - control_codewords (Union[List[str], str]): Name(s) of codewords that correspond to controls based on which noise threshold will be defined.
@@ -218,22 +221,19 @@ def quantify_overexpression(
     return sdata if copy else None
 
 def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: bool = False):
-    """Calculate the proportion of extracellular and intracellular transcripts for each gene and integrate results into the AnnData object.
-
+    """
     This function computes the proportion of transcripts classified as extracellular or intracellular for each gene and calculates additional metrics, including log fold change of extracellular to intracellular proportions. The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
 
     Parameters:
-    -----------
-    - sdata : AnnData
+    sdata : AnnData
         An AnnData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_id_column`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
-    - gene_id_column : str, optional
+    gene_id_column : str, optional
         The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'feature_name'.
-    - copy : bool, optional
+    copy : bool, optional
         Whether to return a modified copy of the input `sdata` object. If `False`, the input object is modified in place. Defaults to `False`.
 
     Returns:
-    --------
-    - AnnData or None
+    AnnData or None
         If `copy=True`, returns a modified copy of the input `sdata` object with updated metadata. Otherwise, modifies `sdata` in place and returns `None`.
 
     Notes:
@@ -276,7 +276,8 @@ def spatial_colocalization(
     n_threads=1, 
     threshold_colocalized=1,copy=False
 ):
-    """Computes spatial variability of extracellular RNA using Moran's I.
+    """
+    Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
     -----------

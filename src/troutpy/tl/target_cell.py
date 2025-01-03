@@ -105,8 +105,7 @@ def calculate_target_cells(
     return sdata.copy() if copy else None
 
 def define_target_by_celltype(sdata, layer='transcripts', closest_celltype_key='closest_target_cell_type', feature_key='feature_name'):
-    """Computes the proportion of features (e.g., transcripts) associated with each cell type in the spatial dataset.
-
+    """
     This function calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,and then normalizes the result to provide the proportion of each feature associated with each cell type.
 
     Parameters:

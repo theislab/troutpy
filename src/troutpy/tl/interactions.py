@@ -15,7 +15,8 @@ def get_number_of_communication_genes(
     source_proportion_threshold: float = 0.2,
     target_proportion_threshold: float = 0.2
     ) -> pd.DataFrame:
-    """Compute the number of exchanged genes between any two cell types
+    """
+    Compute the number of exchanged genes between any two cell types
 
     Parameters:
         - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
@@ -63,8 +64,7 @@ def get_gene_interaction_strength(
     output_path: str = '',             # Directory to save the plot
     format: str = 'pdf'                # Format to save the plot (e.g., pdf, png)
 ) -> None:
-    """Computes and visualizes the interaction strength for a specific gene between source and target cell types.
-
+    """
     This function calculates the interaction strength between source and target cell types for a specified gene by multiplying the proportions of the gene in the source and target cell types. The interaction matrix can be visualized using a chord diagram, with the option to save the resulting plot.
 
     Parameters:

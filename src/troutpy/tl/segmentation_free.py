@@ -14,8 +14,7 @@ def segmentation_free_clustering(
     transcript_id: str = 'transcript_id', 
     copy: bool = False
 ):
-    """Perform segmentation-free clustering on transcriptomic spatial data.
-
+    """
     This function clusters transcriptomic data without relying on pre-defined cell or tissue segmentations.It supports multiple clustering methods, with Points2Regions being the default.
 
     Parameters:

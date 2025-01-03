@@ -39,8 +39,6 @@ def define_extracellular(
     copy: bool = False
 ):
     """
-    Define extracellular transcripts in spatial omics data.
-
     This function identifies extracellular transcripts based on the specified method and updates the spatial data object accordingly.
 
     Parameters:
@@ -106,7 +104,8 @@ def define_extracellular(
     return sdata if copy else None
 
 def compute_crosstab(data, xvar: str = '', yvar: str = ''):
-    """Compute a crosstabulation (contingency table) of two categorical variables from the given DataFrame.
+    """
+    Compute a crosstabulation (contingency table) of two categorical variables from the given DataFrame.
 
     Parameters:
     -----------

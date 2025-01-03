@@ -12,7 +12,7 @@ def format_adata(input_path, outpath_dummy, xlimits, ylimits):
     """
     Processes and formats AnnData and transcripts by loading data, merging cell information,applying spatial filters, and saving the processed data to a dummy output directory.
 
-    Args:
+    Parameters:
         input_path (str): Path to the input directory containing:
                           - 'cell_feature_matrix.h5'
                           - 'cells.parquet'
