@@ -48,7 +48,7 @@ def nmf(
 
     Parameters:
     ----------
-    - sdata : spatial data object 
+    - sdata : spatial data object
         Input spatial data containing transcript and bin data.
     - layer : str, optional
         Layer name of the data that contains extracellular transcripts (default: 'extracellular_transcripts_enriched').
@@ -103,14 +103,13 @@ def apply_exrna_factors_to_cells(sdata, layer_factors='nmf_data'):
     Parameters:
     sdata (AnnData): The AnnData object containing both extracellular and cellular data.
     layer_factors (str, optional): The key in `sdata` that contains the extracellular RNA data with NMF factors. Default is 'nmf_data'.
-  
+
     Returns:
     AnnData: The updated `sdata` object with annotated cellular data that includes the applied exRNA factors as new columns.
 
     Notes:
     The function assumes that the extracellular RNA data is stored in `sdata[layer_factors]` and that the NMF factor loadings are stored in the `uns` attribute of the extracellular dataset as 'H_nmf'. The factor scores are added to the `obs` attribute of the cellular data.
-    """
-    
+    """ 
     # Extract extracellular data and cellular annotations
     adata_extracellular_with_nmf = sdata[layer_factors]
     adata_annotated_cellular = sdata['table']

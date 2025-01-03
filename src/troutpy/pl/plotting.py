@@ -410,7 +410,7 @@ def proportion_above_threshold(
     output_path:str='',format='pdf'
 ):
     """ Plot top and bottom percentile of features
- 
+
     Plots the top and bottom percentiles of features with the highest and lowest proportions above a threshold, or visualizes a specific list of transcripts.
 
     Parameters:
@@ -903,7 +903,6 @@ def interactions_with_arrows(
     """Visualizes interactions between source and target cells using arrows, along with transcript locations.
 
     The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot. 
-
     Parameters:
     ----------
     - sdata (AnnData): The AnnData object containing the spatial omics data.

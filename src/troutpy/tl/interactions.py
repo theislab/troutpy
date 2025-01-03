@@ -5,6 +5,8 @@ import numpy as np
 import anndata as ad
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
+
 
 # function to compute the number of exchanged genes between any two cell types
 
@@ -17,9 +19,8 @@ def get_number_of_communication_genes(
     """Compute the number of exchanged genes between any two cell types
 
     Parameters:
-        - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with 
-        - proportion of cells per cell type expressing corresponding gene 
-        - target_proportions : A data frame 
+        - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene 
+        - target_proportions : A data frame
         - (Gene name x Cell Type) with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
         - source_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
         - target_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant target of a gene. Defaults to 0.2.
@@ -73,8 +74,7 @@ def get_gene_interaction_strength(
         A DataFrame where rows represent genes and columns represent source cell types. Each value indicates the proportion of the gene in the respective source cell type.
 
     - target_proportions : pd.DataFrame
-        A DataFrame where rows represent genes and columns represent target cell types. Each value indicates 
-        the proportion of the gene in the respective target cell type.
+        A DataFrame where rows represent genes and columns represent target cell types. Each value indicates the proportion of the gene in the respective target cell type.
 
     - gene_symbol : str, optional
         The gene symbol for which the interaction strength is to be computed and visualized (default: '').
@@ -119,7 +119,8 @@ def get_gene_interaction_strength(
     colors = [cmap(i) for i in range(interactions.shape[0])]
 
     # Plot the interaction strength using a chord diagram
-    chord_diagram(interactions, source_proportions.columns.tolist(), directed=True, fontsize=8, colors=colors)
+    #### work on this function
+    #chord_diagram(interactions, source_proportions.columns.tolist(), directed=True, fontsize=8, colors=colors)
     plt.title(f"exotranscriptomic {gene_symbol} exchange", fontweight="bold")
 
     # Save the plot if the 'save' option is enabled
