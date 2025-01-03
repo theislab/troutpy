@@ -41,6 +41,7 @@ dependencies = [
   "statsmodels",
   "tifffile",
   "numpy",
+  "sainsc",
   "sympy"]
 
 optional-dependencies.dev = [
