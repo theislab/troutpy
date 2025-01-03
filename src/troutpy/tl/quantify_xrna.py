@@ -26,26 +26,17 @@ def spatial_variability(
     Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
-    - sdata : SpatialData
-        The spatial transcriptomics dataset in SpatialData format.
-    - coords_keys : list of str, optional
-        The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    - gene_id_key : str, optional
-        The key for gene identifiers in the dataset (default: 'feature_name').
-    - n_neighbors : int, optional
-        Number of neighbors to use for computing spatial neighbors (default: 10).
-    - resolution : int, optional
-        The resolution for kernel density estimation (default: 1000).
-    - binsize : int, optional
-        The binsize for kernel density estimation (default: 20).
-    - n_threads : int, optional
-        The number of threads for LazyKDE processing (default: 1).
-    - spatial_autocorr_mode : str, optional
-        The mode for spatial autocorrelation computation (default: "moran").
+    - sdata (SpatialData): The spatial transcriptomics dataset in SpatialData format.
+    - coords_keys (list of str): The keys for spatial coordinates in the dataset (default: ['x', 'y']).
+    - gene_id_key (str, optional): The key for gene identifiers in the dataset (default: 'feature_name').
+    - n_neighbors (int, optional): Number of neighbors to use for computing spatial neighbors (default: 10).
+    - resolution (int, optional): The resolution for kernel density estimation (default: 1000).
+    - binsize (int, optional): The binsize for kernel density estimation (default: 20).
+    - n_threads (int, optional): The number of threads for LazyKDE processing (default: 1).
+    - spatial_autocorr_mode (str, optional): The mode for spatial autocorrelation computation (default: "moran").
 
     Returns:
-    pd.DataFrame
-        A DataFrame containing Moran's I values for each gene, indexed by gene names.
+    - sdata(SpatialData):Sdata containing Moran's I values for each gene, indexed by gene names.
     """
     # Step 1: Extract and preprocess data
     data = sdata.points['transcripts'][coords_keys + ['extracellular', gene_id_key]].compute()
@@ -109,25 +100,13 @@ def create_xrna_metadata(
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
     Parameters:
-    - sdata : SpatialData
-        The SpatialData object to modify.
-    - points_layer : str, optional
-        The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
-    - gene_key : str, optional
-        The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
-    - copy : bool, optional
-        - If `True`, returns a copy of the `SpatialData` object with the new table added.
-        - If `False`, modifies the original `SpatialData` object in place. Default is `False`.
+    - sdata (SpatialData): The SpatialData object to modify.
+    - points_layer (str, optional): The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
+    - gene_key (str, optional): The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
+    - copy : If `True`, returns a copy of the `SpatialData` object with the new table added.
 
     Returns:
-    - SpatialData | None
-        If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
-
-    Raises:
-    ValueError
-        - If the specified points layer does not exist in `sdata.points`.
-        - If the `gene_key` column is not present in the specified points layer.
-
+    - SpatialData | None: If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
     """
     # Check if the specified points layer exists
     if points_layer not in sdata.points:
@@ -270,26 +249,17 @@ def spatial_colocalization(
     Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
-    - sdata : SpatialData
-        The spatial transcriptomics dataset in SpatialData format.
-    - coords_keys : list of str, optional
-        The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    - gene_id_key : str, optional
-        The key for gene identifiers in the dataset (default: 'feature_name').
-    - n_neighbors : int, optional
-        Number of neighbors to use for computing spatial neighbors (default: 10).
-    - resolution : int, optional
-        The resolution for kernel density estimation (default: 1000).
-    - binsize : int, optional
-        The binsize for kernel density estimation (default: 20).
-    - n_threads : int, optional
-        The number of threads for LazyKDE processing (default: 1).
-    - spatial_autocorr_mode : str, optional
-        The mode for spatial autocorrelation computation (default: "moran").
+    - sdata (SpatialData): The spatial transcriptomics dataset in SpatialData format.
+    - coords_keys (list of str, optional): The keys for spatial coordinates in the dataset (default: ['x', 'y']).
+    - gene_id_key (str, optional): The key for gene identifiers in the dataset (default: 'feature_name').
+    - n_neighbors (int, optional): Number of neighbors to use for computing spatial neighbors (default: 10).
+    - resolution (int, optional): The resolution for kernel density estimation (default: 1000).
+    - binsize (int, optional): The binsize for kernel density estimation (default: 20).
+    - n_threads (int, optional): The number of threads for LazyKDE processing (default: 1).
+    - spatial_autocorr_mode (str, optional): The mode for spatial autocorrelation computation (default: "moran").
 
     Returns:
-    - pd.DataFrame
-        A DataFrame containing Moran's I values for each gene, indexed by gene names.
+    - sdata(SpatialData): A DataFrame containing Moran's I values for each gene, indexed by gene names.
     """
     # Step 1: Extract and preprocess data
     data = sdata.points['transcripts'][coords_keys + ['extracellular', gene_id_key]].compute()

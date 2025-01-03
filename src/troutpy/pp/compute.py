@@ -45,9 +45,9 @@ def define_extracellular(
     sdata (SpatialData): A spatial data object containing transcriptomic information.
     layer (str): The layer in `sdata.points` containing the transcript data to process.
     method (str):The method to define extracellular transcripts. Options:
-        - 'segmentation_free': Uses segmentation-free clustering results.
-        - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
-        - 'cells': Classifies transcripts not assigned to a cell as extracellular.
+    - 'segmentation_free': Uses segmentation-free clustering results.
+    - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
+    - 'cells': Classifies transcripts not assigned to a cell as extracellular.
     min_prop_of_extracellular (float, optional): Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
     unassigned_to_cell_tag (str, optional): Tag indicating transcripts not assigned to any cell.
     copy (bool): If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.

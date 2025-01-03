@@ -54,7 +54,6 @@ def get_number_of_communication_genes(
     number_interactions_df.index.name='Source cell type'  
     return number_interactions_df
 
-
 def get_gene_interaction_strength(
     source_proportions: pd.DataFrame,  # gene by source cell type
     target_proportions: pd.DataFrame,  # gene by target cell type
@@ -68,30 +67,16 @@ def get_gene_interaction_strength(
     This function calculates the interaction strength between source and target cell types for a specified gene by multiplying the proportions of the gene in the source and target cell types. The interaction matrix can be visualized using a chord diagram, with the option to save the resulting plot.
 
     Parameters:
-    - source_proportions : pd.DataFrame
-        A DataFrame where rows represent genes and columns represent source cell types. Each value indicates the proportion of the gene in the respective source cell type.
-
-    - target_proportions : pd.DataFrame
-        A DataFrame where rows represent genes and columns represent target cell types. Each value indicates the proportion of the gene in the respective target cell type.
-
-    - gene_symbol : str, optional
-        The gene symbol for which the interaction strength is to be computed and visualized (default: '').
-
-    - return_interactions : bool, optional
-        If True, returns the interaction matrix as a NumPy array (default: False).
-
-    - save : bool, optional
-        If True, saves the chord diagram plot to the specified output path (default: False).
-
-   - output_path : str, optional
-        The directory path where the plot will be saved. If `save=True`, this path will be used to store the file (default: ''). A 'figures' subdirectory is created if it doesn't exist.
-
-    - format : str, optional
-        The file format for saving the plot (e.g., 'pdf', 'png'). This is used only if `save=True` (default: 'pdf').
+    - source_proportions (pd.DataFrame): A DataFrame where rows represent genes and columns represent source cell types. Each value indicates the proportion of the gene in the respective source cell type.
+    - target_proportions (pd.DataFrame): A DataFrame where rows represent genes and columns represent target cell types. Each value indicates the proportion of the gene in the respective target cell type.
+    - gene_symbol (str, optional): The gene symbol for which the interaction strength is to be computed and visualized (default: '').
+    - return_interactions (bool, optional): If True, returns the interaction matrix as a NumPy array (default: False).
+    - save (bool, optional): If True, saves the chord diagram plot to the specified output path (default: False).
+    - output_path (str, optional): The directory path where the plot will be saved. If `save=True`, this path will be used to store the file (default: ''). A 'figures' subdirectory is created if it doesn't exist.
+    - format (str, optional): The file format for saving the plot (e.g., 'pdf', 'png'). This is used only if `save=True` (default: 'pdf').
 
     Returns:
     - None or np.ndarray
-        If `return_interactions=True`, the function returns the interaction matrix as a NumPy array. Otherwise, the function generates a chord diagram plot.
 
     Notes:
     - The function computes the interaction matrix by multiplying the proportions of the gene in the source and target cell types.

@@ -15,24 +15,15 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0, save=Fa
     Applies Non-Negative Matrix Factorization (NMF) to an AnnData object to reduce the dimensionality of gene expression data.
 
     Parameters:
-    adata : AnnData
-        The AnnData object containing the gene expression matrix (`adata.X`) along with cell and gene annotations.
-    n_components : int, optional, default: 20
-        The number of components (latent factors) to extract from the NMF model.
-    subsample_percentage : float, optional, default: 1.0
-        The percentage of cells to sample before applying NMF. A value of 1.0 means no subsampling.
-    save : bool, optional, default: False
-        If True, the factor loadings (`H`) and factor scores (`W`) will be saved as Parquet files to the specified output path.
-    output_path : str, optional, default: ''
-        The directory where the factor loadings and scores will be saved if `save` is True.
-    random_state : int, optional, default: None
-        The random seed used for initializing the NMF model. If None, the random seed is not fixed.
+    adata (AnnData):The AnnData object containing the gene expression matrix (`adata.X`) along with cell and gene annotations.
+    n_components (int, optional): The number of components (latent factors) to extract from the NMF model.
+    subsample_percentage (float): The percentage of cells to sample before applying NMF. A value of 1.0 means no subsampling.
+    save (bool, optional): If True, the factor loadings (`H`) and factor scores (`W`) will be saved as Parquet files to the specified output path.
+    output_path (str, optional): The directory where the factor loadings and scores will be saved if `save` is True.
+    random_state (int, optional): The random seed used for initializing the NMF model. If None, the random seed is not fixed.
 
     Returns:
-    adata : AnnData
-        The input AnnData object with the NMF results added:
-        - `adata.obsm['W_nmf']` contains the cell factors (factor scores for each cell).
-        - `adata.uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
+    adata (AnnData): The input AnnData object with the NMF results added:`adata.obsm['W_nmf']` contains the cell factors (factor scores for each cell) and `adata.uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
 
     Notes:
     - The NMF algorithm is initialized using a random method for factorization (`init='random'`).
@@ -73,22 +64,14 @@ def nmf(
     """Applies Non-negative Matrix Factorization (NMF) on filtered data based on feature_name and bin_id.
 
     Parameters:
-    - sdata : spatial data object
-        Input spatial data containing transcript and bin data.
-    - layer : str, optional
-        Layer name of the data that contains extracellular transcripts (default: 'extracellular_transcripts_enriched').
-    - feature_key : str, optional
-        Column name for the transcript feature (default: 'feature_name').
-    - bin_key : str, optional
-        Column name for bin IDs (default: 'bin_id').
-    - density_table_key : str, optional
-        Key to retrieve the density table from sdata (default: 'segmentation_free_table').
-    - n_components : int, optional
-        Number of components for NMF (default: 20).
-    - subsample_percentage : float, optional
-        Percentage of data to use for NMF (default: 0.1).
-    - random_state : int, optional
-        Random state for NMF initialization for reproducibility (default: None).
+    - sdata (SpatialData): Input spatial data containing transcript and bin data.
+    - layer (str, optional): Layer name of the data that contains extracellular transcripts (default: 'extracellular_transcripts_enriched').
+    - feature_key (str, optional): Column name for the transcript feature (default: 'feature_name').
+    - bin_key (str, optional): Column name for bin IDs (default: 'bin_id').
+    - density_table_key (str, optional): Key to retrieve the density table from sdata (default: 'segmentation_free_table').
+    - n_components (int, optional): Number of components for NMF (default: 20).
+    - subsample_percentage (float, optional): Percentage of data to use for NMF (default: 0.1).
+    - random_state (int, optional): Random state for NMF initialization for reproducibility (default: None).
 
     Returns:
     - sdata : Updated spatial data object with NMF components stored.

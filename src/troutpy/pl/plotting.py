@@ -153,10 +153,10 @@ def plot_crosstab(data, xvar: str = '', yvar: str = '', normalize=True, axis=1, 
     normalize (bool, optional) Whether to normalize the cross-tabulated data (percentages). If True, the data will be normalized.
     axis (int): The axis to normalize across. Use `1` for row normalization and `0` for column normalization.
     kind (str, optional): The kind of plot to generate. Options include:
-        - 'barh': Horizontal bar plot
-        - 'bar': Vertical bar plot
-        - 'heatmap': Heatmap visualization
-        - 'clustermap': Clustermap visualization
+    - 'barh': Horizontal bar plot
+    - 'bar': Vertical bar plot
+    - 'heatmap': Heatmap visualization
+    - 'clustermap': Clustermap visualization
     save (bool):If True, the plot will be saved to a file.
     figures_path (str, optional): The directory path where the figure should be saved. If not specified, the plot will be saved in the current directory.
     stacked (bool, optional): If True, the bar plots will be stacked. Only applicable for 'barh' and 'bar' plot kinds.
