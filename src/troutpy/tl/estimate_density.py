@@ -1,9 +1,10 @@
 import os
 import numpy as np
 import pandas as pd
+from spatialdata import SpatialData
 
 def colocalization_proportion(
-    sdata, 
+    sdata:SpatialData, 
     outpath, 
     threshold_colocalized=1, 
     filename='proportion_of_grouped_exRNA.parquet', save=True

@@ -4,15 +4,8 @@ import os
 import scanpy as sc
 import seaborn as sns
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-import spatialdata as sd
-
-
-
 from typing import Optional
-import numpy as np
 from tqdm import tqdm
-import scanpy as sc
 import spatialdata as sd
 from spatialdata import SpatialData
 

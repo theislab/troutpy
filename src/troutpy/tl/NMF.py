@@ -9,8 +9,10 @@ from sklearn.decomposition import NMF
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from spatialdata import SpatialData
 
-def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0, save=False, output_path: str = '', random_state=None):
+
+def apply_nmf_to_adata(adata:SpatialData, n_components=20, subsample_percentage=1.0, save=False, output_path: str = '', random_state=None):
     """
     Applies Non-Negative Matrix Factorization (NMF) to an AnnData object to reduce the dimensionality of gene expression data.
 
@@ -55,7 +57,7 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0, save=Fa
 
 
 def nmf(
-    sdata, layer='extracellular_transcripts_enriched', 
+    sdata:SpatialData, layer='extracellular_transcripts_enriched', 
     feature_key='feature_name', bin_key='bin_id', 
     density_table_key='segmentation_free_table', 
     n_components=20, subsample_percentage=0.1,
