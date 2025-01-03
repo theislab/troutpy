@@ -19,14 +19,14 @@ def get_number_of_communication_genes(
     Compute the number of exchanged genes between any two cell types
 
     Parameters:
-        - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
-        - target_proportions : A data frame
-        - (Gene name x Cell Type) with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
-        - source_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
-        - target_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant target of a gene. Defaults to 0.2.
+    - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
+    - target_proportions : A data frame
+    - (Gene name x Cell Type) with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
+    - source_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
+    - target_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant target of a gene. Defaults to 0.2.
 
     Returns:
-        - pd.DataFrame: _description_
+    - pd.DataFrame: _description_
     """
     
     # filter the source and target cell types by defining signficant proportions
@@ -68,7 +68,6 @@ def get_gene_interaction_strength(
     This function calculates the interaction strength between source and target cell types for a specified gene by multiplying the proportions of the gene in the source and target cell types. The interaction matrix can be visualized using a chord diagram, with the option to save the resulting plot.
 
     Parameters:
-    ----------
     - source_proportions : pd.DataFrame
         A DataFrame where rows represent genes and columns represent source cell types. Each value indicates the proportion of the gene in the respective source cell type.
 
@@ -91,12 +90,10 @@ def get_gene_interaction_strength(
         The file format for saving the plot (e.g., 'pdf', 'png'). This is used only if `save=True` (default: 'pdf').
 
     Returns:
-    -------
     - None or np.ndarray
         If `return_interactions=True`, the function returns the interaction matrix as a NumPy array. Otherwise, the function generates a chord diagram plot.
 
     Notes:
-    -----
     - The function computes the interaction matrix by multiplying the proportions of the gene in the source and target cell types.
     - The chord diagram visualizes the interaction strength between the cell types.
     - If `save=True`, the plot is saved in the specified format and location.

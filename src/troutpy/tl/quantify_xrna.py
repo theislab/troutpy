@@ -26,7 +26,6 @@ def spatial_variability(
     Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
-    -----------
     - sdata : SpatialData
         The spatial transcriptomics dataset in SpatialData format.
     - coords_keys : list of str, optional
@@ -45,7 +44,6 @@ def spatial_variability(
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns:
-    --------
     pd.DataFrame
         A DataFrame containing Moran's I values for each gene, indexed by gene names.
     """
@@ -111,7 +109,6 @@ def create_xrna_metadata(
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
     Parameters:
-    ----------
     - sdata : SpatialData
         The SpatialData object to modify.
     - points_layer : str, optional
@@ -123,12 +120,10 @@ def create_xrna_metadata(
         - If `False`, modifies the original `SpatialData` object in place. Default is `False`.
 
     Returns:
-    -------
     - SpatialData | None
         If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
 
     Raises:
-    ------
     ValueError
         - If the specified points layer does not exist in `sdata.points`.
         - If the `gene_key` column is not present in the specified points layer.
@@ -237,7 +232,6 @@ def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: 
         If `copy=True`, returns a modified copy of the input `sdata` object with updated metadata. Otherwise, modifies `sdata` in place and returns `None`.
 
     Notes:
-    ------
     - The function assumes that the `sdata` object has a 'points' layer containing a 'transcripts' DataFrame.
     - If the 'xrna_metadata' attribute does not exist in `sdata`, it will be created using the `create_xrna_metadata` function.
     """
@@ -280,7 +274,6 @@ def spatial_colocalization(
     Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters:
-    -----------
     - sdata : SpatialData
         The spatial transcriptomics dataset in SpatialData format.
     - coords_keys : list of str, optional
@@ -299,7 +292,6 @@ def spatial_colocalization(
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns:
-    --------
     - pd.DataFrame
         A DataFrame containing Moran's I values for each gene, indexed by gene names.
     """

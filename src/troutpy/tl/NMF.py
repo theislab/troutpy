@@ -15,7 +15,6 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0, save=Fa
     Applies Non-Negative Matrix Factorization (NMF) to an AnnData object to reduce the dimensionality of gene expression data.
 
     Parameters:
-    -----------
     adata : AnnData
         The AnnData object containing the gene expression matrix (`adata.X`) along with cell and gene annotations.
     n_components : int, optional, default: 20
@@ -30,14 +29,12 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0, save=Fa
         The random seed used for initializing the NMF model. If None, the random seed is not fixed.
 
     Returns:
-    --------
     adata : AnnData
         The input AnnData object with the NMF results added:
         - `adata.obsm['W_nmf']` contains the cell factors (factor scores for each cell).
         - `adata.uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
 
     Notes:
-    ------
     - The NMF algorithm is initialized using a random method for factorization (`init='random'`).
     - The function assumes that the expression matrix (`adata.X`) contains raw gene expression counts.
     """
@@ -76,7 +73,6 @@ def nmf(
     """Applies Non-negative Matrix Factorization (NMF) on filtered data based on feature_name and bin_id.
 
     Parameters:
-    ----------
     - sdata : spatial data object
         Input spatial data containing transcript and bin data.
     - layer : str, optional
@@ -95,7 +91,6 @@ def nmf(
         Random state for NMF initialization for reproducibility (default: None).
 
     Returns:
-    -------
     - sdata : Updated spatial data object with NMF components stored.
     """
     if not all:
@@ -125,8 +120,7 @@ def nmf(
     return sdata
 
 def apply_exrna_factors_to_cells(sdata, layer_factors='nmf_data'):
-    """Applies extracellular RNA (exRNA) factor loadings to cellular annotation data based on NMF factors.
-
+    """
     This function extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
 
     Parameters:

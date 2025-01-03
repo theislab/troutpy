@@ -26,12 +26,10 @@ def calculate_target_cells(
     gene_id_key:str='feature_name',
     copy: bool = False
 ) -> Optional[sd.SpatialData]:
-    """Calculate the closest target cell for each transcript in a spatial omics dataset.
-
+    """
     This function identifies the nearest cell to each transcript based on spatial coordinates and annotates the transcript data with the ID, cell type, and distance to the closest cell.
 
     Parameters:
-    ----------
     - sdata : sd.SpatialData
         SpatialData object containing spatial and transcript data.
     - layer : str, optional
@@ -52,7 +50,6 @@ def calculate_target_cells(
         If True, returns a copy of the modified SpatialData object. Default is False.
 
     Returns:
-    -------
     - Optional[sd.SpatialData]
         Modified SpatialData object with updated transcript annotations if `copy=True`.Otherwise, updates are made in place, and None is returned.
     """

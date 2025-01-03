@@ -108,7 +108,6 @@ def compute_crosstab(data, xvar: str = '', yvar: str = ''):
     Compute a crosstabulation (contingency table) of two categorical variables from the given DataFrame.
 
     Parameters:
-    -----------
     data : pandas.DataFrame
         The input DataFrame containing the data to be analyzed.
     xvar : str, optional
@@ -117,7 +116,6 @@ def compute_crosstab(data, xvar: str = '', yvar: str = ''):
         The name of the column to use as the columns of the crosstab. Default is an empty string.
 
     Returns:
-    --------
     pandas.DataFrame
         A DataFrame representing the crosstab of the specified variables, with counts of occurrences for each combination of categories.
     """

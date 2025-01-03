@@ -20,35 +20,24 @@ def create_xrna_metadata(
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
     Parameters:
-    ----------
     - sdata : SpatialData
         The SpatialData object to modify.
-
     - points_layer : str, optional
         The name of the layer in `sdata.points` from which to extract gene names.Default is 'transcripts'.
-
     - gene_key : str, optional
         The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
-
     - copy : bool, optional
         - If `True`, returns a copy of the `SpatialData` object with the new table added.
         - If `False`, modifies the original `SpatialData` object in place. Default is `False`.
 
     Returns:
-    -------
     SpatialData | None
         If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
 
     Raises:
-    ------
     ValueError
         - If the specified points layer does not exist in `sdata.points`.
         - If the `gene_key` column is not present in the specified points layer.
-
-    Notes:
-    -----
-    - The function uses `scanpy` to create an AnnData object and integrates it into the SpatialData table model.
-    - The unique gene names are extracted from the specified points layer and stored in the `.var` of the AnnData object.
     """
     # Check if the specified points layer exists
     if points_layer not in sdata.points:
@@ -86,8 +75,7 @@ def compute_source_cells(
     """
     Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
 
-    - Parameters:
-    ----------
+    Parameters:
     - sdata : SpatialData object
         The input spatial data object containing spatial transcriptomics data.
     - expression_threshold : float, optional, default=1
@@ -100,7 +88,6 @@ def compute_source_cells(
         If True, returns a modified copy of the spatial data object. Otherwise, modifies in place.
 
     Returns:
-    -------
     - sdata : SpatialData object or None
         - The modified spatial data object with added `source` metadata if `copy=True`. Otherwise, modifies the input object in place and returns None.
     """
@@ -216,7 +203,6 @@ def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='featu
     Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
 
     Parameters
-    ----------
     - sdata : SpatialData
         A SpatialData object containing the spatial omics data.
     - layer : str, optional
@@ -227,12 +213,10 @@ def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='featu
         The distance threshold (in micrometers) to calculate the proportion of transcripts farther away from their closest source cell. Default is 30.
 
     Returns
-    -------
     None
     - The function modifies the `sdata` object in place, adding the computed proportions as a new column in `sdata['xrna_metadata'].var`.
 
     Notes
-    -----
     - This function assumes that `sdata.points[layer]` contains a column `distance_to_source_cell` with distances between transcripts and their closest source cells.
     - The resulting column is named `frac_beyond_<threshold>_from_source`.
 
@@ -262,14 +246,12 @@ def get_proportion_expressed_per_cell_type(adata, cell_type_key='cell type'):
     Calculate the proportion of expression for each feature (gene) per cell type.
 
     Parameters
-    ----------
     - adata : AnnData
         An AnnData object containing the single-cell or spatial transcriptomics dataset.The `obs` attribute should contain cell type annotations.
     - cell_type_key : str, optional
         The key in `adata.obs` corresponding to cell type annotations, by default 'cell type'.
 
     Returns
-    -------
     - pd.DataFrame
         A DataFrame where rows correspond to features (genes) and columns correspond to cell types. Each entry represents the mean expression of the feature in the specified cell type.
     """
