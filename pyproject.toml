@@ -23,7 +23,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "anndata",
+  "anndata>=0.9",
   # for debug logging (referenced from the issue template)
   "session-info",
   "docutils>=0.8,!=0.18.*,!=0.19.*",
