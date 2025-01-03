@@ -7,7 +7,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import os
 
-
 # function to compute the number of exchanged genes between any two cell types
 
 def get_number_of_communication_genes(
@@ -19,7 +18,7 @@ def get_number_of_communication_genes(
     """Compute the number of exchanged genes between any two cell types
 
     Parameters:
-        - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene 
+        - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
         - target_proportions : A data frame
         - (Gene name x Cell Type) with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
         - source_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
@@ -116,10 +115,9 @@ def get_gene_interaction_strength(
 
     # Define the colormap and create color mappings for each cell type
     cmap = plt.get_cmap("tab20")
-    colors = [cmap(i) for i in range(interactions.shape[0])]
-
     # Plot the interaction strength using a chord diagram
-    #### work on this function
+    #### work on this function ######
+    #colors = [cmap(i) for i in range(interactions.shape[0])]
     #chord_diagram(interactions, source_proportions.columns.tolist(), directed=True, fontsize=8, colors=colors)
     plt.title(f"exotranscriptomic {gene_symbol} exchange", fontweight="bold")
 

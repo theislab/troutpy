@@ -115,7 +115,7 @@ def create_xrna_metadata(
     - points_layer : str, optional
         The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
     - gene_key : str, optional
-        The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'. 
+        The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
     - copy : bool, optional
         - If `True`, returns a copy of the `SpatialData` object with the new table added.
         - If `False`, modifies the original `SpatialData` object in place. Default is `False`.
@@ -131,7 +131,6 @@ def create_xrna_metadata(
         - If the specified points layer does not exist in `sdata.points`.
         - If the `gene_key` column is not present in the specified points layer.
 
-    
     """
     # Check if the specified points layer exists
     if points_layer not in sdata.points:
@@ -185,7 +184,7 @@ def quantify_overexpression(
     
     # Compute the data from the Dask DataFrame
     data = sdata.points[layer][['extracellular',codeword_column,gene_id_column]].compute()
-    data=data[data['extracellular']==True]
+    data=data[data['extracellular']]
 
     # Ensure control_codewords is a list
     if isinstance(control_codewords, str):
@@ -269,7 +268,7 @@ def extracellular_enrichment(sdata, gene_id_column: str = 'feature_name', copy: 
 
 def spatial_colocalization(
     sdata, 
-    coords_keys=['x', 'y'], 
+    coords_keys=None, 
     gene_id_key='feature_name', 
     
     resolution=1000, 
@@ -305,7 +304,7 @@ def spatial_colocalization(
     """
     # Step 1: Extract and preprocess data
     data = sdata.points['transcripts'][coords_keys + ['extracellular', gene_id_key]].compute()
-    data = data[data['extracellular'] == True]
+    data = data[data['extracellular']]
     data[gene_id_key] = data[gene_id_key].astype(str)
 
     # Rename columns for clarity

@@ -902,7 +902,7 @@ def interactions_with_arrows(
 ):
     """Visualizes interactions between source and target cells using arrows, along with transcript locations.
 
-    The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot. 
+    The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot.
     Parameters:
     ----------
     - sdata (AnnData): The AnnData object containing the spatial omics data.

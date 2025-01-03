@@ -15,46 +15,33 @@ def create_xrna_metadata(
     gene_key: str = 'feature_name',
     copy: bool = False
 ) -> SpatialData | None:
-    """
-    Creates a new table within the SpatialData object that contains a 'gene' column 
-    with the unique gene names extracted from the specified points layer.
+    """Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
     Parameters:
     ----------
-    sdata : SpatialData
+    - sdata : SpatialData
         The SpatialData object to modify.
     
-    points_layer : str, optional
-        The name of the layer in `sdata.points` from which to extract gene names.
-        Default is 'transcripts'.
+    - points_layer : str, optional
+        The name of the layer in `sdata.points` from which to extract gene names.Default is 'transcripts'.
     
-    gene_key : str, optional
-        The key in the `points_layer` dataframe that contains the gene names.
-        Default is 'feature_name'.
+    - gene_key : str, optional
+        The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
     
-    copy : bool, optional
-        If `True`, returns a copy of the `SpatialData` object with the new table added.
-        If `False`, modifies the original `SpatialData` object in place. Default is `False`.
+    - copy : bool, optional
+        - If `True`, returns a copy of the `SpatialData` object with the new table added.
+        - If `False`, modifies the original `SpatialData` object in place. Default is `False`.
 
     Returns:
     -------
     SpatialData | None
-        If `copy` is `True`, returns a copy of the modified `SpatialData` object.
-        Otherwise, returns `None`.
+        If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
 
     Raises:
     ------
     ValueError
-        If the specified points layer does not exist in `sdata.points`.
-        If the `gene_key` column is not present in the specified points layer.
-
-    Examples:
-    --------
-    Add a metadata table for genes in the 'transcripts' layer:
-    >>> create_xrna_metadata(sdata, points_layer='transcripts', gene_key='feature_name')
-
-    Modify a custom SpatialData layer and return a copy:
-    >>> updated_sdata = create_xrna_metadata(sdata, points_layer='custom_layer', gene_key='gene_id', copy=True)
+        - If the specified points layer does not exist in `sdata.points`.
+        - If the `gene_key` column is not present in the specified points layer.
 
     Notes:
     -----
@@ -94,27 +81,25 @@ def compute_source_cells(
     layer='transcripts',
     copy=False
 ):
-    """
-    Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
+    """Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
 
-    Parameters:
+    - Parameters:
     ----------
-    sdata : SpatialData object
+    - sdata : SpatialData object
         The input spatial data object containing spatial transcriptomics data.
-    expression_threshold : float, optional, default=1
+    - expression_threshold : float, optional, default=1
         Threshold for filtering transcripts based on expression levels.
-    gene_id_column : str, optional, default='feature_name'
+    - gene_id_column : str, optional, default='feature_name'
         Column name for gene identifiers in the transcripts data.
-    layer : str, optional, default='transcripts'
+    - layer : str, optional, default='transcripts'
         Layer in `sdata.points` containing the transcript information.
-    copy : bool, optional, default=False
+    - copy : bool, optional, default=False
         If True, returns a modified copy of the spatial data object. Otherwise, modifies in place.
 
     Returns:
     -------
-    sdata : SpatialData object or None
-        The modified spatial data object with added `source` metadata if `copy=True`. 
-        Otherwise, modifies the input object in place and returns None.
+    - sdata : SpatialData object or None
+        - The modified spatial data object with added `source` metadata if `copy=True`. Otherwise, modifies the input object in place and returns None.
     """
 
     # Create a copy of the table containing spatial transcriptomics data
@@ -157,24 +142,20 @@ def distance_to_source_cell(
     This function computes the distance from each extracellular RNA transcript to the nearest source cell based on their spatial coordinates. The function uses a KDTree to efficiently find the closest cell to each transcript, storing the results in the `sdata` object.
 
     Parameters:
-    sdata (AnnData): The AnnData object containing both transcript and cellular data.
-    layer (str, optional): The layer in `sdata` containing the transcript data. Default is 'transcripts'.
-    xcoord (str, optional): The column name in the transcript data for the x-coordinate. Default is 'x'.
-    ycoord (str, optional): The column name in the transcript data for the y-coordinate. Default is 'y'.
-    xcellcoord (str, optional): The column name in the cellular data for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    ycellcoord (str, optional): The column name in the cellular data for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    gene_id_column (str, optional): The column name for the gene identifier. Default is 'feature_name'.
-    copy (bool, optional): Whether to return a copy of the `sdata` object with updated distances, or modify in place. Default is False.
+    - sdata (AnnData): The AnnData object containing both transcript and cellular data.
+    - layer (str, optional): The layer in `sdata` containing the transcript data. Default is 'transcripts'.
+    - xcoord (str, optional): The column name in the transcript data for the x-coordinate. Default is 'x'.
+    - ycoord (str, optional): The column name in the transcript data for the y-coordinate. Default is 'y'.
+    - xcellcoord (str, optional): The column name in the cellular data for the x-coordinate of cell centroids. Default is 'x_centroid'.
+    - ycellcoord (str, optional): The column name in the cellular data for the y-coordinate of cell centroids. Default is 'y_centroid'.
+    - gene_id_column (str, optional): The column name for the gene identifier. Default is 'feature_name'.
+    - copy (bool, optional): Whether to return a copy of the `sdata` object with updated distances, or modify in place. Default is False.
 
     Returns:
-    AnnData or None: If `copy` is True, returns the updated `sdata` object. Otherwise, modifies `sdata` in place and returns None.
+    - AnnData or None: If `copy` is True, returns the updated `sdata` object. Otherwise, modifies `sdata` in place and returns None.
 
     Notes:
-    The function assumes that the transcript data contains a column `transcript_id` and that the cellular data contains 
-    cell centroids for spatial coordinates. The KDTree algorithm is used to compute the closest cell for each transcript.
-    The resulting distances are stored in the `distance_to_source_cell` column of the `sdata` object's transcript layer, 
-    and the closest source cell is stored in the `closest_source_cell` column.
-    The median distance for each gene is also added to the `xrna_metadata` in the `var` attribute of `sdata`.
+    - The function assumes that the transcript data contains a column `transcript_id` and that the cellular data contains cell centroids for spatial coordinates. The KDTree algorithm is used to compute the closest cell for each transcript. The resulting distances are stored in the `distance_to_source_cell` column of the `sdata` object's transcript layer, and the closest source cell is stored in the `closest_source_cell` column. The median distance for each gene is also added to the `xrna_metadata` in the `var` attribute of `sdata`.
     """
     
     # Extract transcript and cellular data
@@ -229,35 +210,29 @@ def distance_to_source_cell(
     return sdata.copy() if copy else None
 
 def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='feature_name', threshold=30,copy=False):
-    """
-    Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
+    """Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
 
     Parameters
     ----------
-    sdata : SpatialData
+    - sdata : SpatialData
         A SpatialData object containing the spatial omics data.
-    layer : str, optional
+    - layer : str, optional
         The layer in `sdata.points` that contains the transcript data. Default is 'transcripts'.
-    gene_id_column : str, optional
+    - gene_id_column : str, optional
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
-    threshold : float, optional
+    - threshold : float, optional
         The distance threshold (in micrometers) to calculate the proportion of transcripts farther away from their closest source cell. Default is 30.
 
     Returns
     -------
     None
-        The function modifies the `sdata` object in place, adding the computed proportions as a new column in `sdata['xrna_metadata'].var`.
+    - The function modifies the `sdata` object in place, adding the computed proportions as a new column in `sdata['xrna_metadata'].var`.
 
     Notes
     -----
     - This function assumes that `sdata.points[layer]` contains a column `distance_to_source_cell` with distances between transcripts and their closest source cells.
     - The resulting column is named `frac_beyond_<threshold>_from_source`.
 
-    Example
-    -------
-    ```
-    compute_source_cells_beyond_distance(sdata, layer='transcripts', threshold=30)
-    ```
     """
 
     # Extract transcript data
@@ -279,7 +254,21 @@ def compute_distant_cells_prop(sdata, layer='transcripts', gene_id_column='featu
 
     return sdata.copy() if copy else None
 
-def get_proportion_expressed_per_cell_type(adata,cell_type_key='cell type'):
+def get_proportion_expressed_per_cell_type(adata, cell_type_key='cell type'):
+    """Calculate the proportion of expression for each feature (gene) per cell type.
+
+    Parameters
+    ----------
+    - adata : AnnData
+        An AnnData object containing the single-cell or spatial transcriptomics dataset.The `obs` attribute should contain cell type annotations.
+    - cell_type_key : str, optional
+        The key in `adata.obs` corresponding to cell type annotations, by default 'cell type'.
+
+    Returns
+    -------
+    - pd.DataFrame
+        A DataFrame where rows correspond to features (genes) and columns correspond to cell types. Each entry represents the mean expression of the feature in the specified cell type.
+    """
     cell_types = adata.obs[cell_type_key].unique().dropna()
     proportions = pd.DataFrame(index=adata.var_names, columns=cell_types)
     for cell_type in cell_types:

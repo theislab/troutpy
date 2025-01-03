@@ -6,7 +6,7 @@ import pandas as pd
 
 def segmentation_free_clustering(
     sdata, 
-    params: dict = {}, 
+    params: None, 
     x: str = 'x', 
     y: str = 'y', 
     feature_name: str = 'feature_name', 
