@@ -42,35 +42,23 @@ def define_extracellular(
     This function identifies extracellular transcripts based on the specified method and updates the spatial data object accordingly.
 
     Parameters:
-        sdata : SpatialData
-            A spatial data object containing transcriptomic information.
-        layer : str, optional (default: 'transcripts')
-            The layer in `sdata.points` containing the transcript data to process.
-        method : str, optional (default: 'segmentation_free')
-            The method to define extracellular transcripts. Options:
-            - 'segmentation_free': Uses segmentation-free clustering results.
-            - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
-            - 'cells': Classifies transcripts not assigned to a cell as extracellular.
-        min_prop_of_extracellular : float, optional (default: 0.8)
-            - Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
-        unassigned_to_cell_tag : str, optional (default: 'UNASSIGNED')Tag indicating transcripts not assigned to any cell.
-        copy : bool, optional (default: False) If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
+    sdata (SpatialData): A spatial data object containing transcriptomic information.
+    layer (str): The layer in `sdata.points` containing the transcript data to process.
+    method (str):The method to define extracellular transcripts. Options:
+        - 'segmentation_free': Uses segmentation-free clustering results.
+        - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
+        - 'cells': Classifies transcripts not assigned to a cell as extracellular.
+    min_prop_of_extracellular (float, optional): Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
+    unassigned_to_cell_tag (str, optional): Tag indicating transcripts not assigned to any cell.
+    copy (bool): If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
 
     Returns:
-        Optional[SpatialData]:
-            If `copy` is True, returns a copy of the updated `sdata` object.Otherwise, updates the `sdata` object in-place and returns None.
+    Optional[SpatialData]: If `copy` is True, returns a copy of the updated `sdata` object.Otherwise, updates the `sdata` object in-place and returns None.
 
     Notes:
-        - The 'segmentation_free' method uses clustering results to determine extracellular transcripts.
-        - The 'nuclei' method assumes transcripts outside nuclei are extracellular.
-        - The 'cells' method classifies transcripts unassigned to cells as extracellular.
-
-    Example:
-        ```python
-        updated_sdata = define_extracellular(
-            sdata, method='segmentation_free', min_prop_of_extracellular=0.9, copy=True
-        )
-        ```
+    - The 'segmentation_free' method uses clustering results to determine extracellular transcripts.
+    - The 'nuclei' method assumes transcripts outside nuclei are extracellular.
+    - The 'cells' method classifies transcripts unassigned to cells as extracellular.
     """
     # Compute the data layer
     data = sdata.points[layer].compute()
@@ -108,16 +96,12 @@ def compute_crosstab(data, xvar: str = '', yvar: str = ''):
     Compute a crosstabulation (contingency table) of two categorical variables from the given DataFrame.
 
     Parameters:
-    data : pandas.DataFrame
-        The input DataFrame containing the data to be analyzed.
-    xvar : str, optional
-        The name of the column to use as the rows of the crosstab. Default is an empty string.
-    yvar : str, optional
-        The name of the column to use as the columns of the crosstab. Default is an empty string.
+    data (pandas.DataFrame): The input DataFrame containing the data to be analyzed.
+    xvar (str, optional): The name of the column to use as the rows of the crosstab. Default is an empty string.
+    yvar (str, optional): The name of the column to use as the columns of the crosstab. Default is an empty string.
 
     Returns:
-    pandas.DataFrame
-        A DataFrame representing the crosstab of the specified variables, with counts of occurrences for each combination of categories.
+    crosstab_data (pandas.DataFrame): A DataFrame representing the crosstab of the specified variables, with counts of occurrences for each combination of categories.
     """
     crosstab_data = pd.crosstab(data[xvar], data[yvar])
     return crosstab_data

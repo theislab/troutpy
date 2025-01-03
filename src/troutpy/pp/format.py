@@ -13,17 +13,14 @@ def format_adata(input_path, outpath_dummy, xlimits, ylimits):
     Processes and formats AnnData and transcripts by loading data, merging cell information,applying spatial filters, and saving the processed data to a dummy output directory.
 
     Parameters:
-        input_path (str): Path to the input directory containing:
-                          - 'cell_feature_matrix.h5'
-                          - 'cells.parquet'
-                          - 'transcripts.parquet'
-        outpath_dummy (str): Path to the output directory where processed files will be saved.
-        xlimits (list or tuple of two ints): Spatial limits for the x-coordinate filtering [min_x, max_x].
-        ylimits (list or tuple of two ints): Spatial limits for the y-coordinate filtering [min_y, max_y].
+    input_path (str): Path to the input directory containing:'cell_feature_matrix.h5','cells.parquet','transcripts.parquet'
+    outpath_dummy (str): Path to the output directory where processed files will be saved.
+    xlimits (list or tuple of two ints): Spatial limits for the x-coordinate filtering [min_x, max_x].
+    ylimits (list or tuple of two ints): Spatial limits for the y-coordinate filtering [min_y, max_y].
 
     Raises:
-        FileNotFoundError: If required input files are not found in the input_path.
-        ValueError: If xlimits or ylimits are not properly defined.
+    FileNotFoundError: If required input files are not found in the input_path.
+    ValueError: If xlimits or ylimits are not properly defined.
     """
     # Validate input limits
     if not (isinstance(xlimits, (list | tuple)) and len(xlimits) == 2):

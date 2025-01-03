@@ -608,46 +608,26 @@ def spatial_interactions(
     This function generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
 
     Parameters:
-    sdata : AnnData
-        An AnnData object containing the spatial omics data, including transcript expression and cell positions.
-    layer : str, optional, default: 'extracellular_transcripts_enriched'
-        The layer in the AnnData object that contains the extracellular RNA transcript data.
-    gene : str, optional, default: 'Arc'
-        The gene of interest to be visualized in terms of its spatial interaction with source and target cells.
-    gene_key : str, optional, default: 'feature_name'
-        The column name in the AnnData object used to identify the gene.
-    cell_id_key : str, optional, default: 'cell_id'
-        The column name in the AnnData object used to identify individual cells.
-    color_target : str, optional, default: 'blue'
-        The color to be used for target cells in the plot.
-    color_source : str, optional, default: 'red'
-        The color to be used for source cells in the plot.
-    color_transcript : str, optional, default: 'green'
-        The color to be used for the RNA transcripts in the plot.
-    spatial_key : str, optional, default: 'spatial'
-        The key in the AnnData object that stores the spatial coordinates of the cells.
-    img : Optional[Union[bool, Sequence]], optional, default: None
-        A background image to overlay on the plot, such as a tissue section. Can be set to `None` to omit.
-    img_alpha : Optional[float], optional, default: None
-        The transparency level of the background image. Ignored if `img` is `None`.
-    image_cmap : Optional[Colormap], optional, default: None
-        The colormap to be used for the background image, if applicable.
-    size : Optional[Union[float, Sequence[float]]], optional, default: 8
-        The size of the scatter plot points for the cells and transcripts.
-    alpha : float, optional, default: 0.6
-        The transparency level for the scatter plot points.
-    title : Optional[Union[str, Sequence[str]]], optional, default: None
-        The title of the plot. If `None`, the gene name is used.
-    legend_loc : Optional[str], optional, default: 'best'
-        The location of the legend in the plot.
-    figsize : Tuple[float, float], optional, default: (10, 10)
-        The dimensions of the plot in inches.
-    dpi : Optional[int], optional, default: 100
-        The resolution (dots per inch) for the plot.
-    save : Optional[Union[str, Path]], optional, default: None
-        The path to save the plot image. If `None`, the plot is displayed but not saved.
-    **kwargs : Additional keyword arguments
-        Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
+    sdata (AnnData): An AnnData object containing the spatial omics data, including transcript expression and cell positions.
+    layer (str): The layer in the AnnData object that contains the extracellular RNA transcript data.
+    gene (str): The gene of interest to be visualized in terms of its spatial interaction with source and target cells.
+    gene_key (str): The column name in the AnnData object used to identify the gene.
+    cell_id_key (str): The column name in the AnnData object used to identify individual cells.
+    color_target (str): The color to be used for target cells in the plot.
+    color_source (str): The color to be used for source cells in the plot.
+    color_transcript (str): The color to be used for the RNA transcripts in the plot.
+    spatial_key (str): The key in the AnnData object that stores the spatial coordinates of the cells.
+    img (Optional[Union[bool, Sequence]]): A background image to overlay on the plot, such as a tissue section. Can be set to `None` to omit.
+    img_alpha (Optional[float]): The transparency level of the background image. Ignored if `img` is `None`.
+    image_cmap (Optional[Colormap]): The colormap to be used for the background image, if applicable.
+    size (Optional[Union[float, Sequence[float]]]): The size of the scatter plot points for the cells and transcripts.
+    alpha (float): The transparency level for the scatter plot points.
+    title (Optional[Union[str, Sequence[str]]]): The title of the plot. If `None`, the gene name is used.
+    legend_loc (Optional[str]): The location of the legend in the plot.
+    figsize (Tuple[float, float]): The dimensions of the plot in inches.
+    dpi (Optional[int]): The resolution (dots per inch) for the plot.
+    save (Optional[Union[str, Path]]): The path to save the plot image. If `None`, the plot is displayed but not saved.
+    **kwargs : Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
 
     Returns:
     None
