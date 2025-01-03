@@ -26,38 +26,35 @@ def calculate_target_cells(
     gene_id_key:str='feature_name',
     copy: bool = False
 ) -> Optional[sd.SpatialData]:
-    """
-    Calculate the closest target cell for each transcript in a spatial omics dataset.
+    """Calculate the closest target cell for each transcript in a spatial omics dataset.
 
-    This function identifies the nearest cell to each transcript based on spatial coordinates and
-    annotates the transcript data with the ID, cell type, and distance to the closest cell.
+    This function identifies the nearest cell to each transcript based on spatial coordinates and annotates the transcript data with the ID, cell type, and distance to the closest cell.
 
     Parameters:
     ----------
-    sdata : sd.SpatialData
+    - sdata : sd.SpatialData
         SpatialData object containing spatial and transcript data.
-    layer : str, optional
+    - layer : str, optional
         The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
-    xcoord : str, optional
+    - xcoord : str, optional
         Column name for the x-coordinate of transcripts. Default is 'x'.
-    ycoord : str, optional
+    - ycoord : str, optional
         Column name for the y-coordinate of transcripts. Default is 'y'.
-    xcellcoord : str, optional
+    - xcellcoord : str, optional
         Column name for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    ycellcoord : str, optional
+    - ycellcoord : str, optional
         Column name for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    celltype_key : str, optional
+    - celltype_key : str, optional
         Column name in `adata.obs` that contains cell type annotations. Default is 'cell type'.
-    gene_id_key : str, optional
+    - gene_id_key : str, optional
         Column name in `sdata.points[layer]` that contains gene identity. Default is 'feature_name'.
-    copy : bool, optional
+    - copy : bool, optional
         If True, returns a copy of the modified SpatialData object. Default is False.
 
     Returns:
     -------
-    Optional[sd.SpatialData]
-        Modified SpatialData object with updated transcript annotations if `copy=True`.
-        Otherwise, updates are made in place, and None is returned.
+    - Optional[sd.SpatialData]
+        Modified SpatialData object with updated transcript annotations if `copy=True`.Otherwise, updates are made in place, and None is returned.
     """
     # Copy AnnData object from the SpatialData table
     adata = sdata['table'].copy()
@@ -108,33 +105,25 @@ def calculate_target_cells(
     return sdata.copy() if copy else None
 
 def define_target_by_celltype(sdata, layer='transcripts', closest_celltype_key='closest_target_cell_type', feature_key='feature_name'):
-    """
-    Computes the proportion of features (e.g., transcripts) associated with each cell type in the spatial dataset.
+    """Computes the proportion of features (e.g., transcripts) associated with each cell type in the spatial dataset.
 
-    This function calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,
-    and then normalizes the result to provide the proportion of each feature associated with each cell type.
+    This function calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,and then normalizes the result to provide the proportion of each feature associated with each cell type.
 
     Parameters:
     ----------
-    sdata : dict-like spatial data object (with 'points' key)
-        A spatial data object that contains transcript and cell type information. The relevant data is accessed from the
-        `sdata.points[layer]` where:
-        - `layer`: Specifies the data layer (e.g., 'extracellular_transcripts') that contains the feature and cell type data.
-
-    layer : str, optional
+    -sdata : dict-like spatial data object (with 'points' key)
+        A spatial data object that contains transcript and cell type information. The relevant data is accessed from the `sdata.points[layer]`
+    - layer : str, optional
         The key for the layer in `sdata.points` that contains the transcript data (default: 'extracellular_transcripts').
-
-    celltype_key : str, optional
+    - celltype_key : str, optional
         The column name representing cell types in the transcript data (default: 'cell type').
-
-    feature_key : str, optional
+    - feature_key : str, optional
         The column name representing the feature (e.g., transcript or gene) in the transcript data (default: 'feature_name').
 
     Returns:
     -------
-    pd.DataFrame
-        A pandas DataFrame where the rows represent features (e.g., transcripts), and the columns represent cell types. 
-        Each entry in the DataFrame is the proportion of that feature associated with the respective cell type.
+    - pd.DataFrame
+        A pandas DataFrame where the rows represent features (e.g., transcripts), and the columns represent cell types. Each entry in the DataFrame is the proportion of that feature associated with the respective cell type.
 
     Notes:
     -----

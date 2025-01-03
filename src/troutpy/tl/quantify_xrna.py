@@ -209,7 +209,7 @@ def quantify_overexpression(
     scores_per_gene.loc[:, "logfoldratio_over_noise"] = np.log(scores_per_gene.loc[:, "count"] / threshold)
     try:
          sdata['xrna_metadata']
-    except:
+    except KeyError:
          create_xrna_metadata(sdata, points_layer = 'transcripts')
 
     sdata['xrna_metadata'].var=sdata['xrna_metadata'].var.join(scores_per_gene)

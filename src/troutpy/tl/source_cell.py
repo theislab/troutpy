@@ -3,6 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+import scanpy as sc
 import pandas as pd
 import os
 from sklearn.neighbors import KDTree
@@ -21,13 +22,13 @@ def create_xrna_metadata(
     ----------
     - sdata : SpatialData
         The SpatialData object to modify.
-    
+
     - points_layer : str, optional
         The name of the layer in `sdata.points` from which to extract gene names.Default is 'transcripts'.
-    
+
     - gene_key : str, optional
         The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
-    
+
     - copy : bool, optional
         - If `True`, returns a copy of the `SpatialData` object with the new table added.
         - If `False`, modifies the original `SpatialData` object in place. Default is `False`.

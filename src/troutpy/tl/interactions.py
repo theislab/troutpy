@@ -114,9 +114,10 @@ def get_gene_interaction_strength(
 
 
     # Define the colormap and create color mappings for each cell type
-    cmap = plt.get_cmap("tab20")
+    
     # Plot the interaction strength using a chord diagram
     #### work on this function ######
+    #cmap = plt.get_cmap("tab20")
     #colors = [cmap(i) for i in range(interactions.shape[0])]
     #chord_diagram(interactions, source_proportions.columns.tolist(), directed=True, fontsize=8, colors=colors)
     plt.title(f"exotranscriptomic {gene_symbol} exchange", fontweight="bold")
