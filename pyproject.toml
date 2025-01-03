@@ -43,7 +43,8 @@ dependencies = [
   "tifffile>=2021.7.2",
   "numpy>=1.21.0",
   "sainsc",  # Version not specified; verify if necessary
-  "sympy>=1.8"
+  "sympy>=1.8",
+  "points2regions"
 ]
 
 
