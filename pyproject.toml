@@ -25,6 +25,8 @@ classifiers = [
 
 dependencies = [
   "spatialdata",
+  "spatialdata-io",
+  "spatialdata-plot",
   "scanpy>=1.9.0",
   "squidpy>=0.2.7",
   "session-info>=1.0",
