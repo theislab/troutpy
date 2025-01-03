@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from spatialdata import SpatialData
 import os
 import scanpy as sc
 import seaborn as sns
@@ -10,7 +11,7 @@ from typing import Optional, Union, Sequence, Tuple
 from anndata import AnnData
 from matplotlib.colors import Colormap, Normalize
 from pathlib import Path
-from spatialdata import SpatialData
+
 
 def sorted_heatmap(celltype_by_feature, output_path:str='',filename:str="Heatmap_target_cells_by_gene",format='pdf',cmap='viridis',vmax=None,save=False,figsize=(10, 10)):
     """
