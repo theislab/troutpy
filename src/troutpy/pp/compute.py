@@ -54,18 +54,16 @@ def define_extracellular(
             - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
             - 'cells': Classifies transcripts not assigned to a cell as extracellular.
         min_prop_of_extracellular : float, optional (default: 0.8)
-            Minimum proportion of transcripts in a cluster required to be extracellular for 
-            it to be classified as such (used only with 'segmentation_free' method).
+            Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
         unassigned_to_cell_tag : str, optional (default: 'UNASSIGNED')
             Tag indicating transcripts not assigned to any cell.
         copy : bool, optional (default: False)
-            If True, returns a copy of the updated spatial data. 
-            If False, updates the `sdata` object in-place.
+            - If True, returns a copy of the updated spatial data. 
+            - If False, updates the `sdata` object in-place.
 
     Returns:
         Optional[SpatialData]:
-            If `copy` is True, returns a copy of the updated `sdata` object.
-            Otherwise, updates the `sdata` object in-place and returns None.
+            If `copy` is True, returns a copy of the updated `sdata` object.Otherwise, updates the `sdata` object in-place and returns None.
 
     Notes:
         - The 'segmentation_free' method uses clustering results to determine extracellular transcripts.

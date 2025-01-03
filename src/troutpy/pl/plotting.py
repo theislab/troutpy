@@ -323,7 +323,7 @@ def pie_of_positive(data, groupby: str = '', figures_path: str = '', save: bool 
 
 def genes_over_noise(sdata, scores_by_genes,layer='extracellular_transcripts', output_path:str='',save=True,format:str='pdf'):
     """Function that plots log fold change per gene over noise using a boxplot.
- 
+
     Parameters:
     - data_quantified: DataFrame containing the extracellular transcript data, including feature names and codeword categories.
     - scores_by_genes: DataFrame containing gene scores with feature names and log fold ratios.
@@ -409,9 +409,9 @@ def proportion_above_threshold(
     save=False,
     output_path:str='',format='pdf'
 ):
-    """
-    Plots the top and bottom percentiles of features with the highest and lowest proportions above a threshold,
-    or visualizes a specific list of transcripts.
+    """ Plot top and bottom percentile of features
+    
+    Plots the top and bottom percentiles of features with the highest and lowest proportions above a threshold, or visualizes a specific list of transcripts.
 
     Parameters:
     - df: DataFrame containing feature proportions.
@@ -459,11 +459,9 @@ def proportion_above_threshold(
 
 def nmf_factors_exrna_cells_W(sdata, nmf_adata_key: str = 'nmf_data', save: bool = True, saving_path: str = '', 
                               spot_size: int = 30, cmap: str = 'viridis'):
-    """
-    Plot NMF factors for each cell in a spatial transcriptomics dataset.
+    """Plot NMF factors for each cell in a spatial transcriptomics dataset.
 
-    This function extracts the NMF (Non-negative Matrix Factorization) factors from the specified AnnData object 
-    within the spatial data (`sdata`) and creates spatial plots for each factor. The plots can be displayed or saved to disk.
+    This function extracts the NMF (Non-negative Matrix Factorization) factors from the specified AnnData object within the spatial data (`sdata`) and creates spatial plots for each factor. The plots can be displayed or saved to disk.
 
     Parameters:
     -----------
@@ -645,8 +643,7 @@ def paired_nmf_factors(
     output_path:str='',
     format='pdf'
 ):
-    """
-    Plots the spatial distribution of NMF factors for extracellular transcripts and cells.
+    """Plots the spatial distribution of NMF factors for extracellular transcripts and cells.
 
     Parameters:
     ----------
@@ -724,8 +721,7 @@ def paired_nmf_factors(
         plt.show()
 
 def plot_nmf_factors_spatial(adata, n_factors, save=True):
-    """
-    Plot spatial maps of cells colored by NMF factors.
+    """Plot spatial maps of cells colored by NMF factors.
 
     This function visualizes the spatial distribution of cells, colored by their corresponding NMF factor values, stored in `adata.obs`. It iterates over all specified NMF factors and generates spatial plots for each factor.
 
@@ -785,8 +781,7 @@ def spatial_interactions(
     save: Optional[Union[str, Path]] = None,
     **kwargs
 ):
-    """
-    Visualizes the spatial interactions of extracellular RNA and associated cells.
+    """Visualizes the spatial interactions of extracellular RNA and associated cells.
 
     This function generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
 
@@ -908,7 +903,7 @@ def interactions_with_arrows(
 ):
     """
     Visualizes interactions between source and target cells using arrows, along with transcript locations.
-    
+
     The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot. 
 
     Parameters:
@@ -938,8 +933,7 @@ def interactions_with_arrows(
 
     Notes:
     The plot will show arrows from source to target cells, with different colors for source, target, and transcript points.
-    """
-    
+    """ 
     # Extract relevant data
     transcripts = sdata.points[layer]
     trans_filt = transcripts[transcripts[gene_key] == gene]

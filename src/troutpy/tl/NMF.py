@@ -14,17 +14,13 @@ def apply_nmf_to_adata(adata, n_components=20, subsample_percentage=1.0,save=Fal
     """
     Applies Non-Negative Matrix Factorization (NMF) to an AnnData object.
 
-    This function performs NMF on the expression matrix (`adata.X`) to extract 
-    a reduced number of latent factors that describe the gene expression profiles 
-    of cells. The number of factors is specified by `n_components`. Optionally, 
-    the data can be subsampled before applying NMF.
+    This function performs NMF on the expression matrix (`adata.X`) to extract a reduced number of latent factors that describe the gene expression profiles of cells. The number of factors is specified by `n_components`. Optionally, the data can be subsampled before applying NMF.
     """
     
     # Extract the cell count matrix (X) from AnnData object
     # Assuming that adata.X contains the raw counts for cells
     sc.pp.subsample(adata, subsample_percentage)
     counts = adata.X.copy()
-    
     # Perform NMF with 20 factors
     nmf_model = NMF(n_components=n_components, init='random', random_state=42)
     W = nmf_model.fit_transform(counts)  # Cell factors

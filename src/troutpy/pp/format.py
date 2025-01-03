@@ -26,9 +26,9 @@ def format_adata(input_path, outpath_dummy, xlimits, ylimits):
         ValueError: If xlimits or ylimits are not properly defined.
     """
     # Validate input limits
-    if not (isinstance(xlimits, (list, tuple)) and len(xlimits) == 2):
+    if not (isinstance(xlimits, (list | tuple)) and len(xlimits) == 2):
         raise ValueError("xlimits must be a list or tuple with two elements: [min_x, max_x].")
-    if not (isinstance(ylimits, (list, tuple)) and len(ylimits) == 2):
+    if not (isinstance(ylimits, (list | tuple)) and len(ylimits) == 2):
         raise ValueError("ylimits must be a list or tuple with two elements: [min_y, max_y].")
 
     # Ensure output directory exists
