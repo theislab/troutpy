@@ -4,4 +4,4 @@ from . import pl, pp, tl,read
 
 __all__ = ["pl", "pp", "tl","read"]
 
-#__version__ = version("troutpy")
+__version__ = version("troutpy")
