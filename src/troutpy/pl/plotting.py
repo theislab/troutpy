@@ -610,6 +610,7 @@ def spatial_interactions(
     This function generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
 
     Parameters:
+    ----------
     sdata (AnnData): An AnnData object containing the spatial omics data, including transcript expression and cell positions.
     layer (str): The layer in the AnnData object that contains the extracellular RNA transcript data.
     gene (str): The gene of interest to be visualized in terms of its spatial interaction with source and target cells.
@@ -632,6 +633,7 @@ def spatial_interactions(
     kwargs : Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
 
     Returns:
+    ----------
     None
     """
     # Extract relevant data

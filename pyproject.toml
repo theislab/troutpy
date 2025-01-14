@@ -91,7 +91,7 @@ scripts.clean = "git clean -fdX -- {args:docs}"
 features = [ "test" ]
 
 [tool.ruff]
-line-length = 120
+line-length = 150
 src = [ "src" ]
 extend-include = [ "*.ipynb" ]
 
