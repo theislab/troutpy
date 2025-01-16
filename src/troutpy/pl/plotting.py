@@ -225,6 +225,7 @@ def plot_crosstab(
 
     Returns
     -------
+    None
     """
     # Compute the crosstab data
     crosstab_data = compute_crosstab(data, xvar=xvar, yvar=yvar)
