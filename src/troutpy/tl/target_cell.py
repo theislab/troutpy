@@ -21,19 +21,29 @@ def calculate_target_cells(
 
     Parameters
     ----------
-    sdata (SpatialData): SpatialData object containing spatial and transcript data.
-    layer (str, optional): The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
-    xcoord (str, optional): Column name for the x-coordinate of transcripts. Default is 'x'.
-    ycoord (str, optional): Column name for the y-coordinate of transcripts. Default is 'y'.
-    xcellcoord (str, optional): Column name for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    ycellcoord (str, optional): Column name for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    celltype_key (str, optional): Column name in `adata.obs` that contains cell type annotations. Default is 'cell type'.
-    gene_id_key (str, optional): Column name in `sdata.points[layer]` that contains gene identity. Default is 'feature_name'.
-    copy (bool, optional): If True, returns a copy of the modified SpatialData object. Default is False.
+    sdata (SpatialData)
+        SpatialData object containing spatial and transcript data.
+    layer (str, optional)
+        The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
+    xcoord (str, optional)
+        Column name for the x-coordinate of transcripts. Default is 'x'.
+    ycoord (str, optional)
+        Column name for the y-coordinate of transcripts. Default is 'y'.
+    xcellcoord (str, optional)
+        Column name for the x-coordinate of cell centroids. Default is 'x_centroid'.
+    ycellcoord (str, optional)
+        Column name for the y-coordinate of cell centroids. Default is 'y_centroid'.
+    celltype_key (str, optional)
+        Column name in `adata.obs` that contains cell type annotations. Default is 'cell type'.
+    gene_id_key (str, optional)
+        Column name in `sdata.points[layer]` that contains gene identity. Default is 'feature_name'.
+    copy (bool, optional)
+        If True, returns a copy of the modified SpatialData object. Default is False.
 
     Returns
     -------
-    Optional (SpatialData): Modified SpatialData object with updated transcript annotations if `copy=True`.Otherwise, updates are made in place, and None is returned.
+    Optional (SpatialData)
+        Modified SpatialData object with updated transcript annotations if `copy=True`.Otherwise, updates are made in place, and None is returned.
     """
     # Copy AnnData object from the SpatialData table
     adata = sdata["table"].copy()
