@@ -27,21 +27,21 @@ def spatial_variability(
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    sdata (SpatialData)
         The spatial transcriptomics dataset in SpatialData format.
-    - coords_keys (list of str)
+    coords_keys (list of str)
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    - gene_id_key (str, optional)
+    gene_id_key (str, optional)
         The key for gene identifiers in the dataset (default: 'feature_name').
-    - n_neighbors (int, optional)
+    n_neighbors (int, optional)
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    - resolution (int, optional)
+    resolution (int, optional)
         The resolution for kernel density estimation (default: 1000).
-    - binsize (int, optional)
+    binsize (int, optional)
         The binsize for kernel density estimation (default: 20).
-    - n_threads (int, optional)
+    n_threads (int, optional)
         The number of threads for LazyKDE processing (default: 1).
-    - spatial_autocorr_mode (str, optional)
+    spatial_autocorr_mode (str, optional)
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns
@@ -164,24 +164,24 @@ def quantify_overexpression(
 
     Parameters
     ----------
-    - sdata (pd.DataFrame)
+    sdata (pd.DataFrame)
         The spatial data object holding points and transcript data.
-    - codeword_column (str)
+    codeword_column (str)
         Column name that holds codeword category.
-    - control_codewords (Union[List[str], str])
+    control_codewords (Union[List[str], str])
         Name(s) of codewords that correspond to controls based on which noise threshold will be defined.
-    - gene_id_column (str)
+    gene_id_column (str)
         Column that holds name of gene (/ or feature) that is being detected.
-    - percentile_threshold (float, optional)
+    percentile_threshold (float, optional)
         Percentile used to define overexpression threshold. Defaults to 100.
-    - save (bool, optional)
+    save (bool, optional)
         Whether to save outputs to file. Defaults to True.
-    - saving_path (str, optional)
+    saving_path (str, optional)
         Path to directory that files should be saved in. Defaults to "".
 
     Returns
     -------
-    - Tuple[pd.DataFrame, pd.DataFrame, float]
+    Tuple[pd.DataFrame, pd.DataFrame, float]
         A tuple containing the updated sdata, scores per gene DataFrame, and the calculated threshold.
     """
     # Compute the data from the Dask DataFrame
@@ -270,21 +270,21 @@ def spatial_colocalization(
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    sdata (SpatialData)
         The spatial transcriptomics dataset in SpatialData format.
-    - coords_keys (list of str, optional)
+    coords_keys (list of str, optional)
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    - gene_id_key (str, optional)
+    gene_id_key (str, optional)
         The key for gene identifiers in the dataset (default: 'feature_name').
-    - n_neighbors (int, optional)
+    n_neighbors (int, optional)
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    - resolution (int, optional)
+    resolution (int, optional)
         The resolution for kernel density estimation (default: 1000).
-    - binsize (int, optional)
+    binsize (int, optional)
         The binsize for kernel density estimation (default: 20).
-    - n_threads (int, optional)
+    n_threads (int, optional)
         The number of threads for LazyKDE processing (default: 1).
-    - spatial_autocorr_mode (str, optional)
+    spatial_autocorr_mode (str, optional)
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns
