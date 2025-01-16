@@ -10,11 +10,13 @@ def compute_extracellular_counts(data_extracell):  # would be good to change the
 
     Parameters
     ----------
-    data_extracell (pd.DataFrame): Data with extracellular transcripts.
+    data_extracell (pd.DataFrame)
+        Data with extracellular transcripts.
 
     Returns
     -------
-    pd.DataFrame: Dataframe with observed, expected counts, fold ratios, and gene categories.
+    pd.DataFrame
+        Dataframe with observed, expected counts, fold ratios, and gene categories.
     """
     extracellular_counts = data_extracell.groupby("feature_name").count()
     extracellular_counts = pd.DataFrame({"observed": extracellular_counts.iloc[:, 0]})
@@ -43,19 +45,26 @@ def define_extracellular(
 
     Parameters
     ----------
-    sdata (SpatialData): A spatial data object containing transcriptomic information.
-    layer (str): The layer in `sdata.points` containing the transcript data to process.
-    method (str):The method to define extracellular transcripts. Options:
-    - 'segmentation_free': Uses segmentation-free clustering results.
-    - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
-    - 'cells': Classifies transcripts not assigned to a cell as extracellular.
-    min_prop_of_extracellular (float, optional): Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
-    unassigned_to_cell_tag (str, optional): Tag indicating transcripts not assigned to any cell.
-    copy (bool): If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
+    sdata (SpatialData)
+        A spatial data object containing transcriptomic information.
+    layer (str)
+        The layer in `sdata.points` containing the transcript data to process.
+    method (str)
+        The method to define extracellular transcripts. Options:
+            - 'segmentation_free': Uses segmentation-free clustering results.
+            - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
+            - 'cells': Classifies transcripts not assigned to a cell as extracellular.
+    min_prop_of_extracellular (float, optional)
+        Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
+    unassigned_to_cell_tag (str, optional)
+        Tag indicating transcripts not assigned to any cell.
+    copy (bool)
+        If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
 
     Returns
     -------
-    Optional[SpatialData]: If `copy` is True, returns a copy of the updated `sdata` object.Otherwise, updates the `sdata` object in-place and returns None.
+    Optional[SpatialData]
+        If `copy` is True, returns a copy of the updated `sdata` object.Otherwise, updates the `sdata` object in-place and returns None.
 
     Notes
     -----
@@ -101,9 +110,12 @@ def compute_crosstab(data, xvar: str = "", yvar: str = ""):
 
     Parameters
     ----------
-    data (pandas.DataFrame): The input DataFrame containing the data to be analyzed.
-    xvar (str, optional): The name of the column to use as the rows of the crosstab. Default is an empty string.
-    yvar (str, optional): The name of the column to use as the columns of the crosstab. Default is an empty string.
+    data (pandas.DataFrame)
+        The input DataFrame containing the data to be analyzed.
+    xvar (str, optional)
+        The name of the column to use as the rows of the crosstab. Default is an empty string.
+    yvar (str, optional)
+        The name of the column to use as the columns of the crosstab. Default is an empty string.
 
     Returns
     -------
