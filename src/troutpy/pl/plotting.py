@@ -225,7 +225,6 @@ def plot_crosstab(
 
     Returns
     -------
-    This function generates a plot and optionally saves it to a file.
     """
     # Compute the crosstab data
     crosstab_data = compute_crosstab(data, xvar=xvar, yvar=yvar)
@@ -449,7 +448,7 @@ def nmf_factors_exrna_cells_W(
     sdata, nmf_adata_key: str = "nmf_data", save: bool = True, saving_path: str = "", spot_size: int = 30, cmap: str = "viridis"
 ):
     """
-    This function extracts the NMF (Non-negative Matrix Factorization) factors from the specified AnnData object within the spatial data (`sdata`) and creates spatial plots for each factor. The plots can be displayed or saved to disk.
+    Extracts the NMF (Non-negative Matrix Factorization) factors from the specified AnnData object within the spatial data (`sdata`) and creates spatial plots for each factor. The plots can be displayed or saved to disk.
 
     Parameters
     ----------
@@ -653,7 +652,7 @@ def paired_nmf_factors(
 
 def plot_nmf_factors_spatial(adata, n_factors, save=True):
     """
-    This function visualizes the spatial distribution of cells, colored by their corresponding NMF factor values, stored in `adata.obs`. It iterates over all specified NMF factors and generates spatial plots for each factor.
+    Visualizes the spatial distribution of cells, colored by their corresponding NMF factor values, stored in `adata.obs`. It iterates over all specified NMF factors and generates spatial plots for each factor.
 
     Parameters
     ----------
@@ -705,7 +704,7 @@ def spatial_interactions(
     **kwargs,
 ):
     """
-    This function generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
+    Generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
 
     Parameters
     ----------
