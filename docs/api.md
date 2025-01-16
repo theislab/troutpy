@@ -12,7 +12,7 @@
     pp.compute_extracellular_counts
     pp.define_extracellular
     pp.compute_crosstab
-    pp.format_adata 
+    pp.format_adata
 ```
 
 ## Tools
