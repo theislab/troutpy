@@ -723,9 +723,12 @@ def spatial_interactions(
     image_cmap (Optional[Colormap]): The colormap to be used for the background image, if applicable.
     size (Optional[Union[float, Sequence[float]]]): The size of the scatter plot points for the cells and transcripts.
     alpha (float): The transparency level for the scatter plot points.
-    title (Optional[Union[str, Sequence[str]]]): The title of the plot. If `None`, the gene name is used.
-    legend_loc (Optional[str]): The location of the legend in the plot.
-    figsize (Tuple[float, float]): The dimensions of the plot in inches.
+    title (Optional[Union[str, Sequence[str]]])
+        The title of the plot. If `None`, the gene name is used.
+    legend_loc (Optional[str])
+        The location of the legend in the plot.
+    figsize
+        The dimensions of the plot in inches.
     dpi (Optional[int]): The resolution (dots per inch) for the plot.
     save (Optional[Union[str, Path]]): The path to save the plot image. If `None`, the plot is displayed but not saved.
     kwargs : Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
