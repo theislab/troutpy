@@ -110,7 +110,7 @@ def nmf(
 
 def apply_exrna_factors_to_cells(sdata, layer_factors="nmf_data"):
     """
-    This function extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
+     Extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
 
     Parameters
     ----------
