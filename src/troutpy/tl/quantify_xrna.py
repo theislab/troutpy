@@ -12,36 +12,36 @@ from tqdm import tqdm
 
 
 def spatial_variability(
-    sdata,
-    coords_keys=None,
-    gene_id_key="feature_name",
-    n_neighbors=10,
-    resolution=1000,
-    binsize=20,
-    n_threads=1,
-    spatial_autocorr_mode="moran",
-    copy=False,
+    sdata: SpatialData,
+    coords_keys: list = None,  # type: ignore
+    gene_id_key: str = "feature_name",
+    n_neighbors: int = 10,
+    resolution: int = 1000,
+    binsize: int = 20,
+    n_threads: int = 1,
+    spatial_autocorr_mode: str = "moran",
+    copy: bool = False,
 ):
     """
     Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters
     ----------
-    sdata (SpatialData)
+    sdata
         The spatial transcriptomics dataset in SpatialData format.
-    coords_keys (list of str)
+    coords_keys
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    gene_id_key (str, optional)
+    gene_id_key
         The key for gene identifiers in the dataset (default: 'feature_name').
-    n_neighbors (int, optional)
+    n_neighbors
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    resolution (int, optional)
+    resolution
         The resolution for kernel density estimation (default: 1000).
-    binsize (int, optional)
+    binsize
         The binsize for kernel density estimation (default: 20).
-    n_threads (int, optional)
+    n_threads
         The number of threads for LazyKDE processing (default: 1).
-    spatial_autocorr_mode (str, optional)
+    spatial_autocorr_mode
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns
@@ -153,36 +153,36 @@ def create_xrna_metadata(
 def quantify_overexpression(
     sdata: SpatialData,
     codeword_column: str,
-    control_codewords: list[str] | str,
+    control_codewords: list,
     gene_id_column: str = "feature_name",
     layer: str = "transcripts",
     percentile_threshold: float = 100,
     copy=False,
-) -> tuple[pd.DataFrame, pd.DataFrame, float]:
+) -> SpatialData:
     """
     Compare counts per gene with counts per non-gene feature. We define a threshold as the 'percentile_threshold' counts of non-gene counts (e.g. 'percentile_threshold = 100' corresponds to the maximum number of counts observed in any non-gene feature). Any gene whose counts are above the threshold are considered overexpressed.
 
     Parameters
     ----------
-    sdata (pd.DataFrame)
+    sdata
         The spatial data object holding points and transcript data.
-    codeword_column (str)
+    codeword_column
         Column name that holds codeword category.
-    control_codewords (Union[List[str], str])
+    control_codewords
         Name(s) of codewords that correspond to controls based on which noise threshold will be defined.
-    gene_id_column (str)
+    gene_id_column
         Column that holds name of gene (/ or feature) that is being detected.
-    percentile_threshold (float, optional)
+    percentile_threshold
         Percentile used to define overexpression threshold. Defaults to 100.
-    save (bool, optional)
+    save
         Whether to save outputs to file. Defaults to True.
-    saving_path (str, optional)
+    saving_path
         Path to directory that files should be saved in. Defaults to "".
 
     Returns
     -------
-    Tuple[pd.DataFrame, pd.DataFrame, float]
-        A tuple containing the updated sdata, scores per gene DataFrame, and the calculated threshold.
+    sdata
+        The updated sdata object with scores per gene DataFrame, and the calculated threshold.
     """
     # Compute the data from the Dask DataFrame
     data = sdata.points[layer][["extracellular", codeword_column, gene_id_column]].compute()
@@ -222,11 +222,11 @@ def extracellular_enrichment(sdata: SpatialData, gene_id_column: str = "feature_
 
     Parameters
     ----------
-    sdata (AnnData)
-        An AnnData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_id_column`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
-    gene_id_column (str, optional)
+    sdata
+        An spatialData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_id_column`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
+    gene_id_column
         The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'feature_name'.
-    copy (bool, optional)
+    copy
         Whether to return a modified copy of the input `sdata` object. If `False`, the input object is modified in place. Defaults to `False`.
 
     Returns
@@ -263,33 +263,40 @@ def extracellular_enrichment(sdata: SpatialData, gene_id_column: str = "feature_
 
 
 def spatial_colocalization(
-    sdata: SpatialData, coords_keys=None, gene_id_key="feature_name", resolution=1000, binsize=20, n_threads=1, threshold_colocalized=1, copy=False
+    sdata: SpatialData,
+    coords_keys: list = ["x", "y"],  # noqa: B006
+    gene_id_key: str = "feature_name",
+    resolution: int = 1000,
+    binsize: int = 20,
+    n_threads: int = 1,
+    threshold_colocalized: int = 1,
+    copy: bool = False,
 ):
     """
     Computes spatial variability of extracellular RNA using Moran's I.
 
     Parameters
     ----------
-    sdata (SpatialData)
+    sdata
         The spatial transcriptomics dataset in SpatialData format.
-    coords_keys (list of str, optional)
+    coords_keys
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    gene_id_key (str, optional)
+    gene_id_key
         The key for gene identifiers in the dataset (default: 'feature_name').
-    n_neighbors (int, optional)
+    n_neighbors
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    resolution (int, optional)
+    resolution
         The resolution for kernel density estimation (default: 1000).
-    binsize (int, optional)
+    binsize
         The binsize for kernel density estimation (default: 20).
-    n_threads (int, optional)
+    n_threads
         The number of threads for LazyKDE processing (default: 1).
-    spatial_autocorr_mode (str, optional)
+    spatial_autocorr_mode
         The mode for spatial autocorrelation computation (default: "moran").
 
     Returns
     -------
-    - sdata(SpatialData)
+    - sdata
         A DataFrame containing Moran's I values for each gene, indexed by gene names.
     """
     # Step 1: Extract and preprocess data
