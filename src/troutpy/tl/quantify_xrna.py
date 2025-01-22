@@ -1,6 +1,4 @@
 import numpy as np
-
-# import squidpy as sq
 import pandas as pd
 import polars as pl
 import scanpy as sc

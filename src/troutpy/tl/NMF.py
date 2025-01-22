@@ -7,6 +7,61 @@ from sklearn.decomposition import NMF
 from spatialdata import SpatialData
 
 
+def apply_exrna_factors_to_cells(sdata: SpatialData, layer_factors: str = "nmf_data") -> SpatialData:
+    """
+    Extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
+
+    Parameters
+    ----------
+    sdata
+        The AnnData object containing both extracellular and cellular data.
+    layer_factors
+        The key in `sdata` that contains the extracellular RNA data with NMF factors. Default is 'nmf_data'.
+
+    Returns
+    -------
+    sdata
+        The updated `sdata` object with annotated cellular data that includes the applied exRNA factors as new columns.
+
+    Notes
+    -----
+    The function assumes that the extracellular RNA data is stored in `sdata[layer_factors]` and that the NMF factor loadings are stored in the `uns` attribute of the extracellular dataset as 'H_nmf'. The factor scores are added to the `obs` attribute of the cellular data.
+    """
+    # Extract extracellular data and cellular annotations
+    adata_extracellular_with_nmf = sdata[layer_factors]
+    adata_annotated_cellular = sdata["table"]
+
+    # Retrieve NMF factor loadings (H matrix) from extracellular data
+    H = adata_extracellular_with_nmf.uns["H_nmf"]  # type: ignore
+
+    # Get gene names from both datasets
+    genes_spots2region = adata_extracellular_with_nmf.var_names
+    genes_annotated = adata_annotated_cellular.var_names
+
+    # Get the intersection of genes between the extracellular and cellular datasets
+    common_genes = genes_annotated.intersection(genes_spots2region)
+
+    # Filter both datasets to retain only the common genes
+    adata_annotated_cellular = adata_annotated_cellular[:, common_genes]
+    H_filtered = H[:, np.isin(genes_spots2region, common_genes)]  # Filtered NMF factor loadings for common genes
+
+    # Apply NMF factors to the annotated cellular dataset
+    # Calculate the W matrix by multiplying the cellular data (X) with the filtered NMF loadings (H)
+    W_annotated = adata_annotated_cellular.X @ H_filtered.T
+
+    # Store the factors in the 'obsm' attribute of the AnnData object
+    adata_annotated_cellular.obsm["factors"] = pd.DataFrame(W_annotated, index=adata_annotated_cellular.obs.index)
+
+    # Add each factor as a new column in the 'obs' attribute of the cellular dataset
+    for factor in range(W_annotated.shape[1]):
+        adata_annotated_cellular.obs[f"NMF_factor_{factor + 1}"] = W_annotated[:, factor]
+
+    # Update the 'table' in the sdata object with the annotated cellular data
+    sdata["table"] = adata_annotated_cellular
+
+    return sdata
+
+
 def apply_nmf_to_adata(adata: SpatialData, n_components=20, subsample_percentage=1.0, save=False, output_path: str = "", random_state=None):
     """
     Applies Non-Negative Matrix Factorization (NMF) to an AnnData object to reduce the dimensionality of gene expression data.
@@ -120,60 +175,5 @@ def nmf(
 
     # Store the NMF results in the spatial data
     sdata["nmf_data"] = adata_nmf
-
-    return sdata
-
-
-def apply_exrna_factors_to_cells(sdata, layer_factors="nmf_data"):
-    """
-     Extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
-
-    Parameters
-    ----------
-    sdata
-        The AnnData object containing both extracellular and cellular data.
-    layer_factors
-        The key in `sdata` that contains the extracellular RNA data with NMF factors. Default is 'nmf_data'.
-
-    Returns
-    -------
-    AnnData
-        The updated `sdata` object with annotated cellular data that includes the applied exRNA factors as new columns.
-
-    Notes
-    -----
-    The function assumes that the extracellular RNA data is stored in `sdata[layer_factors]` and that the NMF factor loadings are stored in the `uns` attribute of the extracellular dataset as 'H_nmf'. The factor scores are added to the `obs` attribute of the cellular data.
-    """
-    # Extract extracellular data and cellular annotations
-    adata_extracellular_with_nmf = sdata[layer_factors]
-    adata_annotated_cellular = sdata["table"]
-
-    # Retrieve NMF factor loadings (H matrix) from extracellular data
-    H = adata_extracellular_with_nmf.uns["H_nmf"]
-
-    # Get gene names from both datasets
-    genes_spots2region = adata_extracellular_with_nmf.var_names
-    genes_annotated = adata_annotated_cellular.var_names
-
-    # Get the intersection of genes between the extracellular and cellular datasets
-    common_genes = genes_annotated.intersection(genes_spots2region)
-
-    # Filter both datasets to retain only the common genes
-    adata_annotated_cellular = adata_annotated_cellular[:, common_genes]
-    H_filtered = H[:, np.isin(genes_spots2region, common_genes)]  # Filtered NMF factor loadings for common genes
-
-    # Apply NMF factors to the annotated cellular dataset
-    # Calculate the W matrix by multiplying the cellular data (X) with the filtered NMF loadings (H)
-    W_annotated = adata_annotated_cellular.X @ H_filtered.T
-
-    # Store the factors in the 'obsm' attribute of the AnnData object
-    adata_annotated_cellular.obsm["factors"] = pd.DataFrame(W_annotated, index=adata_annotated_cellular.obs.index)
-
-    # Add each factor as a new column in the 'obs' attribute of the cellular dataset
-    for factor in range(W_annotated.shape[1]):
-        adata_annotated_cellular.obs[f"NMF_factor_{factor + 1}"] = W_annotated[:, factor]
-
-    # Update the 'table' in the sdata object with the annotated cellular data
-    sdata["table"] = adata_annotated_cellular
 
     return sdata
