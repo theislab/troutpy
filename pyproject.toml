@@ -24,7 +24,7 @@ classifiers = [
 ]
 
 dependencies = [
-  "spatialdata",
+  "spatialdata<0.3.0",
   "spatialdata-io",
   "spatialdata-plot",
   "scanpy>=1.9.0",

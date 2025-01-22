@@ -17,15 +17,19 @@ def get_number_of_communication_genes(
 
     Parameters
     ----------
-    - source_proportions (pd.DataFrame): A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
-    - target_proportions : A data frame
-    - (Gene name x Cell Type) with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
-    - source_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
-    - target_proportion_threshold (float, optional): The threshold to consider a cell type to be a significant target of a gene. Defaults to 0.2.
+    source_proportions
+        A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
+    target_proportions
+        pd.DataFrame with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
+    source_proportion_threshold
+        The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
+    target_proportion_threshold
+        The threshold to consider a cell type to be a significant target of a gene. Defaults to 0.2.
 
     Returns
     -------
-    - pd.DataFrame: _description_
+    number_interactions_df:
+        Dataframe with number of interactions
     """
     # filter the source and target cell types by defining signficant proportions
     source_binary = source_proportions > source_proportion_threshold
