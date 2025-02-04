@@ -1,7 +1,10 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from spatialdata import SpatialData
+from tqdm import tqdm
 
 # function to compute the number of exchanged genes between any two cell types
 
@@ -119,3 +122,32 @@ def get_gene_interaction_strength(
     # Show the plot
     plt.show()
     return pd.DataFrame(interactions, index=source_proportions.columns, columns=target_proportions.columns)
+
+
+def compute_communication_strength(sdata: SpatialData, source_key: str = "source_score", target_key: str = "target_score", copy: bool = False):
+    """
+    Compute a 3D interaction strength matrix from the source table in SpatialData.
+
+    Parameters
+    ----------
+        sdata
+            SpatialData object with a 'tables' attribute.
+        source_key
+            Key to access the source table within sdata.tables.
+
+    Returns
+    -------
+        sdata
+            SpatialData object with computed interactions
+    """
+    source_table = sdata.tables[source_key]
+    target_table = sdata.tables[source_key]
+    interaction_strength = np.empty((source_table.shape[0], source_table.shape[1], target_table.shape[1]))
+
+    for i, id in enumerate(tqdm(source_table.obs.index)):
+        matmul_result = np.dot(np.array(source_table[id].X).T, np.array(target_table[id].X))
+        interaction_strength[i, :, :] = matmul_result
+
+    sdata["source_score"].uns["interaction_stength"] = interaction_strength
+
+    return sdata.copy() if copy else None

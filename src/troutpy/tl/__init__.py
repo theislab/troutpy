@@ -1,7 +1,13 @@
 from .estimate_density import colocalization_proportion
-from .interactions import get_gene_interaction_strength, get_number_of_communication_genes
+from .interactions import compute_communication_strength, get_gene_interaction_strength
 from .NMF import apply_exrna_factors_to_cells, apply_nmf_to_adata, nmf
 from .quantify_xrna import create_xrna_metadata, extracellular_enrichment, quantify_overexpression, spatial_colocalization, spatial_variability
 from .segmentation_free import segmentation_free_clustering
-from .source_cell import compute_distant_cells_prop, compute_source_cells, distance_to_source_cell, get_proportion_expressed_per_cell_type
-from .target_cell import calculate_target_cells, define_target_by_celltype
+from .source_cell import (
+    compute_distant_cells_prop,
+    compute_source_cells,
+    compute_source_score,
+    distance_to_source_cell,
+    get_proportion_expressed_per_cell_type,
+)
+from .target_cell import calculate_target_cells, compute_target_score, define_target_by_celltype

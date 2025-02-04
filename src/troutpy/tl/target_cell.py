@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
+import scanpy as sc
 import spatialdata as sd
+from sklearn.neighbors import KDTree
 from spatialdata import SpatialData
 from tqdm import tqdm
 
@@ -117,3 +119,85 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
     celltype_by_feature = celltype_by_feature_raw.div(celltype_by_feature_raw.sum(axis=1), axis=0)
 
     return celltype_by_feature
+
+
+def compute_target_score(
+    sdata: SpatialData,
+    layer: str = "transcripts",
+    gene_id_column: str = "feature_name",
+    xcoord="x",
+    ycoord="y",
+    xcellcoord="x_centroid",
+    ycellcoord="y_centroid",
+    lambda_decay=0.1,
+    copy=False,
+    celltype_key="cell type",
+):
+    """
+    Computes the scores for each extracellular transcript targeting a specific cell type.
+
+    Parameters
+    ----------
+    - sdata (SpatialData)
+        The input spatial data object.
+    - layer (str, optional)
+        The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
+    - gene_id_column (str, optional)
+        Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
+    - xcoord, ycoord, xcellcoord, ycellcoord (str, optional)
+        Column names for spatial coordinates of transcripts and cell centroids.
+    - lambda_decay (float, optional)
+        The exponential decay factor for distances.
+    - copy (bool, optional)
+        If True, returns a modified copy of the SpatialData object.
+    - celltype_key (str, optional)
+        Key for cell type annotations in the cell table.
+
+    Returns
+    -------
+    - sdata (SpatialData)
+        Updated SpatialData object with target cell scores added.
+    """
+    # Extract transcript and cellular data
+    transcripts = sdata.points[layer].compute()
+    cells = sdata["table"].to_df()
+    coord_cells = sdata["table"].obsm["spatial"]
+    cell_types = sdata["table"].obs[celltype_key]
+    all_cell_types = cell_types.unique()
+
+    # Ensure necessary columns exist
+    required_cols = [xcoord, ycoord]
+    for col in required_cols:
+        if col not in transcripts.columns and col not in cells.columns:
+            raise ValueError(f"Required column '{col}' is missing.")
+
+    # Filter for extracellular transcripts only
+    extracellular_transcripts = transcripts[transcripts["extracellular"] == False]
+    target_scores_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
+
+    # Precompute KDTree for all cell coordinates
+    kdtree = KDTree(coord_cells)
+
+    # Compute scores for each transcript
+    transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
+    distances, cell_indices = kdtree.query(transcript_coords, k=len(coord_cells))
+
+    # Compute exponential decay scores for proximity
+    exp_decay = np.exp(-lambda_decay * distances)
+
+    # Aggregate scores by cell type
+    for i, transcript_idx in enumerate(tqdm(extracellular_transcripts.index)):
+        cell_indices_i = cell_indices[i]
+        scores_i = exp_decay[i]
+        types_i = cell_types.iloc[cell_indices_i].to_numpy()
+
+        for cell_type in all_cell_types:
+            target_scores_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
+
+    # probabilities_table['feature_name']=extracellular_transcripts['feature_name']
+    prob_table = sc.AnnData(target_scores_table)
+    prob_table.obs["feature_name"] = list(extracellular_transcripts["feature_name"])
+    prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
+    sdata.tables["target_score"] = prob_table
+
+    return sdata.copy() if copy else None
