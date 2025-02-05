@@ -148,6 +148,47 @@ def compute_communication_strength(sdata: SpatialData, source_key: str = "source
         matmul_result = np.dot(np.array(source_table[id].X).T, np.array(target_table[id].X))
         interaction_strength[i, :, :] = matmul_result
 
-    sdata["source_score"].uns["interaction_stength"] = interaction_strength
+    sdata["source_score"].uns["interaction_strength"] = interaction_strength
+
+    return sdata.copy() if copy else None
+
+
+def gene_specific_interactions(sdata, copy: bool = False):
+    """
+    Group the read-specific interaction scores into gene-specific scores
+
+    Parameters
+    ----------
+        sdata
+            A SpatialData object including precomputed communication strenghts for each exRNA
+        copy
+            Wether to save the resulting sdata as a copy
+
+    Returns
+    -------
+        sdata
+            A 3D array of shape (num_categories, H, W) containing mean values per category.
+    """
+    try:
+        interaction_strength = sdata["source_score"].uns["interaction_strength"]
+        source_table = sdata["source_score"]
+    except:
+        KeyError("Interaction streght is not computed. Please run troutpy.tl.compute_communication_strength first")
+
+    categories = list(source_table.obs["feature_name"])  # Extract categories
+    unique_cats = np.unique(categories)  # Get unique categories
+
+    # Initialize result 3D matrix (num_categories, H, W)
+    result_matrix = np.zeros((len(unique_cats), interaction_strength.shape[1], interaction_strength.shape[2]))
+
+    # Iterate over unique categories
+    for i, cat in enumerate(tqdm(unique_cats, desc="Processing categories")):
+        mask = np.array(categories) == cat  # Boolean mask
+        subset = interaction_strength[mask, :, :]  # Extract relevant slices
+        result_matrix[i] = np.mean(subset, axis=0)  # Compute mean over axis 0
+
+    # save resulting matrix
+    sdata["source_score"].uns["gene_interaction_strength"] = result_matrix
+    sdata["source_score"].uns["gene_interaction_names"] = unique_cats
 
     return sdata.copy() if copy else None

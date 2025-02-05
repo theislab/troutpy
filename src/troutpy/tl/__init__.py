@@ -1,5 +1,5 @@
 from .estimate_density import colocalization_proportion
-from .interactions import compute_communication_strength, get_gene_interaction_strength
+from .interactions import compute_communication_strength, gene_specific_interactions, get_gene_interaction_strength
 from .NMF import apply_exrna_factors_to_cells, apply_nmf_to_adata, nmf
 from .quantify_xrna import create_xrna_metadata, extracellular_enrichment, quantify_overexpression, spatial_colocalization, spatial_variability
 from .segmentation_free import segmentation_free_clustering

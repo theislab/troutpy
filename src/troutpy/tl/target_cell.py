@@ -196,7 +196,7 @@ def compute_target_score(
 
     # probabilities_table['feature_name']=extracellular_transcripts['feature_name']
     prob_table = sc.AnnData(target_scores_table)
-    prob_table.obs["feature_name"] = list(extracellular_transcripts["feature_name"])
+    prob_table.obs["feature_name"] = list(extracellular_transcripts["feature_name"].astype(str))
     prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
     sdata.tables["target_score"] = prob_table
 
