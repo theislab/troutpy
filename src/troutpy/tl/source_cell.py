@@ -199,40 +199,35 @@ def distance_to_source_cell(
     return sdata.copy() if copy else None
 
 
-def compute_distant_cells_prop(sdata: SpatialData, layer="transcripts", gene_id_column="feature_name", threshold=30, copy=False):
+def compute_distant_cells_proportion(sdata: SpatialData, gene_id_column: str = "feature_name", threshold: int = 30, copy: bool = False):
     """
-    Compute the proportion of transcripts for each gene that are located beyond a specified distance from their closest source cell, and add the result to the metadata of the SpatialData object.
+    Compute the proportion of transcripts for each gene that are located beyond a specified distance (in um) from their closest source cell, and add the result to the metadata of the SpatialData object.
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    sdata
         A SpatialData object containing the spatial omics data.
-    - layer (str, optional)
-        The layer in `sdata.points` that contains the transcript data. Default is 'transcripts'.
-    - gene_id_column (str, optional)
+    gene_id_column
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
-    - threshold (float, optional)
+    threshold
         The distance threshold (in micrometers) to calculate the proportion of transcripts farther away from their closest source cell. Default is 30.
 
     Returns
     -------
     None
     """
-    # Extract transcript data
-    data = sdata.points[layer].compute()
+    data = sdata["source_score"].obs
+    total_distant = pd.crosstab(data[gene_id_column], data["distance"] > threshold)
+    prop_distant = total_distant.div(total_distant.sum(axis=1), axis=0)
+    gene2distantprop = dict(zip(prop_distant.index, prop_distant[True], strict=False))
 
-    # Calculate the proportions of distances above the threshold
-    proportions_above_threshold = data.groupby(gene_id_column)["distance_to_source_cell"].apply(lambda x: (x > threshold).mean())
+    from troutpy.tl.quantify_xrna import create_xrna_metadata
 
-    # Create a DataFrame and rename the column
-    proportions_above_threshold = pd.DataFrame(proportions_above_threshold)
-    proportions_above_threshold.columns = [f"frac_beyond_{threshold}_from_source"]
-
-    # Join the computed proportions with the metadata
-    for column in proportions_above_threshold.columns:
-        if column in sdata["xrna_metadata"].var.columns:
-            sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.drop([column], axis=1)
-    sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(proportions_above_threshold)
+    try:
+        sdata["xrna_metadata"]
+    except KeyError:
+        create_xrna_metadata(sdata, points_layer="transcripts")
+    sdata["xrna_metadata"].var["distant_from_source_proportion"] = sdata["xrna_metadata"].var.index.map(gene2distantprop)
 
     return sdata.copy() if copy else None
 
