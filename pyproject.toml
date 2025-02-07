@@ -35,6 +35,7 @@ dependencies = [
   "statsmodels",
   "tifffile>=2021.7.2",
   "sainsc",  # Version not specified; verify if necessary
+  "sopa[cellpose,baysor]",
   "points2regions"
 ]
 
