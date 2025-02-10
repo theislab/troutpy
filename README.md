@@ -31,7 +31,7 @@ pip install troutpy
 1. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/sergiomarco25/troutpy.git@main
+pip install git+https://github.com/theislab/troutpy.git@main
 ```
 
 ## Release notes
