@@ -23,12 +23,12 @@ classifiers = [
 ]
 
 dependencies = [
-  "squidpy",
+  "squidpy>=1.6.2",
   "spatialdata",
   "spatialdata-io",
   "spatialdata-plot",
   "docutils>=0.21.2",
-  "ipykernel>=6.0",
+  "ipykernel>=6.29.5",
   "ipython>=8.0",
   "seaborn",
   "scikit-learn>=1.0",
