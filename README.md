@@ -3,7 +3,7 @@
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/sergiomarco25/troutpy/test.yaml?branch=main
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/theislab/troutpy/test.yaml?branch=main
 [badge-docs]: https://img.shields.io/readthedocs/troutpy
 
 Package for the analysis of transcripts outside segmented cells in python
