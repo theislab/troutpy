@@ -20,25 +20,26 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
 
 dependencies = [
-  "squidpy>=1.6.2",
+  "dask==2024.11.2",
+  "docutils>=0.21.2",
+  "ipykernel>=6.29.5",
+  "ipython>=8.32",
+  "points2regions",
+  "sainsc",                # Version not specified; verify if necessary
+  "scikit-learn>=1.6.1",
+  "seaborn",
+  "sopa[cellpose,baysor]",
   "spatialdata",
   "spatialdata-io",
   "spatialdata-plot",
-  "docutils>=0.21.2",
-  "ipykernel>=6.29.5",
-  "ipython>=8.0",
-  "seaborn",
-  "scikit-learn>=1.0",
+  "squidpy>=1.6.2",
   "statsmodels",
   "tifffile>=2021.7.2",
-  "sainsc",  # Version not specified; verify if necessary
-  "sopa[cellpose,baysor]",
-  "points2regions"
 ]
-
 
 optional-dependencies.dev = [
   "pre-commit",
