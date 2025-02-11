@@ -8,6 +8,9 @@
 
 Package for the analysis of transcripts outside segmented cells in python
 
+
+![Alt text][images/logo_fish.png]
+
 ## Getting started
 
 Please refer to the [documentation][],
@@ -34,6 +37,14 @@ pip install troutpy
 pip install git+https://github.com/theislab/troutpy.git@main
 ```
 
+
+## Usage
+Please have a look at the [Usage documentation](https://troutpy.readthedocs.io/en/latest/) and the [tutorials](https://troutpy.readthedocs.io/en/latest/).
+
+```python
+import troutpy as tp
+```
+
 ## Release notes
 
 See the [changelog][].
@@ -49,9 +60,10 @@ If you found a bug, please use the [issue tracker][].
 
 [mambaforge]: https://github.com/conda-forge/miniforge#mambaforge
 [scverse discourse]: https://discourse.scverse.org/
-[issue tracker]: https://github.com/sergiomarco25/troutpy/issues
-[tests]: https://github.com/sergiomarco25/troutpy/actions/workflows/test.yml
+[issue tracker]: https://github.com/theislab/troutpy/issues
+[tests]: https://github.com/theislab/troutpy/actions/workflows/test.yml
 [documentation]: https://troutpy.readthedocs.io
 [changelog]: https://troutpy.readthedocs.io/en/latest/changelog.html
 [api documentation]: https://troutpy.readthedocs.io/en/latest/api.html
 [pypi]: https://pypi.org/project/troutpy
+[images/logo_fish.png]: images/logo_fish.png
