@@ -185,16 +185,16 @@ def quantify_overexpression(
         The updated sdata object with scores per gene DataFrame, and the calculated threshold.
     """
     # Compute the data from the Dask DataFrame
-    data = sdata.points[layer][["extracellular", codeword_column, gene_id_column]].compute()
-    data = data[data["extracellular"]]
+    data = sdata.points[layer][np.unique(["extracellular", codeword_column, gene_id_column])].compute()
+    # data = data[data["extracellular"]]
 
     # Ensure control_codewords is a list
     if isinstance(control_codewords, str):
         control_codewords = [control_codewords]
     assert isinstance(control_codewords, list), f"control_codewords should be a list but has type: {type(control_codewords)}"
-
+    print(data.shape)
     # Get counts per control feature
-    counts_per_nongene = data.loc[(data.loc[:, codeword_column].isin(control_codewords)), gene_id_column].value_counts().to_frame().reset_index()
+    counts_per_nongene = data.loc[list(data.loc[:, codeword_column].isin(control_codewords)), gene_id_column].value_counts().to_frame().reset_index()
     threshold = np.percentile(counts_per_nongene.loc[:, "count"].values, percentile_threshold)
 
     # create dict
@@ -247,7 +247,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_id_column: str = "feature_
     norm_counts["extracellular_foldratio"] = norm_counts[False] / norm_counts[True]
 
     extracellular_proportion = feature_inout.div(feature_inout.sum(axis=1), axis=0)
-    extracellular_proportion.columns = extracellular_proportion.columns.map({True: "intracellular_proportion", False: "extracellular_proportion"})
+    extracellular_proportion.columns = extracellular_proportion.columns.map({True: "extracellular_proportion", False: "intracellular_proportion"})
     extracellular_proportion["logfoldratio_extracellular"] = np.log(norm_counts["extracellular_foldratio"])
 
     # Ensure the 'xrna_metadata' attribute exists
