@@ -5,6 +5,8 @@ import scanpy as sc
 import spatialdata as sd
 import squidpy as sq
 from sainsc import LazyKDE
+from scipy.spatial import cKDTree
+from scipy.stats import spearmanr
 from spatialdata import SpatialData
 from tqdm import tqdm
 
@@ -341,5 +343,99 @@ def spatial_colocalization(
         if column in sdata["xrna_metadata"].var.columns:
             sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.drop([column], axis=1)
     sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(coloc)
+
+    return sdata if copy else None
+
+
+def in_out_correlation(
+    sdata, extracellular_key: str = "segmentation_free_table", cellular_key: str = "table", n_neighbors: int = 5, copy: bool | None = None
+):
+    """Computes the correlation between intracellular and extracellular gene expressionusing k-nearest extracellular bins.
+
+    Parameters
+    ----------
+    sdata : SpatialData
+        A SpatialData object containing both extracellular and cellular AnnData objects.
+
+    extracellular_key : str, optional (default="segmentation_free_table")
+        Key for the extracellular AnnData object in sdata.
+
+    cellular_key : str, optional (default="table")
+        Key for the cellular AnnData object in sdata.
+
+    n_neighbors : int, optional (default=5)
+        Number of nearest extracellular bins to consider for aggregation.
+
+    Returns
+    -------
+    correlation_results : pd.DataFrame
+        A DataFrame containing correlation values for each gene, with gene names as the indexand columns ['SpearmanR', 'PValue'].
+    """
+    try:
+        adata_extracellular = sdata[extracellular_key]
+    except:
+        KeyError(
+            "Extracellular layer not found. Please make ensure ´extracellular_key´ and that extracellular grouping has been performed. Otherwise, please run trouty.tl.aggregate_extracellular_transcripts"
+        )
+    adata_cellular = sdata[cellular_key]
+
+    # Extract spatial coordinates
+    coords_cellular = adata_cellular.obsm["spatial"]
+    coords_extracellular = adata_extracellular.obsm["spatial"]
+
+    # Match genes present in both datasets and reindex
+    shared_genes = adata_cellular.var_names.intersection(adata_extracellular.var_names)
+    adata_cellular = adata_cellular[:, shared_genes]
+    adata_extracellular = adata_extracellular[:, shared_genes]
+
+    # Build KDTree for fast nearest-neighbor lookup
+    extracellular_tree = cKDTree(coords_extracellular)
+
+    # Find k-nearest extracellular bins for each cell
+    _, nearest_indices = extracellular_tree.query(coords_cellular, k=k)
+
+    # Extract gene expression matrices
+    expr_cellular = adata_cellular.X  # (cells × genes)
+    expr_extracellular = adata_extracellular.X  # (bins × genes)
+
+    # Ensure we're working with dense matrices (if sparse)
+    if not isinstance(expr_cellular, np.ndarray):
+        expr_cellular = expr_cellular.toarray()
+    if not isinstance(expr_extracellular, np.ndarray):
+        expr_extracellular = expr_extracellular.toarray()
+
+    # Aggregate extracellular expression for each cell (mean of k-nearest bins)
+    aggregated_extracellular = np.array(
+        [expr_extracellular[nearest_indices[i]].mean(axis=0) for i in range(expr_cellular.shape[0])]
+    )  # Shape: (cells × genes)
+
+    # Compute correlation for each gene
+    correlations = []
+
+    for i, gene in enumerate(shared_genes):
+        # Get expression values for this gene
+        cell_expr = expr_cellular[:, i]
+        ext_expr = aggregated_extracellular[:, i]
+
+        # Compute Spearman correlation (skip if all-zero)
+        if np.any(cell_expr) and np.any(ext_expr):
+            corr, pval = spearmanr(cell_expr, ext_expr)
+        else:
+            corr, pval = np.nan, np.nan
+
+        correlations.append([gene, corr, pval])
+
+    # Convert results into a DataFrame
+    correlation_results = pd.DataFrame(correlations, columns=["Gene", "SpearmanR", "PValue"])
+    correlation_results.set_index("Gene", inplace=True)
+
+    gene2spearman = dict(zip(correlation_results.index, correlation_results["SpearmanR"], strict=False))
+    gene2pval = dict(zip(correlation_results.index, correlation_results["PValue"], strict=False))  # type: ignore
+    try:
+        sdata["xrna_metadata"]
+    except KeyError:
+        create_xrna_metadata(sdata, points_layer="transcripts")
+    sdata["xrna_metadata"].var["in_out_spearmanR"] = sdata["xrna_metadata"].var.index.map(gene2spearman)
+    sdata["xrna_metadata"].var["in_out_pvalue"] = sdata["xrna_metadata"].var.index.map(gene2pval)
 
     return sdata if copy else None

@@ -696,16 +696,23 @@ def paired_nmf_factors(
     adata_annotated = sdata["table"]
 
     # Get the factors from the obsm attribute (NMF results)
-    factors = pd.DataFrame(adata.obsm["W_nmf"], index=adata.obs.index)
-    factors.columns = [f"NMF_factor_{fact + 1}" for fact in factors.columns]
+    factors = pd.DataFrame(adata.obsm["cell_loadings"], index=adata.obs.index)
+    factors.columns = [f"Factor_{fact + 1}" for fact in factors.columns]
 
     # Add each NMF factor to adata.obs
     for f in factors.columns:
         adata.obs[f] = factors[f]
 
+    # Add to each annotated one
+    factors = pd.DataFrame(adata_annotated.obsm["factors_cell_loadings"], index=adata_annotated.obs.index)
+    factors.columns = [f"Factor_{fact + 1}" for fact in factors.columns]
+    # Add each NMF factor to adata.obs
+    for f in factors.columns:
+        adata_annotated.obs[f] = factors[f]
+
     # Loop over the specified number of NMF factors and plot
     for factor in range(n_factors):
-        factor_name = f"NMF_factor_{factor + 1}"
+        factor_name = f"Factor_{factor + 1}"
 
         # Create a figure with a single subplot for each factor
         fig, axs = plt.subplots(1, 1, figsize=figsize)
@@ -715,7 +722,7 @@ def paired_nmf_factors(
             adata,
             color=factor_name,
             cmap=cmap_exrna,
-            title=f"NMF Factor {factor + 1} (Extracellular)",
+            title=f"Factor {factor + 1} (Extracellular)",
             ax=axs,
             show=False,
             spot_size=spot_size_exrna,
@@ -727,7 +734,7 @@ def paired_nmf_factors(
             adata_annotated,
             color=factor_name,
             cmap=cmap_cells,
-            title=f"NMF Factor cell-red/exRNa-blue {factor + 1}",
+            title=f"Factor cell-red/exRNa-blue {factor + 1}",
             ax=axs,
             show=False,
             spot_size=spot_size_cells,
