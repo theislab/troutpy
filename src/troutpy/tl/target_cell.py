@@ -7,6 +7,7 @@ from spatialdata import SpatialData
 from tqdm import tqdm
 
 
+# deprecated
 def calculate_target_cells(
     sdata: SpatialData,
     layer: str = "transcripts",
@@ -96,6 +97,7 @@ def calculate_target_cells(
     return sdata.copy() if copy else None
 
 
+# deprecated
 def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_celltype_key="closest_target_cell_type", feature_key="feature_name"):
     """
     It calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,and then normalizes the result to provide the proportion of each feature associated with each cell type.
@@ -124,11 +126,8 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
 def compute_target_score(
     sdata: SpatialData,
     layer: str = "transcripts",
-    gene_id_column: str = "feature_name",
-    xcoord="x",
-    ycoord="y",
-    xcellcoord="x_centroid",
-    ycellcoord="y_centroid",
+    gene_key: str = "feature_name",
+    coords_key: list = None,  # type: ignore
     lambda_decay=0.1,
     copy=False,
     celltype_key="cell type",
@@ -142,9 +141,9 @@ def compute_target_score(
         The input spatial data object.
     - layer (str, optional)
         The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
-    - gene_id_column (str, optional)
+    - gene_key (str, optional)
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
-    - xcoord, ycoord, xcellcoord, ycellcoord (str, optional)
+    - coords_key
         Column names for spatial coordinates of transcripts and cell centroids.
     - lambda_decay (float, optional)
         The exponential decay factor for distances.
@@ -158,6 +157,12 @@ def compute_target_score(
     - sdata (SpatialData)
         Updated SpatialData object with target cell scores added.
     """
+    # define xcoord and ycoord
+    if coords_key is None:
+        coords_key = ["x", "y"]
+    xcoord = coords_key[0]
+    ycoord = coords_key[1]
+
     # Extract transcript and cellular data
     transcripts = sdata.points[layer].compute()
     cells = sdata["table"].to_df()
@@ -172,7 +177,7 @@ def compute_target_score(
             raise ValueError(f"Required column '{col}' is missing.")
 
     # Filter for extracellular transcripts only
-    extracellular_transcripts = transcripts[transcripts["extracellular"] == False]
+    extracellular_transcripts = transcripts[transcripts["extracellular"]]
     target_scores_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
 
     # Precompute KDTree for all cell coordinates
@@ -196,7 +201,7 @@ def compute_target_score(
 
     # probabilities_table['feature_name']=extracellular_transcripts['feature_name']
     prob_table = sc.AnnData(target_scores_table)
-    prob_table.obs["feature_name"] = list(extracellular_transcripts["feature_name"].astype(str))
+    prob_table.obs[gene_key] = list(extracellular_transcripts[gene_key].astype(str))
     prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
     sdata.tables["target_score"] = prob_table
 

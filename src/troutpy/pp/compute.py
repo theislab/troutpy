@@ -37,7 +37,7 @@ def define_extracellular(
     layer: str = "transcripts",
     method: str = "segmentation_free",
     min_prop_of_extracellular: float = 0.8,
-    unassigned_to_cell_tag: str = "UNASSIGNED",
+    unassigned_tag: str = "UNASSIGNED",
     copy: bool = False,
 ):
     """
@@ -56,7 +56,7 @@ def define_extracellular(
             - 'cells': Classifies transcripts not assigned to a cell as extracellular.
     min_prop_of_extracellular (float, optional)
         Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
-    unassigned_to_cell_tag (str, optional)
+    unassigned_tag (str, optional)
         Tag indicating transcripts not assigned to any cell.
     copy (bool)
         If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
@@ -77,7 +77,7 @@ def define_extracellular(
 
     # Method: Segmentation-free clustering
     if method == "segmentation_free":
-        data["overlaps_cell"] = (data["cell_id"] != unassigned_to_cell_tag).astype(int)
+        data["overlaps_cell"] = (data["cell_id"] != unassigned_tag).astype(int)
         overlapping_cell = pd.crosstab(data["segmentation_free_clusters"], data["overlaps_cell"])
 
         # Compute proportions and define extracellular clusters
@@ -92,7 +92,7 @@ def define_extracellular(
 
     # Method: Based on cell assignment
     elif method == "cells":
-        data["extracellular"] = data["cell_id"] == unassigned_to_cell_tag
+        data["extracellular"] = data["cell_id"] == unassigned_tag
 
     # Unsupported method
     else:
@@ -102,24 +102,3 @@ def define_extracellular(
     sdata.points[layer] = sd.models.PointsModel.parse(data)
 
     return sdata if copy else None
-
-
-def compute_crosstab(data, xvar: str = "", yvar: str = ""):
-    """
-    Compute a crosstabulation (contingency table) of two categorical variables from the given DataFrame.
-
-    Parameters
-    ----------
-    data (pandas.DataFrame)
-        The input DataFrame containing the data to be analyzed.
-    xvar (str, optional)
-        The name of the column to use as the rows of the crosstab. Default is an empty string.
-    yvar (str, optional)
-        The name of the column to use as the columns of the crosstab. Default is an empty string.
-
-    Returns
-    -------
-    crosstab_data (pandas.DataFrame): A DataFrame representing the crosstab of the specified variables, with counts of occurrences for each combination of categories.
-    """
-    crosstab_data = pd.crosstab(data[xvar], data[yvar])
-    return crosstab_data

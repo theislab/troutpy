@@ -7,7 +7,7 @@ from spatialdata import SpatialData
 def latent_factor(
     sdata: SpatialData,
     method="NMF",
-    layer_key: str = "segmentation_free_table",
+    layer: str = "segmentation_free_table",
     n_components: int = 20,
     copy: bool | None = None,
     random_state=None,
@@ -34,7 +34,7 @@ def latent_factor(
     Returns
     -------
     sdata
-        The input spatialdata object with the NMF results added:`spatialdata[layer_key].obsm['W_nmf']` contains the cell factors (factor scores for each cell) and `spatialdata[layer_key].uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
+        The input spatialdata object with the NMF results added:`spatialdata[layer].obsm['W_nmf']` contains the cell factors (factor scores for each cell) and `spatialdata[layer].uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
 
     Notes
     -----
@@ -42,7 +42,7 @@ def latent_factor(
     - The function assumes that the expression matrix (`adata.X`) contains raw gene expression counts.
     """
     # Extract the cell count matrix (X) from AnnData object
-    adata = sdata[layer_key]
+    adata = sdata[layer]
     counts = adata.X.copy()
 
     # Perform NMF with the specified number of components
@@ -61,13 +61,13 @@ def latent_factor(
     adata.varm["gene_loadings"] = gene_loadings.transpose()
 
     # Optionally save the factor loadings and scores to disk
-    sdata[layer_key] = adata
+    sdata[layer] = adata
 
     return sdata if copy else None
 
 
 def apply_exrna_factors_to_cells(
-    sdata: SpatialData, extracellular_key: str = "segmentation_free_table", cellular_key: str = "table", copy: bool | None = None
+    sdata: SpatialData, extracellular_layer: str = "segmentation_free_table", cellular_layer: str = "table", copy: bool | None = None
 ) -> SpatialData:
     """
     Extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
@@ -91,8 +91,8 @@ def apply_exrna_factors_to_cells(
     The function assumes that the extracellular RNA data is stored in `sdata[layer_factors]` and that the NMF factor loadings are stored in the `uns` attribute of the extracellular dataset as 'H_nmf'. The factor scores are added to the `obs` attribute of the cellular data.
     """
     # Extract extracellular data and cellular annotations
-    adata_extracellular_with_factors = sdata[extracellular_key]
-    adata_annotated_cellular = sdata[cellular_key]
+    adata_extracellular_with_factors = sdata[extracellular_layer]
+    adata_annotated_cellular = sdata[cellular_layer]
 
     # Retrieve NMF factor loadings (H matrix) from extracellular data
     H = adata_extracellular_with_factors.varm["gene_loadings"].transpose()  # type: ignore
@@ -121,6 +121,6 @@ def apply_exrna_factors_to_cells(
     #    adata_annotated_cellular.obs[f"Factor_{factor + 1}"] = W_annotated[:, factor]
 
     # Update the 'table' in the sdata object with the annotated cellular data
-    sdata[cellular_key] = adata_annotated_cellular
+    sdata[cellular_layer] = adata_annotated_cellular
 
     return sdata if copy else None

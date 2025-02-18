@@ -11,9 +11,7 @@ from tqdm import tqdm
 warnings.filterwarnings("ignore")
 
 
-def create_xrna_metadata(
-    sdata: SpatialData, points_layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False
-) -> SpatialData | None:
+def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False) -> SpatialData | None:
     """
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
@@ -21,10 +19,10 @@ def create_xrna_metadata(
     ----------
     - sdata (SpatialData)
         The SpatialData object to modify.
-    - points_layer (str, optional)
+    - layer (str, optional)
         The name of the layer in `sdata.points` from which to extract gene names.Default is 'transcripts'.
     - gene_key (str, optional)
-        The key in the `points_layer` dataframe that contains the gene names.Default is 'feature_name'.
+        The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
     - copy (bool)
         If `True`, returns a copy of the `SpatialData` object with the new table added.
 
@@ -35,13 +33,13 @@ def create_xrna_metadata(
 
     """
     # Check if the specified points layer exists
-    if points_layer not in sdata.points:
-        raise ValueError(f"Points layer '{points_layer}' not found in sdata.points.")
+    if layer not in sdata.points:
+        raise ValueError(f"Points layer '{layer}' not found in sdata.points.")
 
     # Extract unique gene names from the specified points layer
-    points_data = sdata.points[points_layer]
+    points_data = sdata.points[layer]
     if gene_key not in points_data.columns:
-        raise ValueError(f"The specified points layer '{points_layer}' does not contain a '{gene_key}' column.")
+        raise ValueError(f"The specified points layer '{layer}' does not contain a '{gene_key}' column.")
 
     unique_genes = points_data[gene_key].compute().unique().astype(str)
 
@@ -61,7 +59,8 @@ def create_xrna_metadata(
     return sdata if copy else None
 
 
-def compute_source_cells(sdata: SpatialData, expression_threshold=1, gene_id_column="feature_name", layer="transcripts", copy=False):
+# deprecated
+def compute_source_cells(sdata: SpatialData, expression_threshold=1, gene_key="feature_name", layer="transcripts", copy=False):
     """
     Compute the source of extracellular RNA by linking detected extracellular transcripts to specific cell types in the spatial data.
 
@@ -71,7 +70,7 @@ def compute_source_cells(sdata: SpatialData, expression_threshold=1, gene_id_col
         The input spatial data object containing spatial transcriptomics data.
     - expression_threshold (float, optional, default=1)
         Threshold for filtering transcripts based on expression levels.
-    - gene_id_column (str, optional, default='feature_name')
+    - gene_key (str, optional, default='feature_name')
         Column name for gene identifiers in the transcripts data.
     - layer (str, optional, default='transcripts')
         Layer in `sdata.points` containing the transcript information.
@@ -96,7 +95,7 @@ def compute_source_cells(sdata: SpatialData, expression_threshold=1, gene_id_col
 
     # Ensure the necessary `xrna_metadata` is present in `sdata`
     if "xrna_metadata" not in sdata:
-        create_xrna_metadata(sdata, points_layer="transcripts")
+        create_xrna_metadata(sdata, layer=layer)
 
     # Create an output DataFrame and store computed proportions
     outtable = pd.DataFrame(index=sdata["xrna_metadata"].var.index)
@@ -106,6 +105,7 @@ def compute_source_cells(sdata: SpatialData, expression_threshold=1, gene_id_col
     return sdata.copy() if copy else None
 
 
+# deprecated
 def distance_to_source_cell(
     sdata: SpatialData,
     layer="transcripts",
@@ -113,7 +113,7 @@ def distance_to_source_cell(
     ycoord="y",
     xcellcoord="x_centroid",
     ycellcoord="y_centroid",
-    gene_id_column="feature_name",
+    gene_key="feature_name",
     copy=False,
 ):
     """
@@ -133,7 +133,7 @@ def distance_to_source_cell(
         The column name in the cellular data for the x-coordinate of cell centroids. Default is 'x_centroid'.
     - ycellcoord (str, optional)
         The column name in the cellular data for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    - gene_id_column (str, optional)
+    - gene_key (str, optional)
         The column name for the gene identifier. Default is 'feature_name'.
     - copy (bool, optional)
         Whether to return a copy of the `sdata` object with updated distances, or modify in place. Default is False.
@@ -164,7 +164,7 @@ def distance_to_source_cell(
     for gene_of_interest in tqdm(adata_bin.var_names):
         gene_idx = np.where(adata_bin.var_names == gene_of_interest)[0][0]
         adata_filtered = adata_bin[adata_bin.X[:, gene_idx] > 0]
-        extracellular_transcripts_filtered = extracellular_transcripts[extracellular_transcripts[gene_id_column] == gene_of_interest].copy()
+        extracellular_transcripts_filtered = extracellular_transcripts[extracellular_transcripts[gene_key] == gene_of_interest].copy()
 
         # Only proceed if there are positive cells for the gene of interest
         if (adata_filtered.n_obs > 0) & (extracellular_transcripts_filtered.shape[0] > 0):
@@ -192,14 +192,15 @@ def distance_to_source_cell(
     sdata.points[layer] = sd.models.PointsModel.parse(transcripts)
 
     # Add median distance_to_source_cell
-    dist_to_source = transcripts.loc[:, [gene_id_column, "distance_to_source_cell"]].groupby(gene_id_column).median()
+    dist_to_source = transcripts.loc[:, [gene_key, "distance_to_source_cell"]].groupby(gene_key).median()
     dist_to_source.columns = ["median_distance_to_source_cell"]
     sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(dist_to_source)
 
     return sdata.copy() if copy else None
 
 
-def compute_distant_cells_proportion(sdata: SpatialData, gene_id_column: str = "feature_name", threshold: int = 30, copy: bool = False):
+# deprecated
+def compute_distant_cells_proportion(sdata: SpatialData, gene_key: str = "feature_name", threshold: int = 30, copy: bool = False):
     """
     Compute the proportion of transcripts for each gene that are located beyond a specified distance (in um) from their closest source cell, and add the result to the metadata of the SpatialData object.
 
@@ -207,7 +208,7 @@ def compute_distant_cells_proportion(sdata: SpatialData, gene_id_column: str = "
     ----------
     sdata
         A SpatialData object containing the spatial omics data.
-    gene_id_column
+    gene_key
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
     threshold
         The distance threshold (in micrometers) to calculate the proportion of transcripts farther away from their closest source cell. Default is 30.
@@ -217,7 +218,7 @@ def compute_distant_cells_proportion(sdata: SpatialData, gene_id_column: str = "
     None
     """
     data = sdata["source_score"].obs
-    total_distant = pd.crosstab(data[gene_id_column], data["distance"] > threshold)
+    total_distant = pd.crosstab(data[gene_key], data["distance"] > threshold)
     prop_distant = total_distant.div(total_distant.sum(axis=1), axis=0)
     gene2distantprop = dict(zip(prop_distant.index, prop_distant[True], strict=False))
 
@@ -226,7 +227,7 @@ def compute_distant_cells_proportion(sdata: SpatialData, gene_id_column: str = "
     try:
         sdata["xrna_metadata"]
     except KeyError:
-        create_xrna_metadata(sdata, points_layer="transcripts")
+        create_xrna_metadata(sdata, layer="transcripts")
     sdata["xrna_metadata"].var["distant_from_source_proportion"] = sdata["xrna_metadata"].var.index.map(gene2distantprop)
 
     return sdata.copy() if copy else None
@@ -258,9 +259,8 @@ def get_proportion_expressed_per_cell_type(adata: SpatialData, cell_type_key="ce
 def compute_source_score(
     sdata: SpatialData,
     layer: str = "transcripts",
-    gene_id_column: str = "feature_name",
-    xcoord: str = "x",
-    ycoord: str = "y",
+    gene_key: str = "feature_name",
+    coord_keys: list = None,  # type: ignore
     lambda_decay: float = 0.1,
     copy: bool = False,
     celltype_key: str = "cell type",
@@ -274,7 +274,7 @@ def compute_source_score(
         The input spatial data object.
     layer
         The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
-    gene_id_column
+    gene_key
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
     xcoord, ycoord
         Column names for spatial coordinates of transcripts and cell centroids.
@@ -290,6 +290,11 @@ def compute_source_score(
     sdata
         Updated SpatialData object with source scores added in sdata.tables['source_score'], including distance to closest cell
     """
+    if coord_keys is None:
+        coord_keys = ["x", "y"]
+    xcoord = coord_keys[0]
+    ycoord = coord_keys[1]
+
     transcripts = sdata.points[layer].compute()
     cells = sdata["table"].to_df()
     coord_cells = sdata["table"].obsm["spatial"]
@@ -297,13 +302,13 @@ def compute_source_score(
     all_cell_types = cell_types.unique()
 
     # Ensure necessary columns exist
-    required_cols = [xcoord, ycoord, gene_id_column]
+    required_cols = [xcoord, ycoord, gene_key]
     for col in required_cols:
         if col not in transcripts.columns and col not in cells.columns:
             raise ValueError(f"Required column '{col}' is missing.")
 
     # Filter for extracellular transcripts only
-    extracellular_transcripts = transcripts[transcripts["extracellular"] == False]
+    extracellular_transcripts = transcripts[transcripts["extracellular"]]
     probabilities_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
 
     # Precompute KDTree for all cell coordinates
@@ -312,7 +317,7 @@ def compute_source_score(
     # Process each gene
     for gene in tqdm(cells.columns.unique(), desc="Processing genes"):
         # Filter transcripts and cells for the current gene
-        gene_transcripts = extracellular_transcripts[extracellular_transcripts[gene_id_column] == gene]
+        gene_transcripts = extracellular_transcripts[extracellular_transcripts[gene_key] == gene]
 
         gene_mask = cells[gene] > 0  # Mask for cells expressing the gene
         if not gene_mask.any() or gene_transcripts.empty:
@@ -354,7 +359,7 @@ def compute_source_score(
 
     # We format all probabilieies as an anndata, stored in sdata.tables['source_score']
     prob_table = sc.AnnData(probabilities_table)
-    prob_table.obs[gene_id_column] = list(extracellular_transcripts[gene_id_column])
+    prob_table.obs[gene_key] = list(extracellular_transcripts[gene_key])
     prob_table.obs["distance"] = list(closet_cell_table["distance"].astype(float))
     prob_table.obs["feature_name"] = list(closet_cell_table["feature_name"].astype(str))
     prob_table.obs["closest_cell"] = list(closet_cell_table["closest_cell"].astype(str))

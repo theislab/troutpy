@@ -124,7 +124,7 @@ def get_gene_interaction_strength(
     return pd.DataFrame(interactions, index=source_proportions.columns, columns=target_proportions.columns)
 
 
-def compute_communication_strength(sdata: SpatialData, source_key: str = "source_score", target_key: str = "target_score", copy: bool = False):
+def compute_communication_strength(sdata: SpatialData, source_layer: str = "source_score", target_layer: str = "target_score", copy: bool = False):
     """
     Compute a 3D interaction strength matrix from the source table in SpatialData.
 
@@ -132,7 +132,7 @@ def compute_communication_strength(sdata: SpatialData, source_key: str = "source
     ----------
         sdata
             SpatialData object with a 'tables' attribute.
-        source_key
+        source_layer
             Key to access the source table within sdata.tables.
 
     Returns
@@ -140,8 +140,8 @@ def compute_communication_strength(sdata: SpatialData, source_key: str = "source
         sdata
             SpatialData object with computed interactions
     """
-    source_table = sdata.tables[source_key]
-    target_table = sdata.tables[source_key]
+    source_table = sdata.tables[source_layer]
+    target_table = sdata.tables[target_layer]
     interaction_strength = np.empty((source_table.shape[0], source_table.shape[1], target_table.shape[1]))
 
     for i, id in enumerate(tqdm(source_table.obs.index)):

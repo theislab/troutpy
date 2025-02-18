@@ -28,7 +28,7 @@ def _make_squares(centroid_coordinates: np.ndarray, half_widths: list[float]) ->
     return ShapesModel.parse(cell_polygon_table)
 
 
-def create_grid_squares(sdata: SpatialData, layer_key: str = "transcripts", square_size: float = 50) -> tuple[ShapesModel, np.ndarray]:
+def create_grid_squares(sdata: SpatialData, layer: str = "transcripts", square_size: float = 50) -> tuple[ShapesModel, np.ndarray]:
     """
     Generate a grid of square polygons covering the transcript space.
 
@@ -36,7 +36,7 @@ def create_grid_squares(sdata: SpatialData, layer_key: str = "transcripts", squa
     ----------
     sdata:
         The spatial data object containing transcript coordinates.
-    layer_key:
+    layer:
         The key to access transcript coordinates in sdata.
     square_size:
         The size of each square grid cell.
@@ -45,7 +45,7 @@ def create_grid_squares(sdata: SpatialData, layer_key: str = "transcripts", squa
     -------
     tuple: A ShapesModel containing the grid squares and an array of centroid coordinates.
     """
-    transcripts = sdata.points[layer_key]
+    transcripts = sdata.points[layer]
     x_min, y_min = transcripts[["x", "y"]].compute().min().values
     x_max, y_max = transcripts[["x", "y"]].compute().max().values
 
@@ -60,12 +60,12 @@ def create_grid_squares(sdata: SpatialData, layer_key: str = "transcripts", squa
 
 def aggregate_extracellular_transcripts(
     sdata: SpatialData,
-    layer_key: str = "transcripts",
+    layer: str = "transcripts",
     gene_key: str = "feature_name",
     method: str = "bin",
     square_size: float = 50,
     copy: bool = False,
-    layer_added: str | None = None,
+    key_added: str | None = None,
 ):
     """
     Aggregate extracellular transcript counts into a grid of squares.
@@ -76,7 +76,7 @@ def aggregate_extracellular_transcripts(
         The spatial data object.
     gene_key
         Column name where the gene assigned to each transcript is stored
-    layer_key
+    layer
         The key to access transcript coordinates in sdata.
     square_size
         The size of each square grid bin.
@@ -84,28 +84,26 @@ def aggregate_extracellular_transcripts(
         Strategy employed to aggregate extracellular transcripts
     copy
         Wether to return the sdata as a new object
-    layer_added
+    key_added
         Name of the table where to store the grouped extracellular transcripts .Default is 'segmentation_free_table'
     """
     if method == "bin":
         # Generate grid squares
-        grid_squares, centroid_coordinates = create_grid_squares(sdata, layer_key, square_size)
+        grid_squares, centroid_coordinates = create_grid_squares(sdata, layer, square_size)
 
         # Store generated squares in SpatialData
         sdata.shapes["grid_squares"] = grid_squares
 
         # Filter for non-extracellular transcripts
-        sdata["extracellular_transcripts"] = sdata[layer_key][
-            sdata[layer_key]["extracellular"].compute()
-        ]  ## modify this. Currently is badly implemented
+        sdata["extracellular_transcripts"] = sdata[layer][sdata[layer]["extracellular"].compute()]  # type: ignore ## modify this. Currently is badly implemented
 
         # Aggregate transcript counts by grid squares
         sdata_shapes = sdata.aggregate(values="extracellular_transcripts", by="grid_squares", value_key=gene_key, agg_func="count")
 
         # Store aggregated table in sdata.table['extracellular_table']
-        if not layer_added:
-            layer_added = "segmentation_free_table"
-        sdata[layer_added] = sdata_shapes["table"]
-        sdata[layer_added].obsm["spatial"] = centroid_coordinates  # type: ignore
+        if not key_added:
+            key_added = "segmentation_free_table"
+        sdata[key_added] = sdata_shapes["table"]
+        sdata[key_added].obsm["spatial"] = centroid_coordinates  # type: ignore
 
     return sdata.copy() if copy else None

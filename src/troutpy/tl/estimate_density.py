@@ -5,6 +5,7 @@ import pandas as pd
 from spatialdata import SpatialData
 
 
+## deprecated
 def colocalization_proportion(
     sdata: SpatialData, outpath: str, threshold_colocalized: int = 1, filename: str = "proportion_of_grouped_exRNA.parquet", save: bool = True
 ):

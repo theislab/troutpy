@@ -5,6 +5,7 @@ import pandas as pd
 import scanpy as sc
 
 
+## this should be deprecated
 def format_adata(input_path: str, outpath_dummy: str, xlimits: list, ylimits: list):
     """
     Processes and formats AnnData and transcripts by loading data, merging cell information,applying spatial filters, and saving the processed data to a dummy output directory.
