@@ -321,7 +321,7 @@ def plot_crosstab(
         plt.show()
 
 
-def pie_of_positive(data, groupby: str = "", figures_path: str = "", save: bool = True):
+def pie_of_positive(data, groupby: str = "", figures_path: str = "", save: bool = True, custom_title = None, custom_plot_filename = None):
     """
     Generates a pie chart showing the proportion of positive and negative values for a specified categorical variable in the data.
 
@@ -345,10 +345,16 @@ def pie_of_positive(data, groupby: str = "", figures_path: str = "", save: bool 
     mylabels = [f"{groupby}=False", f"{groupby}=True"]
 
     plt.pie(y, labels=mylabels, colors=["#a0b7e0", "#c5e493"])
-    plt.title(f"Proportion of {groupby}")
+    if custom_title:
+        plt.title(custom_title)
+    else:
+        plt.title(f"Proportion of {groupby}")
 
     if save:
-        plot_filename = f"pie_positivity_{groupby}_.pdf"
+        if custom_plot_filename:
+            plot_filename = custom_plot_filename
+        else:
+            plot_filename = f"pie_positivity_{groupby}_.pdf"
         plt.savefig(os.path.join(figures_path, plot_filename))
 
 
@@ -985,3 +991,56 @@ def interactions_with_arrows(
     if save:
         plt.savefig(save)
     plt.show()
+
+
+def barplot_quantified_extracellular_by_group_key(sdata: SpatialData, group_key: str = "segmentation_free_clusters", group_key_filter_vals: list = None, save: bool = True, kind: str = 'bar') -> None:
+    """
+    Generates a bar plot visualizing the proportion of extracellular RNA within different groups.
+
+    Args:
+        sdata (SpatialData): The SpatialData object containing transcriptomics data.
+        group_key (str, optional): The column name used for grouping data. Defaults to "segmentation_free_clusters".
+        group_key_filter_vals (list, optional): A list of specific group values to include. If None, all groups are included.
+        save (bool, optional): Whether to save the generated plot. Defaults to True.
+        kind (str, optional): The type of bar plot ('bar' for vertical, 'barh' for horizontal). Defaults to 'bar'.
+
+    Raises:
+        ValueError: If `kind` is not 'bar' or 'barh'.
+
+    Returns:
+        None
+    """
+    if kind not in ['bar', 'barh']:
+        raise ValueError("kind must be either 'bar' or 'barh'")
+    plot_data = sdata.points["transcripts"][[group_key, "extracellular"]].compute()
+
+    if group_key_filter_vals:
+        plot_data = plot_data[plot_data[group_key].isin(group_key_filter_vals)].copy() 
+    
+    plot_crosstab(
+    plot_data,xvar=group_key,
+    yvar="extracellular", normalize=True,
+    axis=1, kind=kind,figsize=(20, 7),
+    stacked=True,cmap="coolwarm", sortby=True, save=save)
+
+
+def pieplot_quantified_extracellular_by_group_key(sdata: SpatialData, group_key: str = "segmentation_free_clusters", group_key_filter_vals: list = None, save: bool = True) -> None:
+    """
+    Generates a pie chart visualizing the proportion of extracellular RNA within different groups. An individual pie chart is generated for each group value.
+
+    Args:
+        sdata (SpatialData): The SpatialData object containing transcriptomics data.
+        group_key (str, optional): The column name used for grouping data. Defaults to "segmentation_free_clusters".
+        group_key_filter_vals (list, optional): A list of specific group values to include. If None, all groups are included.
+        save (bool, optional): Whether to save the generated plots. Defaults to True.
+
+    Returns:
+        None
+    """
+    plot_data = sdata.points["transcripts"][[group_key, "extracellular"]].compute()
+    if group_key_filter_vals:
+        plot_data = plot_data[plot_data[group_key].isin(group_key_filter_vals)].copy() 
+    unique_values = plot_data[group_key].unique()  
+    unique_dataframes = {val: plot_data[plot_data[group_key] == val].copy() for val in unique_values}  
+    for unique_value in unique_values:
+        pie_of_positive(unique_dataframes[unique_value], groupby = "extracellular", save=save, custom_title=f"Proportion of extracellular RNA in {group_key}: {unique_value}", custom_plot_filename=f"pie_positivity_{group_key}_{unique_value}.pdf")

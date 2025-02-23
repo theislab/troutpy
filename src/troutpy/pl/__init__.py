@@ -13,4 +13,6 @@ from .plotting import (
     proportion_above_threshold,
     sorted_heatmap,
     spatial_interactions,
+    barplot_quantified_extracellular_by_group_key,
+    pieplot_quantified_extracellular_by_group_key
 )
