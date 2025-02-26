@@ -10,7 +10,7 @@ import seaborn as sns
 from matplotlib.colors import Colormap
 from spatialdata import SpatialData
 
-from troutpy.pp.compute import compute_crosstab
+# from troutpy.pp.compute import compute_crosstab
 
 
 def sorted_heatmap(

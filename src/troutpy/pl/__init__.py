@@ -1,3 +1,5 @@
+from .colors import get_colormap, get_palette
+from .factor_analysis import factors_in_cells, rank_factor_genes_loadings, rank_factor_genes_loadings_matrixplot
 from .plotting import (
     apply_exrnaH_to_cellular_to_create_cellularW,
     coupled_scatter,
@@ -9,8 +11,7 @@ from .plotting import (
     nmf_gene_contributions,
     paired_nmf_factors,
     pie_of_positive,
-    plot_crosstab,
-    proportion_above_threshold,
     sorted_heatmap,
     spatial_interactions,
 )
+from .scatter import spatial_inout_expression

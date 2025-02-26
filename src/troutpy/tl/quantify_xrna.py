@@ -181,7 +181,7 @@ def quantify_overexpression(
         The updated sdata object with scores per gene DataFrame, and the calculated threshold.
     """
     # Compute the data from the Dask DataFrame
-    data = sdata.points[layer][np.unique(["extracellular", codeword_key, gene_key])].compute()
+    data = sdata.points[layer][np.unique(["extracellular", codeword_key, gene_key]).tolist()].compute()
     # data = data[data["extracellular"]]
 
     # Ensure control_codewords is a list
