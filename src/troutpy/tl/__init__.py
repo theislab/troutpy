@@ -2,6 +2,10 @@ from .estimate_density import colocalization_proportion
 from .factor_analysis import apply_exrna_factors_to_cells, latent_factor
 from .interactions import compute_communication_strength, gene_specific_interactions, get_gene_interaction_strength
 from .quantify_xrna import (
+    assess_diffussion,
+    cluster_distribution_from_source,
+    compare_intra_extra_distribution,
+    compute_js_divergence,
     create_xrna_metadata,
     extracellular_enrichment,
     in_out_correlation,

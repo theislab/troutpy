@@ -6,6 +6,7 @@ from .plotting import (
     genes_over_noise,
     heatmap,
     interactions_with_arrows,
+    intra_extra_density,
     moranI_histogram,
     nmf_factors_exrna_cells_W,
     nmf_gene_contributions,
@@ -14,4 +15,5 @@ from .plotting import (
     sorted_heatmap,
     spatial_interactions,
 )
-from .scatter import spatial_inout_expression
+from .scatter import diffusion_results, spatial_inout_expression
+from .source import distributions_by_cluster, gene_distribution_from_source, global_distribution_from_source

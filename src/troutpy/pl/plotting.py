@@ -2,6 +2,7 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
+import dask.dataframe as dd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -991,4 +992,56 @@ def interactions_with_arrows(
     # Save the plot if path provided
     if save:
         plt.savefig(save)
+    plt.show()
+
+
+def intra_extra_density(
+    sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=["x", "y"], intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
+):
+    """
+    Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular
+    transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and
+    extracellular KDEs in side-by-side subplots.
+
+    Parameters
+    ----------
+    - sdata: SpatialData object containing transcript locations and metadata.
+    - genes: list of str, gene names to plot.
+    - layer: str, layer within sdata.points where transcripts are stored (default: "transcripts").
+    - gene_key: str, column name where the gene name is stored (default: "feature_name").
+    - coord_keys: list of str, column names for spatial coordinates (default: ["x", "y"]).
+    - intra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for intracellular data.
+    - extra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for extracellular data.
+    """
+    if intra_kde_kwargs is None:
+        intra_kde_kwargs = {"fill": True, "cmap": "Blues", "thresh": 0.05}
+    if extra_kde_kwargs is None:
+        extra_kde_kwargs = {"fill": True, "cmap": "Reds", "thresh": 0.05}
+
+    # Convert Dask DataFrame to Pandas if necessary
+    transcripts_df = sdata[layer]
+    if isinstance(transcripts_df, dd.DataFrame):
+        transcripts_df = transcripts_df.compute()
+
+    if figsize == None:
+        figsize = (12, 5 * len(genes))
+    # Create subplots
+    fig, axes = plt.subplots(len(genes), 2, figsize=figsize)
+    if len(genes) == 1:
+        axes = [axes]  # Ensure axes is iterable when there's only one gene
+
+    for i, gene in enumerate(genes):
+        gene_df = transcripts_df[transcripts_df[gene_key] == gene]
+        intracellular = gene_df[~gene_df["extracellular"]]
+        extracellular = gene_df[gene_df["extracellular"]]
+
+        # Intracellular KDE
+        sns.kdeplot(data=intracellular, x=coord_keys[0], y=coord_keys[1], ax=axes[i][0], **intra_kde_kwargs)
+        axes[i][0].set_title(f"{gene} - Intracellular")
+
+        # Extracellular KDE
+        sns.kdeplot(data=extracellular, x=coord_keys[0], y=coord_keys[1], ax=axes[i][1], **extra_kde_kwargs)
+        axes[i][1].set_title(f"{gene} - Extracellular")
+
+    plt.tight_layout()
     plt.show()

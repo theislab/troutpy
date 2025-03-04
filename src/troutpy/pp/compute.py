@@ -102,3 +102,89 @@ def define_extracellular(
     sdata.points[layer] = sd.models.PointsModel.parse(data)
 
     return sdata if copy else None
+
+
+def filter_xrna(
+    sdata,
+    min_counts=None,
+    min_extracellular_proportion=None,
+    control_probe=None,
+    min_logfoldratio_over_noise=1,
+    min_morani=None,
+    gene_key="feature_name",
+    filter_cellular=False,
+    copy=False,
+):
+    """
+    Filters xRNA based on specified criteria and updates the sdata object.
+
+    Parameters
+    ----------
+        sdata: dict-like
+            Spatial data object containing xRNA metadata and transcript information.
+        min_counts: int, optional
+            Minimum count threshold for xRNA selection.
+        min_extracellular_proportion: float, optional
+            Minimum extracellular proportion threshold for xRNA selection.
+        control_probe: bool, optional
+            If False, filters out control probes.
+        min_logfoldratio_over_noise: float, default=1
+            Minimum log fold-change over noise threshold for xRNA selection.
+        min_morani: float, optional
+            Minimum Moran's I threshold for spatial autocorrelation.
+        gene_key: str, default='feature_name'
+            Key for accessing gene names in transcript tables.
+        filter_cellular: bool, default=False
+            If True, also filters the cellular table.
+        copy: bool, default=False
+            If True, returns a filtered copy of sdata; otherwise, modifies in place.
+
+    Returns
+    -------
+        dict-like or None
+            Filtered sdata if copy=True, else modifies sdata in place and returns None.
+    """
+    if copy:
+        sdata = sdata.copy()
+
+    # Select genes based on the first provided criterion
+    if min_counts is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["count"] > min_counts].index
+    elif min_extracellular_proportion is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["extracellular_proportion"] > min_extracellular_proportion].index
+    elif control_probe is False:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["control_probe"] == False].index
+    elif min_logfoldratio_over_noise is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["logfoldratio_over_noise"] > min_logfoldratio_over_noise].index
+    elif min_morani is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["moran_I"] > min_morani].index
+    else:
+        return sdata if copy else None
+
+    # Filter transcripts
+    sdata["transcripts"] = sdata["transcripts"][sdata["transcripts"][gene_key].compute().isin(selected_genes)]
+
+    # Filter other related tables safely
+    for key in ["segmentation_free_table", "xrna_metadata"]:
+        if key in sdata:
+            try:
+                sdata[key] = sdata[key][:, sdata[key].var.index.isin(selected_genes)]
+            except Exception:
+                pass
+
+    # Filter source_score and target_score by obs
+    for key in ["source_score", "target_score"]:
+        if key in sdata:
+            try:
+                sdata[key] = sdata[key][sdata[key].obs[gene_key].isin(selected_genes), :]
+            except Exception:
+                pass
+
+    # Filter cellular table if requested
+    if filter_cellular and "table" in sdata:
+        try:
+            sdata["table"] = sdata["table"][:, sdata["table"].var.index.isin(selected_genes)]
+        except Exception:
+            pass
+
+    return sdata if copy else None

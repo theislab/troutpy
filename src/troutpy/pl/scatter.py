@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import scanpy as sc
+import seaborn as sns
 
 import troutpy as tp
 
@@ -67,4 +68,33 @@ def spatial_inout_expression(
     ax.set_title(f"Expression of {gene}")
 
     plt.tight_layout()
+    plt.show()
+
+
+def diffusion_results(sdata, x_col="mean_displacement", y_col="-log_ks_pval", y_logscale=False):
+    """
+    Plots a scatter plot of genes with their estimated diffusion coefficient (D_estimated) on the x-axis
+    and a statistical metric (e.g., KS statistic) on the y-axis. Each point is labeled with the gene name.
+
+    Parameters
+    ----------
+        diffusion_results (pd.DataFrame): DataFrame containing diffusion results with gene names as index.
+        x_col (str): Column to use for x-axis (default: "D_estimated").
+        y_col (str): Column to use for y-axis (default: "ks_stat").
+    """
+    diffusion_results = sdata["xrna_metadata"].var
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(data=diffusion_results, x=x_col, y=y_col)
+
+    # Add gene names as labels
+    for gene, (x, y) in diffusion_results[[x_col, y_col]].dropna().iterrows():
+        plt.text(x, y, gene, fontsize=10, ha="right", va="bottom")
+
+    plt.xlabel(x_col.replace("_", " ").capitalize())
+    plt.ylabel(y_col.replace("_", " ").capitalize())
+    if y_logscale:
+        plt.yscale("log")
+    plt.title("Diffusion Pattern Analysis of Extracellular RNA")
+    plt.grid(True, linestyle="--", alpha=0.5)
+    plt.axhline(y=3, color="r", linestyle="--", label="y=10")
     plt.show()
