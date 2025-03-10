@@ -310,7 +310,7 @@ def gene_distribution_from_source(
 
         try:
             distances = sdata["source_score"].obs.query(f"{feature_key} == @gene")[distance_key].dropna().values
-
+            param_g = stats.rayleigh.fit(distances, floc=0)
             if len(distances) == 0:
                 print(f"Warning: No valid distances found for gene {gene}, skipping.")
                 continue
@@ -318,8 +318,12 @@ def gene_distribution_from_source(
             x = np.linspace(0, max(global_distances), 100)
             y = stats.rayleigh.pdf(x, *param)
 
+            x_g = np.linspace(0, max(distances), 100)
+            y_g = stats.rayleigh.pdf(x_g, *param_g)
+
             sns.histplot(distances, bins=bins, stat="density", kde=False, color=bar_color, label="Empirical", ax=ax)
-            ax.plot(x, y, "r-", label="Fitted Rayleigh")
+            ax.plot(x, y, "r-", label="Global Fitted Rayleigh")
+            ax.plot(x_g, y_g, "b-", label="Gene Fitted Rayleigh")
 
             gene_stats = diffusion_results.loc[diffusion_results.index == gene].iloc[0]
             ax.set_title(f"{gene}\nKS p-value: {gene_stats['ks_pval']:.3f}, LR Stat: {gene_stats['lr_stat']:.2f}")

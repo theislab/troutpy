@@ -361,7 +361,7 @@ def compute_source_score(
     prob_table = sc.AnnData(probabilities_table)
     prob_table.obs[gene_key] = list(extracellular_transcripts[gene_key])
     prob_table.obs["distance"] = list(closet_cell_table["distance"].astype(float))
-    prob_table.obs["feature_name"] = list(closet_cell_table["feature_name"].astype(str))
+    #prob_table.obs["feature_name"] = list(closet_cell_table["feature_name"].astype(str))
     prob_table.obs["closest_cell"] = list(closet_cell_table["closest_cell"].astype(str))
     prob_table.obs["closest_celltype"] = list(closet_cell_table["closest_celltype"].astype(str))
 

@@ -322,37 +322,6 @@ def plot_crosstab(
         plt.show()
 
 
-def pie_of_positive(data, groupby: str = "", figures_path: str = "", save: bool = True):
-    """
-    Generates a pie chart showing the proportion of positive and negative values for a specified categorical variable in the data.
-
-    Parameters
-    ----------
-    data (pandas.DataFrame)
-        The input data containing the categorical variable to group by.
-    groupby (str, optional)
-        The column name in the data to group by (default is an empty string).
-    figures_path (str, optional)
-        The path where the pie chart will be saved if `save` is True (default is an empty string).
-    save (bool, optional)
-        Whether to save the figure as a PDF (default is True). If False, the chart is displayed without saving.
-
-    Returns
-    -------
-    The function generates and either saves or displays a pie chart, depending on the value of the `save` parameter.
-    """
-    plt.figure()
-    y = np.array([np.sum(~data[groupby]), np.sum(data[groupby])])
-    mylabels = [f"{groupby}=False", f"{groupby}=True"]
-
-    plt.pie(y, labels=mylabels, colors=["#a0b7e0", "#c5e493"])
-    plt.title(f"Proportion of {groupby}")
-
-    if save:
-        plot_filename = f"pie_positivity_{groupby}_.pdf"
-        plt.savefig(os.path.join(figures_path, plot_filename))
-
-
 def genes_over_noise(sdata, scores_by_genes, layer="extracellular_transcripts", output_path: str = "", save=True, format: str = "pdf"):
     """
     Function that plots log fold change per gene over noise using a boxplot.

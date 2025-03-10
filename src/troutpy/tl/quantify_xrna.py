@@ -173,17 +173,25 @@ def quantify_overexpression(
         control_codewords = [control_codewords]
 
     # Get counts per control feature
+    is_control = list(data[codeword_key].isin(control_codewords))
     control_data = data[data[codeword_key].isin(control_codewords)]
-    gene_data = data[~data[codeword_key].isin(control_codewords)]
+    # gene_data = data[~data[codeword_key].isin(control_codewords)]
 
     control_counts = control_data[gene_key].value_counts()
-    gene_counts = gene_data[gene_key].value_counts()
+    gene_counts = data[gene_key].value_counts()  # we include all because we will test for all
+    n2c = dict(zip(data[gene_key], is_control, strict=False))
+    bool_control = []
+    for g in gene_counts.keys():
+        try:
+            bool_control.append(n2c[g])
+        except:
+            bool_control.append(True)
 
     # Compute percentile-based threshold
     threshold = np.percentile(control_counts.values, percentile_threshold)
 
     # Calculate log fold ratio
-    scores_per_gene = pd.DataFrame({"count": gene_counts, "logfoldratio_over_noise": np.log(gene_counts / threshold)})
+    scores_per_gene = pd.DataFrame({"count": gene_counts, "logfoldratio_over_noise": np.log(gene_counts / threshold), "control_probe": bool_control})
 
     # Perform Poisson test
     p_values = {}
