@@ -2,6 +2,7 @@ import os
 from collections.abc import Sequence
 from pathlib import Path
 
+import dask.dataframe as dd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ import seaborn as sns
 from matplotlib.colors import Colormap
 from spatialdata import SpatialData
 
-from troutpy.pp.compute import compute_crosstab
+# from troutpy.pp.compute import compute_crosstab
 
 
 def sorted_heatmap(
@@ -319,37 +320,6 @@ def plot_crosstab(
         if save:
             plt.savefig(os.path.join(figures_path, plot_filename))
         plt.show()
-
-
-def pie_of_positive(data, groupby: str = "", figures_path: str = "", save: bool = True):
-    """
-    Generates a pie chart showing the proportion of positive and negative values for a specified categorical variable in the data.
-
-    Parameters
-    ----------
-    data (pandas.DataFrame)
-        The input data containing the categorical variable to group by.
-    groupby (str, optional)
-        The column name in the data to group by (default is an empty string).
-    figures_path (str, optional)
-        The path where the pie chart will be saved if `save` is True (default is an empty string).
-    save (bool, optional)
-        Whether to save the figure as a PDF (default is True). If False, the chart is displayed without saving.
-
-    Returns
-    -------
-    The function generates and either saves or displays a pie chart, depending on the value of the `save` parameter.
-    """
-    plt.figure()
-    y = np.array([np.sum(~data[groupby]), np.sum(data[groupby])])
-    mylabels = [f"{groupby}=False", f"{groupby}=True"]
-
-    plt.pie(y, labels=mylabels, colors=["#a0b7e0", "#c5e493"])
-    plt.title(f"Proportion of {groupby}")
-
-    if save:
-        plot_filename = f"pie_positivity_{groupby}_.pdf"
-        plt.savefig(os.path.join(figures_path, plot_filename))
 
 
 def genes_over_noise(sdata, scores_by_genes, layer="extracellular_transcripts", output_path: str = "", save=True, format: str = "pdf"):
@@ -696,16 +666,23 @@ def paired_nmf_factors(
     adata_annotated = sdata["table"]
 
     # Get the factors from the obsm attribute (NMF results)
-    factors = pd.DataFrame(adata.obsm["W_nmf"], index=adata.obs.index)
-    factors.columns = [f"NMF_factor_{fact + 1}" for fact in factors.columns]
+    factors = pd.DataFrame(adata.obsm["cell_loadings"], index=adata.obs.index)
+    factors.columns = [f"Factor_{fact + 1}" for fact in factors.columns]
 
     # Add each NMF factor to adata.obs
     for f in factors.columns:
         adata.obs[f] = factors[f]
 
+    # Add to each annotated one
+    factors = pd.DataFrame(adata_annotated.obsm["factors_cell_loadings"], index=adata_annotated.obs.index)
+    factors.columns = [f"Factor_{fact + 1}" for fact in factors.columns]
+    # Add each NMF factor to adata.obs
+    for f in factors.columns:
+        adata_annotated.obs[f] = factors[f]
+
     # Loop over the specified number of NMF factors and plot
     for factor in range(n_factors):
-        factor_name = f"NMF_factor_{factor + 1}"
+        factor_name = f"Factor_{factor + 1}"
 
         # Create a figure with a single subplot for each factor
         fig, axs = plt.subplots(1, 1, figsize=figsize)
@@ -715,7 +692,7 @@ def paired_nmf_factors(
             adata,
             color=factor_name,
             cmap=cmap_exrna,
-            title=f"NMF Factor {factor + 1} (Extracellular)",
+            title=f"Factor {factor + 1} (Extracellular)",
             ax=axs,
             show=False,
             spot_size=spot_size_exrna,
@@ -727,7 +704,7 @@ def paired_nmf_factors(
             adata_annotated,
             color=factor_name,
             cmap=cmap_cells,
-            title=f"NMF Factor cell-red/exRNa-blue {factor + 1}",
+            title=f"Factor cell-red/exRNa-blue {factor + 1}",
             ax=axs,
             show=False,
             spot_size=spot_size_cells,
@@ -984,4 +961,56 @@ def interactions_with_arrows(
     # Save the plot if path provided
     if save:
         plt.savefig(save)
+    plt.show()
+
+
+def intra_extra_density(
+    sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=["x", "y"], intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
+):
+    """
+    Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular
+    transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and
+    extracellular KDEs in side-by-side subplots.
+
+    Parameters
+    ----------
+    - sdata: SpatialData object containing transcript locations and metadata.
+    - genes: list of str, gene names to plot.
+    - layer: str, layer within sdata.points where transcripts are stored (default: "transcripts").
+    - gene_key: str, column name where the gene name is stored (default: "feature_name").
+    - coord_keys: list of str, column names for spatial coordinates (default: ["x", "y"]).
+    - intra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for intracellular data.
+    - extra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for extracellular data.
+    """
+    if intra_kde_kwargs is None:
+        intra_kde_kwargs = {"fill": True, "cmap": "Blues", "thresh": 0.05}
+    if extra_kde_kwargs is None:
+        extra_kde_kwargs = {"fill": True, "cmap": "Reds", "thresh": 0.05}
+
+    # Convert Dask DataFrame to Pandas if necessary
+    transcripts_df = sdata[layer]
+    if isinstance(transcripts_df, dd.DataFrame):
+        transcripts_df = transcripts_df.compute()
+
+    if figsize == None:
+        figsize = (12, 5 * len(genes))
+    # Create subplots
+    fig, axes = plt.subplots(len(genes), 2, figsize=figsize)
+    if len(genes) == 1:
+        axes = [axes]  # Ensure axes is iterable when there's only one gene
+
+    for i, gene in enumerate(genes):
+        gene_df = transcripts_df[transcripts_df[gene_key] == gene]
+        intracellular = gene_df[~gene_df["extracellular"]]
+        extracellular = gene_df[gene_df["extracellular"]]
+
+        # Intracellular KDE
+        sns.kdeplot(data=intracellular, x=coord_keys[0], y=coord_keys[1], ax=axes[i][0], **intra_kde_kwargs)
+        axes[i][0].set_title(f"{gene} - Intracellular")
+
+        # Extracellular KDE
+        sns.kdeplot(data=extracellular, x=coord_keys[0], y=coord_keys[1], ax=axes[i][1], **extra_kde_kwargs)
+        axes[i][1].set_title(f"{gene} - Extracellular")
+
+    plt.tight_layout()
     plt.show()

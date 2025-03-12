@@ -37,7 +37,7 @@ def define_extracellular(
     layer: str = "transcripts",
     method: str = "segmentation_free",
     min_prop_of_extracellular: float = 0.8,
-    unassigned_to_cell_tag: str = "UNASSIGNED",
+    unassigned_tag: str = "UNASSIGNED",
     copy: bool = False,
 ):
     """
@@ -56,7 +56,7 @@ def define_extracellular(
             - 'cells': Classifies transcripts not assigned to a cell as extracellular.
     min_prop_of_extracellular (float, optional)
         Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such (used only with 'segmentation_free' method).
-    unassigned_to_cell_tag (str, optional)
+    unassigned_tag (str, optional)
         Tag indicating transcripts not assigned to any cell.
     copy (bool)
         If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
@@ -77,7 +77,7 @@ def define_extracellular(
 
     # Method: Segmentation-free clustering
     if method == "segmentation_free":
-        data["overlaps_cell"] = (data["cell_id"] != unassigned_to_cell_tag).astype(int)
+        data["overlaps_cell"] = (data["cell_id"] != unassigned_tag).astype(int)
         overlapping_cell = pd.crosstab(data["segmentation_free_clusters"], data["overlaps_cell"])
 
         # Compute proportions and define extracellular clusters
@@ -92,7 +92,7 @@ def define_extracellular(
 
     # Method: Based on cell assignment
     elif method == "cells":
-        data["extracellular"] = data["cell_id"] == unassigned_to_cell_tag
+        data["extracellular"] = data["cell_id"] == unassigned_tag
 
     # Unsupported method
     else:
@@ -104,22 +104,87 @@ def define_extracellular(
     return sdata if copy else None
 
 
-def compute_crosstab(data, xvar: str = "", yvar: str = ""):
+def filter_xrna(
+    sdata,
+    min_counts=None,
+    min_extracellular_proportion=None,
+    control_probe=None,
+    min_logfoldratio_over_noise=1,
+    min_morani=None,
+    gene_key="feature_name",
+    filter_cellular=False,
+    copy=False,
+):
     """
-    Compute a crosstabulation (contingency table) of two categorical variables from the given DataFrame.
+    Filters xRNA based on specified criteria and updates the sdata object.
 
     Parameters
     ----------
-    data (pandas.DataFrame)
-        The input DataFrame containing the data to be analyzed.
-    xvar (str, optional)
-        The name of the column to use as the rows of the crosstab. Default is an empty string.
-    yvar (str, optional)
-        The name of the column to use as the columns of the crosstab. Default is an empty string.
+        sdata: dict-like
+            Spatial data object containing xRNA metadata and transcript information.
+        min_counts: int, optional
+            Minimum count threshold for xRNA selection.
+        min_extracellular_proportion: float, optional
+            Minimum extracellular proportion threshold for xRNA selection.
+        control_probe: bool, optional
+            If False, filters out control probes.
+        min_logfoldratio_over_noise: float, default=1
+            Minimum log fold-change over noise threshold for xRNA selection.
+        min_morani: float, optional
+            Minimum Moran's I threshold for spatial autocorrelation.
+        gene_key: str, default='feature_name'
+            Key for accessing gene names in transcript tables.
+        filter_cellular: bool, default=False
+            If True, also filters the cellular table.
+        copy: bool, default=False
+            If True, returns a filtered copy of sdata; otherwise, modifies in place.
 
     Returns
     -------
-    crosstab_data (pandas.DataFrame): A DataFrame representing the crosstab of the specified variables, with counts of occurrences for each combination of categories.
+        dict-like or None
+            Filtered sdata if copy=True, else modifies sdata in place and returns None.
     """
-    crosstab_data = pd.crosstab(data[xvar], data[yvar])
-    return crosstab_data
+    if copy:
+        sdata = sdata.copy()
+
+    # Select genes based on the first provided criterion
+    if min_counts is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["count"] > min_counts].index
+    elif min_extracellular_proportion is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["extracellular_proportion"] > min_extracellular_proportion].index
+    elif control_probe is False:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["control_probe"] == False].index
+    elif min_logfoldratio_over_noise is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["logfoldratio_over_noise"] > min_logfoldratio_over_noise].index
+    elif min_morani is not None:
+        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["moran_I"] > min_morani].index
+    else:
+        return sdata if copy else None
+
+    # Filter transcripts
+    sdata["transcripts"] = sdata["transcripts"][sdata["transcripts"][gene_key].compute().isin(selected_genes)]
+
+    # Filter other related tables safely
+    for key in ["segmentation_free_table", "xrna_metadata"]:
+        if key in sdata:
+            try:
+                sdata[key] = sdata[key][:, sdata[key].var.index.isin(selected_genes)]
+            except Exception:
+                pass
+
+    # Filter source_score and target_score by obs
+    for key in ["source_score", "target_score"]:
+        if key in sdata:
+            try:
+                sdata[key] = sdata[key][sdata[key].obs[gene_key].isin(selected_genes), :]
+            except Exception:
+                pass
+
+    # Filter cellular table if requested
+    if filter_cellular and "table" in sdata:
+        try:
+            sdata["table"] = sdata["table"][:, sdata["table"].var.index.isin(selected_genes)]
+        except Exception:
+            pass
+
+    return sdata if copy else None

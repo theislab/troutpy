@@ -5,24 +5,27 @@ import pandas as pd
 from spatialdata import SpatialData
 
 
-def colocalization_proportion(sdata: SpatialData, outpath, threshold_colocalized=1, filename="proportion_of_grouped_exRNA.parquet", save=True):
+## deprecated
+def colocalization_proportion(
+    sdata: SpatialData, outpath: str, threshold_colocalized: int = 1, filename: str = "proportion_of_grouped_exRNA.parquet", save: bool = True
+):
     """
     Calculate the proportion of colocalized transcripts for each gene in the provided AnnData object.
 
     Parameters
     ----------
-    - sdata
+    sdata
         AnnData object with `.X` matrix containing the density of transcripts per gene.
-    - outpath
+    outpath
         The directory path where the output file should be saved.
-    - threshold_colocalized
+    threshold_colocalized
         The threshold for considering a transcript colocalized (default is 1).
-    - filename
+    filename
         The name of the output file (default is 'proportion_of_grouped_exRNA.parquet').
 
     Returns
     -------
-    - coloc
+    coloc
         DataFrame containing the proportion of colocalized transcripts for each gene.
     """
     # Load relevant data

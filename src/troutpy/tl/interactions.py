@@ -6,9 +6,8 @@ import pandas as pd
 from spatialdata import SpatialData
 from tqdm import tqdm
 
-# function to compute the number of exchanged genes between any two cell types
 
-
+####### LIKELY DEPRECATED#########
 def get_number_of_communication_genes(
     source_proportions: pd.DataFrame,  # gene by source cell type
     target_proportions: pd.DataFrame,  # gene by target cell type
@@ -55,6 +54,7 @@ def get_number_of_communication_genes(
     return number_interactions_df
 
 
+####### LIKELY DEPRECATED#########
 def get_gene_interaction_strength(
     source_proportions: pd.DataFrame,  # gene by source cell type
     target_proportions: pd.DataFrame,  # gene by target cell type
@@ -69,19 +69,19 @@ def get_gene_interaction_strength(
 
     Parameters
     ----------
-    - source_proportions (pd.DataFrame)
+    source_proportions
         A DataFrame where rows represent genes and columns represent source cell types. Each value indicates the proportion of the gene in the respective source cell type.
-    - target_proportions (pd.DataFrame)
+    target_proportions
         A DataFrame where rows represent genes and columns represent target cell types. Each value indicates the proportion of the gene in the respective target cell type.
-    - gene_symbol (str, optional)
+    gene_symbol
         The gene symbol for which the interaction strength is to be computed and visualized (default: '').
-    - return_interactions (bool, optional)
+    return_interactions
         If True, returns the interaction matrix as a NumPy array (default: False).
-    - save (bool, optional)
+    save
         If True, saves the chord diagram plot to the specified output path (default: False).
-    - output_path (str, optional)
+    output_path
         The directory path where the plot will be saved. If `save=True`, this path will be used to store the file (default: ''). A 'figures' subdirectory is created if it doesn't exist.
-    - format (str, optional)
+    format (str, optional)
         The file format for saving the plot (e.g., 'pdf', 'png'). This is used only if `save=True` (default: 'pdf').
 
     Returns
@@ -124,7 +124,7 @@ def get_gene_interaction_strength(
     return pd.DataFrame(interactions, index=source_proportions.columns, columns=target_proportions.columns)
 
 
-def compute_communication_strength(sdata: SpatialData, source_key: str = "source_score", target_key: str = "target_score", copy: bool = False):
+def compute_communication_strength(sdata: SpatialData, source_layer: str = "source_score", target_layer: str = "target_score", copy: bool = False):
     """
     Compute a 3D interaction strength matrix from the source table in SpatialData.
 
@@ -132,7 +132,7 @@ def compute_communication_strength(sdata: SpatialData, source_key: str = "source
     ----------
         sdata
             SpatialData object with a 'tables' attribute.
-        source_key
+        source_layer
             Key to access the source table within sdata.tables.
 
     Returns
@@ -140,8 +140,8 @@ def compute_communication_strength(sdata: SpatialData, source_key: str = "source
         sdata
             SpatialData object with computed interactions
     """
-    source_table = sdata.tables[source_key]
-    target_table = sdata.tables[source_key]
+    source_table = sdata.tables[source_layer]
+    target_table = sdata.tables[target_layer]
     interaction_strength = np.empty((source_table.shape[0], source_table.shape[1], target_table.shape[1]))
 
     for i, id in enumerate(tqdm(source_table.obs.index)):
@@ -172,7 +172,7 @@ def gene_specific_interactions(sdata, copy: bool = False):
     try:
         interaction_strength = sdata["source_score"].uns["interaction_strength"]
         source_table = sdata["source_score"]
-    except:
+    except:  # noqa: E722
         KeyError("Interaction streght is not computed. Please run troutpy.tl.compute_communication_strength first")
 
     categories = list(source_table.obs["feature_name"])  # Extract categories
