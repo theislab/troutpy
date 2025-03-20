@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as stats
 import seaborn as sns
+import spatialdata as sd  # Assuming this is the correct import
 from spatialdata import SpatialData  # Assuming this is the correct import
 
 # from troutpy.pp.compute import compute_crosstab
@@ -339,4 +340,107 @@ def gene_distribution_from_source(
         fig.delaxes(axes[j])
 
     plt.tight_layout()
+    plt.show()
+
+
+def source_score_by_celltype(
+    sdata: sd.SpatialData,
+    gene_key: str = "feature_name",
+    min_counts: int = 100,
+    min_value: float | None = None,
+    max_value: float | None = None,
+    title: str | None = "Source Score by Cell Type",
+    cluster_axis: str = "both",
+    cmap: str = "coolwarm",
+    figsize: tuple = (10, 8),
+) -> None:
+    """
+    Plots a heatmap or clustered heatmap of source scores by cell type.
+
+    Parameters
+    ----------
+    sdata : sd.SpatialData
+        A SpatialData object containing `source_score` data.
+    gene_key : str, default="feature_name"
+        The key in `obs` that contains gene names.
+    min_counts : int, default=100
+        Minimum count threshold for genes to be included.
+    min_value : float, optional
+        Genes presenting the highest source score below this will be filtered out in visualization
+    max_value : float, optional
+        Genes presenting the highest source score above this will be filtered out in visualization
+    title : str, optional
+        Custom title for the plot.
+    cluster_axis : str, default="both"
+        Determines clustering:
+        - "none" (no clustering)
+        - "x" (cluster columns only)
+        - "y" (cluster rows only)
+        - "both" (cluster rows and columns)
+    cmap : str, default="coolwarm"
+        Colormap for the heatmap.
+    figsize : tuple, default=(10, 8)
+        Size of the figure.
+
+    Returns
+    -------
+    None
+        Displays the heatmap.
+    """
+    # Extract source scores
+    source_score = sdata["source_score"].to_df()
+    source_score["gene"] = sdata["source_score"].obs[gene_key]
+    gene_by_celltype_score = source_score.groupby("gene").mean()
+
+    # Filter genes based on count threshold
+    genes = sdata["xrna_metadata"].var.index[sdata["xrna_metadata"].var["count"] > min_counts]
+    filtered_gene_by_celltype_score = gene_by_celltype_score.loc[gene_by_celltype_score.index.isin(genes), :]
+
+    # Apply additional filtering based on min/max values
+    if min_value is not None:
+        filtered_gene_by_celltype_score = filtered_gene_by_celltype_score[np.max(filtered_gene_by_celltype_score, axis=1) >= min_value].dropna()
+    if max_value is not None:
+        filtered_gene_by_celltype_score = filtered_gene_by_celltype_score[np.max(filtered_gene_by_celltype_score, axis=1) <= max_value].dropna()
+
+    if filtered_gene_by_celltype_score.empty:
+        print("No data available to plot after filtering.")
+        return
+
+    # Determine clustering options
+    valid_axes = ["none", "x", "y", "both"]
+    cluster_axis = cluster_axis.lower()
+    if cluster_axis not in valid_axes:
+        raise ValueError(f"Invalid cluster_axis: {cluster_axis}. Must be one of {', '.join(valid_axes)}.")
+
+    # Plot heatmap with clustering
+    if cluster_axis == "none":
+        plt.figure(figsize=figsize)
+        ax = sns.heatmap(
+            filtered_gene_by_celltype_score,
+            cmap=cmap,
+            linewidths=0.001,
+            linecolor="gray",
+            annot=False,
+            fmt=".2f",
+            cbar=True,
+            yticklabels=True,
+        )
+    else:
+        g = sns.clustermap(
+            filtered_gene_by_celltype_score,
+            cmap=cmap,
+            linewidths=0.001,
+            linecolor="gray",
+            annot=False,
+            fmt=".2f",
+            cbar=True,
+            figsize=figsize,
+            row_cluster=(cluster_axis in ["y", "both"]),
+            col_cluster=(cluster_axis in ["x", "both"]),
+        )
+        g.ax_heatmap.set_title(title, fontsize=14, fontweight="bold", pad=15)
+        plt.show()
+        return
+
+    ax.set_title(title, fontsize=14, fontweight="bold", pad=15)
     plt.show()
