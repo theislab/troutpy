@@ -12,16 +12,16 @@ from scipy.spatial.distance import euclidean
 from scipy.stats import poisson, spearmanr
 from spatialdata import SpatialData
 from tqdm import tqdm
-
+from ..pp.aggregate import aggregate_extracellular_transcripts
 
 def spatial_variability(
     sdata: SpatialData,
-    coord_keys: list = ["x", "y"],  # type: ignore
+    layer: str = "transcripts",
     gene_key: str = "feature_name",
+    aggr_method: str = "bin",
+    square_size: float = 50,
+    key_added: str | None = None,
     n_neighbors: int = 10,
-    kde_resolution: int = 1000,
-    square_size: int = 20,
-    n_threads: int = 1,
     method: str = "moran",
     copy: bool = False,
 ):
@@ -31,60 +31,35 @@ def spatial_variability(
     Parameters
     ----------
     sdata
-        The spatial transcriptomics dataset in SpatialData format.
-    coord_keys
-        The keys for spatial coordinates in the dataset (default: ['x', 'y']).
+        The spatial data object.
+    layer
+        The key to access transcript coordinates in sdata.
     gene_key
-        The key for gene identifiers in the dataset (default: 'feature_name').
+        Column name where the gene assigned to each transcript is stored
+    aggr_method
+        Strategy employed to aggregate extracellular transcripts
+    square_size
+        The size of each square grid bin.
+    key_added
+        Name of the table where to store the grouped extracellular transcripts .Default is 'segmentation_free_table'
     n_neighbors
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    kde_resolution
-        The kde_resolution for kernel density estimation (default: 1000).
-    square_size
-        The square_size for kernel density estimation (default: 20).
-    n_threads
-        The number of threads for LazyKDE processing (default: 1).
     method
         The mode for spatial autocorrelation computation (default: "moran").
+    copy
+        Wether to return the sdata as a new object
 
     Returns
     -------
     - sdata(SpatialData)
         Sdata containing Moran's I values for each gene, indexed by gene names.
     """
-    # Step 1: Extract and preprocess data
-    data = sdata.points["transcripts"][coord_keys + ["extracellular", gene_key]].compute()
-    data = data[data["extracellular"]]
-    data[gene_key] = data[gene_key].astype(str)
-
-    # Rename columns for clarity
-    newnames = ["x", "y", "extracellular", "gene"]
-    data.columns = newnames
-
-    # Convert to Polars DataFrame for LazyKDE processing
-    trans = pl.from_pandas(data)
-
-    # Step 2: Compute kernel density estimates
-    embryo = LazyKDE.from_dataframe(trans, resolution=kde_resolution, binsize=square_size, n_threads=n_threads)
-
-    # Step 3: Extract counts for all genes
-    expr = embryo.counts.get(embryo.counts.genes()[0]).todense()
-    allres = np.zeros([expr.size, len(embryo.counts.genes())])
-
-    for n, gene in enumerate(tqdm(embryo.counts.genes(), desc="Extracting gene counts")):
-        allres[:, n] = embryo.counts.get(gene).todense().flatten()
-
-    # Create spatial grid coordinates
-    x_coords, y_coords = np.meshgrid(np.arange(expr.shape[1]), np.arange(expr.shape[0]))
-
-    # Step 4: Create AnnData object
-    adata = sc.AnnData(allres)
-    adata.var.index = embryo.counts.genes()
-    adata.obs["x"] = x_coords.flatten()
-    adata.obs["y"] = y_coords.flatten()
-    adata.obsm["spatial"] = np.array(adata.obs.loc[:, ["x", "y"]])
-
-    # Step 5: Compute spatial neighbors and Moran's I
+    aggregate_extracellular_transcripts(sdata, layer, gene_key, aggr_method, square_size, copy, key_added)
+    
+    adata = sc.AnnData(sdata['segmentation_free_table'])
+    adata.var.index = sdata['segmentation_free_table'].var_names
+    adata.obsm["spatial"] = sdata['segmentation_free_table'].obsm['spatial']
+    
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
     sq.gr.spatial_autocorr(adata, mode=method, genes=adata.var_names)
 
