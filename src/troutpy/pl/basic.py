@@ -215,3 +215,101 @@ def crosstab(
         plt.savefig(os.path.join(figures_path, plot_filename))
     else:
         plt.show()
+
+
+def histogram(
+    sdata,
+    x: str,
+    hue: str = None,
+    layer: str = "transcripts",
+    group_key: str = None,
+    figures_path: str = "",
+    save: bool = True,
+    title: str = None,
+    custom_plot_filename: str = None,
+    palette: str = "tab10",
+    bins: int = 30,
+    kde: bool = False,
+):
+    """
+    Plots histograms of a numeric variable with optional grouping and faceting.
+
+    Parameters
+    ----------
+    sdata : sd.SpatialData
+        The input spatial data object.
+    x : str
+        The name of the numeric column to plot on the x-axis.
+    hue : str, optional
+        The column name used for color grouping (optional).
+    layer : str, optional
+        The layer in sdata.points to extract data from (default is "transcripts").
+    group_key : str, optional
+        If provided, creates subplots by the unique values of this column.
+    figures_path : str, optional
+        Path to save the plot if `save` is True.
+    save : bool, optional
+        Whether to save the figure as a PDF.
+    title : str, optional
+        Overall title for the plot.
+    custom_plot_filename : str, optional
+        Custom filename to use when saving the figure.
+    palette : str, optional
+        Color palette name for seaborn (default is "tab10").
+    bins : int, optional
+        Number of histogram bins (default is 30).
+    kde : bool, optional
+        Whether to overlay a kernel density estimate (default is False).
+
+    Returns
+    -------
+    None
+    """
+    data = sdata.points[layer][[x] + ([hue] if hue else []) + ([group_key] if group_key else [])].compute()
+
+    # Load color palette
+    if palette not in plt.colormaps():
+        try:
+            palette = get_palette(palette)
+        except:
+            palette = None  # Fallback if not found
+
+    if group_key:
+        unique_groups = data[group_key].unique()
+        num_groups = len(unique_groups)
+
+        cols = min(3, num_groups)  # Max 3 columns per row
+        rows = math.ceil(num_groups / cols)
+
+        fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 4), sharex=True, sharey=True)
+        axes = axes.flatten() if num_groups > 1 else [axes]
+
+        for i, group in enumerate(unique_groups):
+            subset = data[data[group_key] == group]
+            sns.histplot(data=subset, x=x, hue=hue, bins=bins, kde=kde, palette=palette, ax=axes[i], element="step")
+            axes[i].set_title(f"{group_key}: {group}")
+
+        # Hide unused subplots
+        for j in range(i + 1, len(axes)):
+            axes[j].axis("off")
+
+        plt.suptitle(title if title else f"{x} histogram grouped by {group_key}", y=1.02)
+        plt.tight_layout()
+
+        if save:
+            plot_filename = custom_plot_filename or f"histogram_{x}_by_{group_key}.pdf"
+            plt.savefig(os.path.join(figures_path, plot_filename), bbox_inches="tight")
+        else:
+            plt.show()
+
+    else:
+        # Single plot
+        sns.displot(data=data, x=x, hue=hue, bins=bins, kde=kde, palette=palette, height=5, aspect=1.5, element="step").set(
+            title=title if title else f"Distribution of {x}"
+        )
+
+        if save:
+            plot_filename = custom_plot_filename or f"histogram_{x}.pdf"
+            plt.savefig(os.path.join(figures_path, plot_filename), bbox_inches="tight")
+        else:
+            plt.show()

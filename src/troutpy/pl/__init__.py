@@ -1,4 +1,4 @@
-from .basic import crosstab, pie
+from .basic import crosstab, histogram, pie
 from .colors import get_colormap, get_palette
 from .communication import celltype_communication, gene_communication, target_score_by_celltype
 from .factor_analysis import factors_in_cells, rank_factor_genes_loadings, rank_factor_genes_loadings_matrixplot

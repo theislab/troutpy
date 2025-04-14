@@ -13,15 +13,17 @@ from scipy.stats import poisson, spearmanr
 from spatialdata import SpatialData
 from tqdm import tqdm
 
+from ..pp.aggregate import aggregate_extracellular_transcripts
+
 
 def spatial_variability(
     sdata: SpatialData,
-    coord_keys: list = ["x", "y"],  # type: ignore
+    layer: str = "transcripts",
     gene_key: str = "feature_name",
+    aggr_method: str = "bin",
+    square_size: float = 50,
+    key_added: str | None = None,
     n_neighbors: int = 10,
-    kde_resolution: int = 1000,
-    square_size: int = 20,
-    n_threads: int = 1,
     method: str = "moran",
     copy: bool = False,
 ):
@@ -31,60 +33,40 @@ def spatial_variability(
     Parameters
     ----------
     sdata
-        The spatial transcriptomics dataset in SpatialData format.
-    coord_keys
-        The keys for spatial coordinates in the dataset (default: ['x', 'y']).
+        The spatial data object.
+    layer
+        The key to access transcript coordinates in sdata.
     gene_key
-        The key for gene identifiers in the dataset (default: 'feature_name').
+        Column name where the gene assigned to each transcript is stored
+    aggr_method
+        Strategy employed to aggregate extracellular transcripts
+    square_size
+        The size of each square grid bin.
+    key_added
+        Name of the table where to store the grouped extracellular transcripts .Default is 'segmentation_free_table'
     n_neighbors
         Number of neighbors to use for computing spatial neighbors (default: 10).
-    kde_resolution
-        The kde_resolution for kernel density estimation (default: 1000).
-    square_size
-        The square_size for kernel density estimation (default: 20).
-    n_threads
-        The number of threads for LazyKDE processing (default: 1).
     method
         The mode for spatial autocorrelation computation (default: "moran").
+    copy
+        Wether to return the sdata as a new object
 
     Returns
     -------
     - sdata(SpatialData)
         Sdata containing Moran's I values for each gene, indexed by gene names.
     """
-    # Step 1: Extract and preprocess data
-    data = sdata.points["transcripts"][coord_keys + ["extracellular", gene_key]].compute()
-    data = data[data["extracellular"]]
-    data[gene_key] = data[gene_key].astype(str)
+    try:
+        sdata["segmentation_free_table"]
+        print("Using precomputed segmentation free table")
+    except:
+        print("Computing segmentation-free aggregation of extracellular transcripts...")
+        aggregate_extracellular_transcripts(sdata, layer, gene_key, aggr_method, square_size, copy, key_added)
 
-    # Rename columns for clarity
-    newnames = ["x", "y", "extracellular", "gene"]
-    data.columns = newnames
+    adata = sc.AnnData(sdata["segmentation_free_table"])
+    adata.var.index = sdata["segmentation_free_table"].var_names
+    adata.obsm["spatial"] = sdata["segmentation_free_table"].obsm["spatial"]
 
-    # Convert to Polars DataFrame for LazyKDE processing
-    trans = pl.from_pandas(data)
-
-    # Step 2: Compute kernel density estimates
-    embryo = LazyKDE.from_dataframe(trans, resolution=kde_resolution, binsize=square_size, n_threads=n_threads)
-
-    # Step 3: Extract counts for all genes
-    expr = embryo.counts.get(embryo.counts.genes()[0]).todense()
-    allres = np.zeros([expr.size, len(embryo.counts.genes())])
-
-    for n, gene in enumerate(tqdm(embryo.counts.genes(), desc="Extracting gene counts")):
-        allres[:, n] = embryo.counts.get(gene).todense().flatten()
-
-    # Create spatial grid coordinates
-    x_coords, y_coords = np.meshgrid(np.arange(expr.shape[1]), np.arange(expr.shape[0]))
-
-    # Step 4: Create AnnData object
-    adata = sc.AnnData(allres)
-    adata.var.index = embryo.counts.genes()
-    adata.obs["x"] = x_coords.flatten()
-    adata.obs["y"] = y_coords.flatten()
-    adata.obsm["spatial"] = np.array(adata.obs.loc[:, ["x", "y"]])
-
-    # Step 5: Compute spatial neighbors and Moran's I
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
     sq.gr.spatial_autocorr(adata, mode=method, genes=adata.var_names)
 
@@ -102,6 +84,53 @@ def spatial_variability(
 
     sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(svg_df)
 
+    return sdata if copy else None
+
+
+def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False) -> SpatialData | None:
+    """
+    Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
+
+    Parameters
+    ----------
+    - sdata (SpatialData)
+        The SpatialData object to modify.
+    - layer (str, optional)
+        The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
+    - gene_key (str, optional)
+        The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
+    - copy
+        If `True`, returns a copy of the `SpatialData` object with the new table added.
+
+    Returns
+    -------
+    - SpatialData | None
+        If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
+    """
+    # Check if the specified points layer exists
+    if layer not in sdata.points:
+        raise ValueError(f"Points layer '{layer}' not found in sdata.points.")
+
+    # Extract unique gene names from the specified points layer
+    points_data = sdata.points[layer]
+    if gene_key not in points_data.columns:
+        raise ValueError(f"The specified points layer '{layer}' does not contain a '{gene_key}' column.")
+
+    unique_genes = points_data[gene_key].compute().unique().astype(str)
+
+    # Create a DataFrame for unique genes
+    gene_metadata = pd.DataFrame(index=unique_genes)
+
+    # Convert to AnnData and then to SpatialData table model
+    exrna_adata = sc.AnnData(var=gene_metadata)
+    metadata_table = sd.models.TableModel.parse(exrna_adata)
+
+    # Add the new table to the SpatialData object
+    sdata.tables["xrna_metadata"] = metadata_table
+
+    print(f"Added 'xrna_metadata' table with {len(unique_genes)} unique genes to the SpatialData object.")
+
+    # Return copy or modify in place
     return sdata if copy else None
 
 
