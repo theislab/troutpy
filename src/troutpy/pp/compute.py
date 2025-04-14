@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 import polars as pl
 import spatialdata as sd
+from sainsc import LazyKDE  # assuming LazyKDE is available
 from scipy.sparse import coo_matrix
+from sklearn.neighbors import KDTree
 from spatialdata import SpatialData
 
 
@@ -283,16 +285,8 @@ def segmentation_free_sainsc(
       6. For transcripts that do NOT obtain metadata via the merge, assign them the data
          from their spatially closest neighbor (based on "x", "y").
     """
-    import numpy as np
-    import pandas as pd
-    import polars as pl
-    import spatialdata as sd
-    from sainsc import LazyKDE  # assuming LazyKDE is available
-    from sklearn.neighbors import KDTree
-
     # --- 1. Prepare Transcript Data ---
-    transcripts_all = sdata.points["transcripts"][["feature_name", "x", "y", "transcript_id"]].compute().reset_index(drop=True)
-    transcripts_all = transcripts_all.rename(columns={"feature_name": "gene"})
+    transcripts_all = sdata.points["transcripts"][["gene", "x", "y", "transcript_id"]].compute().reset_index(drop=True)
     # transcripts_all = transcripts_all[transcripts_all["codeword_category"] == codeword_category]
     transcripts_all = transcripts_all[transcripts_all["gene"].astype(str) != "nan"]
 

@@ -44,7 +44,7 @@ def xenium_converter(sdata, copy=False):
     """
     # ----- 1. Modify the Points/transcripts DataFrame -----
     try:
-        transcripts = sdata["transcripts"].compute()
+        transcripts = sdata["transcripts"].compute().reset_index(drop=True)
     except (KeyError, AttributeError) as e:
         raise ValueError("SpatialData must contain Points['transcripts'] as a DataFrame.") from e
 
@@ -59,7 +59,8 @@ def xenium_converter(sdata, copy=False):
     if "codeword_category" in transcripts.columns:
         transcripts["control_probe"] = transcripts["codeword_category"].apply(lambda x: False if x == "predesigned_gene" else True)
     else:
-        print("Warning: 'codeword_category' column not found in Points['transcripts'].")
+        print("Warning: 'codeword_category' column not found in Points['transcripts']. Gene name-based control probe assignment will be used.")
+        transcripts["control_probe"] = transcripts["gene"].str.startswith(("Neg", "BLANK"))
 
     # c. Ensure 'transcript_id' is a string and has unique values.
     if "transcript_id" in transcripts.columns:
