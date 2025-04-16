@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import scanpy as sc
 import seaborn as sns
@@ -71,18 +73,44 @@ def spatial_inout_expression(
     plt.show()
 
 
-def diffusion_results(sdata, x_col="mean_displacement", y_col="-log_ks_pval", y_logscale=False):
+def diffusion_results(
+    sdata,
+    x_col="mean_displacement",
+    y_col="-log_ks_pval",
+    y_logscale=False,
+    save: bool = False,
+    figures_path: str = "",
+    custom_plot_filename: str | None = None,
+):
     """
     Plots a scatter plot of genes with their estimated diffusion coefficient (D_estimated) on the x-axis
     and a statistical metric (e.g., KS statistic) on the y-axis. Each point is labeled with the gene name.
 
     Parameters
     ----------
-        diffusion_results (pd.DataFrame): DataFrame containing diffusion results with gene names as index.
-        x_col (str): Column to use for x-axis (default: "D_estimated").
-        y_col (str): Column to use for y-axis (default: "ks_stat").
+    sdata : AnnData
+        The AnnData object containing the data.
+    x_col (str):
+        Column to use for x-axis (default: "mean_displacement").
+    y_col (str):
+        Column to use for y-axis (default: "-log_ks_pval").
+    y_logscale (bool):
+        Whether to use log scale for y-axis (default: False).
+    save : bool, default=False
+        Whether to save the figure.
+    figures_path : str, default=""
+        Directory path to save the figure.
+    custom_plot_filename : str, optional
+        Custom filename for saving the plot.
+
+    Returns
+    -------
+    None
     """
+    # Extract the diffusion results from sdata
     diffusion_results = sdata["xrna_metadata"].var
+
+    # Create the scatter plot
     plt.figure(figsize=(10, 6))
     sns.scatterplot(data=diffusion_results, x=x_col, y=y_col)
 
@@ -90,6 +118,7 @@ def diffusion_results(sdata, x_col="mean_displacement", y_col="-log_ks_pval", y_
     for gene, (x, y) in diffusion_results[[x_col, y_col]].dropna().iterrows():
         plt.text(x, y, gene, fontsize=10, ha="right", va="bottom")
 
+    # Customize plot
     plt.xlabel(x_col.replace("_", " ").capitalize())
     plt.ylabel(y_col.replace("_", " ").capitalize())
     if y_logscale:
@@ -97,4 +126,12 @@ def diffusion_results(sdata, x_col="mean_displacement", y_col="-log_ks_pval", y_
     plt.title("Diffusion Pattern Analysis of Extracellular RNA")
     plt.grid(True, linestyle="--", alpha=0.5)
     plt.axhline(y=3, color="r", linestyle="--", label="y=10")
+
+    # Save the plot if requested
+    if save:
+        os.makedirs(figures_path, exist_ok=True)
+        plot_filename = custom_plot_filename or f"diffusion_results_{x_col}_{y_col}.pdf"
+        plt.savefig(os.path.join(figures_path, plot_filename), bbox_inches="tight")
+
+    # Show the plot
     plt.show()

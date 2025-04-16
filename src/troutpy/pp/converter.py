@@ -5,7 +5,7 @@ import xarray as xr
 from spatialdata.models import Image2DModel, Labels2DModel
 
 
-def xenium_converter(sdata, copy=False):
+def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
     """
     Converts a SpatialData object (sdata) into the Xenium format.
 
@@ -78,7 +78,7 @@ def xenium_converter(sdata, copy=False):
 
     # e. Create new 'overlaps_cell' boolean column based on 'cell_id'.
     if "cell_id" in transcripts.columns:
-        transcripts["overlaps_cell"] = transcripts["cell_id"].apply(lambda x: False if x == "UNASSIGNED" else True)
+        transcripts["overlaps_cell"] = transcripts["cell_id"].apply(lambda x: False if x == unassigned_tag else True)
     else:
         print("Warning: 'cell_id' column not found in Points['transcripts']. Cannot create 'overlaps_cell'.")
 
@@ -98,6 +98,11 @@ def xenium_converter(sdata, copy=False):
     if table.obs.index.duplicated().any():
         raise ValueError("Tables['table'].obs index contains duplicates. They must be unique.")
     # Create a new layer 'raw' storing a copy of table.X (raw expression data).
+    try:
+        table.var["gene_id"] = table.var.index
+        table.var.index = table.var["gene_names"]
+    except:
+        print("Warning: 'gene_names' column not found in Tables['table']. Using default index.")
     if table.X is None:
         raise ValueError("Tables['table'] must have an expression matrix in .X.")
     if not hasattr(table, "layers") or table.layers is None:

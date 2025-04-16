@@ -14,7 +14,7 @@ from spatialdata import SpatialData  # Assuming this is the correct import
 def global_distribution_from_source(
     sdata: SpatialData,
     cluster_key: str = "kmeans_from_distribution",
-    feature_key: str = "feature_name",
+    gene_key: str = "gene",
     distance_key: str = "distance",
     n_bins: int = 20,
     how: str = "full",
@@ -31,7 +31,7 @@ def global_distribution_from_source(
         Spatial data object containing 'source_score' and 'xrna_metadata' layers.
     cluster_key : str, default "kmeans_from_distribution"
         Column in sdata['xrna_metadata'].var containing cluster assignments.
-    feature_key : str, default "feature_name"
+    gene_key : str, default "gene"
         Column that contains gene names.
     distance_key : str, default "distance"
         Column that contains the distances.
@@ -51,7 +51,7 @@ def global_distribution_from_source(
         raise ValueError(f"Clustering key '{cluster_key}' not found in sdata['xrna_metadata'].var")
 
     # Ensure all genes in metadata exist in observed data
-    merged_df = obs_df.merge(meta_df[[cluster_key]], left_on=feature_key, right_index=True)
+    merged_df = obs_df.merge(meta_df[[cluster_key]], left_on=gene_key, right_index=True)
 
     # Set bin edges based on global max distance
     global_max = merged_df[distance_key].max()
@@ -59,7 +59,7 @@ def global_distribution_from_source(
 
     # Compute histograms for each gene
     gene_histograms = {}
-    for gene, group in merged_df.groupby(feature_key):
+    for gene, group in merged_df.groupby(gene_key):
         distances = group[distance_key].dropna().values
         counts, _ = np.histogram(distances, bins=bin_edges)
         norm_counts = counts / counts.sum() if counts.sum() > 0 else counts
@@ -169,7 +169,7 @@ def global_distribution_from_source(
 
 def distributions_by_cluster(
     sdata: SpatialData,
-    feature_key: str = "feature_name",
+    gene_key: str = "gene",
     cluster_key: str = "kmeans_distribution",
     groups=None,
     distance_key: str = "distance",
@@ -185,7 +185,7 @@ def distributions_by_cluster(
     ----------
     sdata : SpatialData
         Spatial data object containing a 'source_score' layer with an obs DataFrame.
-    feature_key : str, default "feature_name"
+    gene_key : str, default "gene"
         Column name that contains the gene names.
     distance_key : str, default "distance"
         Column name that contains the distance from the source cell.
@@ -218,7 +218,7 @@ def distributions_by_cluster(
 
         # Combine all distances for the genes in the cluster.
         obs_df = sdata["source_score"].obs
-        cluster_distances = obs_df[obs_df[feature_key].isin(genes_in_cluster)][distance_key].dropna().values
+        cluster_distances = obs_df[obs_df[gene_key].isin(genes_in_cluster)][distance_key].dropna().values
         # Filter out non-positive distances as well.
         cluster_distances = cluster_distances[cluster_distances > 0]
 
@@ -262,7 +262,7 @@ def distributions_by_cluster(
 def gene_distribution_from_source(
     sdata: SpatialData,
     cool_pattern,
-    feature_key: str = "feature_name",
+    gene_key: str = "gene",
     distance_key: str = "distance",
     bins: int = 30,
     bar_color: str = "lightblue",
@@ -275,7 +275,7 @@ def gene_distribution_from_source(
     ----------
     - sdata (SpatialData): The spatial dataset containing gene expression and diffusion data.
     - cool_pattern (list): List of gene names to analyze.
-    - feature_key (str): Column name for gene features (default: 'feature_name').
+    - gene_key (str): Column name for gene features (default: 'gene').
     - distance_key (str): Column name for distance values (default: 'distance').
     - bins (int): Number of bins for histogram (default: 30).
     - bar_color (str): Color of histogram bars (default: 'lightblue').
@@ -310,7 +310,7 @@ def gene_distribution_from_source(
         ax = axes[i]  # Select subplot
 
         try:
-            distances = sdata["source_score"].obs.query(f"{feature_key} == @gene")[distance_key].dropna().values
+            distances = sdata["source_score"].obs.query(f"{gene_key} == @gene")[distance_key].dropna().values
             param_g = stats.rayleigh.fit(distances, floc=0)
             if len(distances) == 0:
                 print(f"Warning: No valid distances found for gene {gene}, skipping.")
@@ -345,7 +345,7 @@ def gene_distribution_from_source(
 
 def source_score_by_celltype(
     sdata: sd.SpatialData,
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     min_counts: int = 100,
     min_value: float | None = None,
     max_value: float | None = None,
@@ -361,7 +361,7 @@ def source_score_by_celltype(
     ----------
     sdata : sd.SpatialData
         A SpatialData object containing `source_score` data.
-    gene_key : str, default="feature_name"
+    gene_key : str, default="gene"
         The key in `obs` that contains gene names.
     min_counts : int, default=100
         Minimum count threshold for genes to be included.
