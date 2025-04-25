@@ -133,13 +133,13 @@ def aggregate_extracellular_transcripts(
         extracell = sdata[layer].compute() if hasattr(sdata[layer], "compute") else sdata[layer]
 
     if method == "bin":
+        # --- BIN METHOD (original version) ---
+        # Generate grid squares from the full transcript coordinates.
         if not (0 <= overlap_bin < square_size):
             raise ValueError(f"overlap_x must be in [0, {square_size}) — got {overlap_bin}")
         if not (0 <= overlap_bin < square_size):
             raise ValueError(f"overlap_y must be in [0, {square_size}) — got {overlap_bin}")
-
-        # --- BIN METHOD (original version) ---
-        # Generate grid squares from the full transcript coordinates.
+        
         df = sdata[layer].compute()
         x_min, x_max = df["x"].min(), df["x"].max()
         y_min, y_max = df["y"].min(), df["y"].max()
