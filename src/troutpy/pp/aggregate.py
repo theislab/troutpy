@@ -73,7 +73,7 @@ def aggregate_extracellular_transcripts(
     square_size: float = 50,
     radius: float = 50,
     knn_k: int = 5,
-    overlap_bin: bool = False,
+    overlap_bin: float = 0,
     local_maxima_threshold: float = 0,
     extracellular_only: bool = True,
     copy: bool = False,
@@ -111,7 +111,7 @@ def aggregate_extracellular_transcripts(
     knn_k
         Number of nearest neighbors (used for the "knn" method).
     overlap_bin
-        (Not used in the "bin" method, but available for future updates.)
+        Overlap of squares used in the "bin" method.
     local_maxima_threshold
         Minimum count threshold for a grid cell to be accepted as a local maximum.
     extracellular_only
@@ -133,14 +133,19 @@ def aggregate_extracellular_transcripts(
         extracell = sdata[layer].compute() if hasattr(sdata[layer], "compute") else sdata[layer]
 
     if method == "bin":
+        if not (0 <= overlap_bin < square_size):
+            raise ValueError(f"overlap_x must be in [0, {square_size}) — got {overlap_bin}")
+        if not (0 <= overlap_bin < square_size):
+            raise ValueError(f"overlap_y must be in [0, {square_size}) — got {overlap_bin}")
+
         # --- BIN METHOD (original version) ---
         # Generate grid squares from the full transcript coordinates.
         df = sdata[layer].compute()
         x_min, x_max = df["x"].min(), df["x"].max()
         y_min, y_max = df["y"].min(), df["y"].max()
 
-        xs = np.arange(x_min, x_max + square_size, square_size)
-        ys = np.arange(y_min, y_max + square_size, square_size)
+        xs = np.arange(x_min, x_max + square_size, square_size - overlap_bin)
+        ys = np.arange(y_min, y_max + square_size, square_size - overlap_bin)
 
         grid_squares = []
         centroids = []
