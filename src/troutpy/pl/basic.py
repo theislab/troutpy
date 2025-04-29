@@ -17,52 +17,40 @@ def pie(
     save: bool = True,
     title: str = None,
     custom_plot_filename: str = None,
-    palette: str = "30colors",
+    palette: str = "tab20",
 ):
     """
     Generates pie charts showing the proportion of different categories for a specified categorical variable.
     If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`.
-
-    Parameters
-    ----------
-    sdata : sd.SpatialData
-        The input spatial data object containing the categorical variable.
-    groupby : str
-        The column name in the data to group by.
-    layer : str, optional
-        The layer in sdata.points to extract data from (default is "transcripts").
-    group_key : str, optional
-        If provided, generates separate pie charts for each category in this column.
-    figures_path : str, optional
-        Path where the pie chart will be saved if `save` is True.
-    save : bool, optional
-        Whether to save the figure as a PDF (default is True). If False, the chart is displayed.
-    title : str, optional
-        Title for the pie chart.
-    custom_plot_filename : str, optional
-        Custom filename for saving the pie chart.
-    palette : str, optional
-        Name of the color palette to use.
-
-    Returns
-    -------
-    None
     """
+    import math
+    import os
+
+    import matplotlib.pyplot as plt
+
     data = sdata.points[layer][[groupby] + ([group_key] if group_key else [])].compute()
+
+    # Determine all categories globally
+    all_categories = sorted(data[groupby].dropna().unique())
 
     # Determine colormap
     if palette not in plt.colormaps():
         try:
             palette = get_palette(palette)
         except:
-            palette = None  # Use default colors if custom palette fails
+            palette = plt.cm.tab20.colors  # fallback
+    else:
+        cmap = plt.get_cmap(palette)
+        palette = [cmap(i) for i in range(len(all_categories))]
+
+    # Build category-color mapping
+    color_mapping = dict(zip(all_categories, palette, strict=False))
 
     if group_key:
-        unique_groups = data[group_key].unique()
+        unique_groups = data[group_key].dropna().unique()
         num_groups = len(unique_groups)
 
-        # Determine grid size
-        cols = min(3, num_groups)  # Max 3 columns per row
+        cols = min(3, num_groups)
         rows = math.ceil(num_groups / cols)
 
         fig, axes = plt.subplots(rows, cols, figsize=(cols * 5, rows * 5))
@@ -70,14 +58,14 @@ def pie(
 
         for i, group in enumerate(unique_groups):
             subset = data[data[group_key] == group]
-            category_counts = subset[groupby].value_counts()
+            category_counts = subset[groupby].value_counts().reindex(all_categories, fill_value=0)
 
-            colors = palette[: len(category_counts)] if palette else None
+            # Apply consistent colors
+            colors = [color_mapping[cat] for cat in category_counts.index]
 
             axes[i].pie(category_counts, labels=category_counts.index, colors=colors, autopct="%1.1f%%")
             axes[i].set_title(f"{title if title else ''} {group_key}: {group}")
 
-        # Hide empty subplots
         for j in range(i + 1, len(axes)):
             axes[j].axis("off")
 
@@ -90,9 +78,8 @@ def pie(
             plt.show()
 
     else:
-        # Single pie chart
-        category_counts = data[groupby].value_counts()
-        colors = palette[: len(category_counts)] if palette else None
+        category_counts = data[groupby].value_counts().reindex(all_categories, fill_value=0)
+        colors = [color_mapping[cat] for cat in category_counts.index]
 
         plt.figure(figsize=(5, 5))
         plt.pie(category_counts, labels=category_counts.index, colors=colors, autopct="%1.1f%%")

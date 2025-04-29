@@ -315,14 +315,10 @@ def segmentation_free_sainsc(
     # Round coordinates to create matching keys.
     transcripts_all["x"] = transcripts_all["x"].round(4)
     transcripts_all["y"] = transcripts_all["y"].round(4)
+    transcript2bin_info["x"] = transcript2bin_info["x"].round(4)
+    transcript2bin_info["y"] = transcript2bin_info["y"].round(4)
     transcripts_all["xy"] = transcripts_all["x"].astype(str) + "_" + transcripts_all["y"].astype(str)
     transcript2bin_info["xy"] = transcript2bin_info["x"].astype(str) + "_" + transcript2bin_info["y"].astype(str)
-
-    # Map overlap info, if available.
-    #  id2overlap = dict(zip(transcripts_all["xy"], transcripts_all["overlaps_nucleus"], strict=False))
-    #  id2overlap_cell = dict(zip(transcripts_all["xy"], transcripts_all["overlaps_cell"], strict=False))
-    #  transcript2bin_info["overlaps_nucleus"] = transcript2bin_info["xy"].map(id2overlap)
-    #  transcript2bin_info["overlaps_cell"] = transcript2bin_info["xy"].map(id2overlap_cell)
 
     # --- 7. Run KDE, Background Filtering and Cell Type Assignment ---
     brain.calculate_total_mRNA()
@@ -391,19 +387,25 @@ def segmentation_free_sainsc(
     merged["cosine_similarity"] = merged["cosine_similarity"].fillna(default_numeric)
     merged["assignment_score"] = merged["assignment_score"].fillna(default_numeric)
 
-    # Optionally, force the correct data types
+    # Optionlly, force the correct data types
     merged["closest_cell_type"] = merged["closest_cell_type"].astype(str)
     merged["cosine_similarity"] = merged["cosine_similarity"].astype(float)
     merged["assignment_score"] = merged["assignment_score"].astype(float)
 
     # --- 12. Update the sdata Object ---
     transi = sdata.points["transcripts"].compute().copy()
-    # Use 'xy' as a join key to ensure we assign metadata correctly.
+    transi["xy"] = transi["x"].round(4).astype(str) + "_" + transi["y"].round(4).astype(str)
+    # Drop duplicated columns if needed
+    # columns_to_remove = ["closest_cell_type", "cosine_similarity", "assignment_score"]
+    try:
+        transi = transi.drop(columns=[col for col in columns_to_remove if col in transi.columns])
+    except Exception:
+        pass
+    # Then merge safely
     transi = pd.merge(
         transi,
         merged[["xy", "closest_cell_type", "cosine_similarity", "assignment_score"]],
-        left_on=(transi["x"].round(4).astype(str) + "_" + transi["y"].round(4).astype(str)),
-        right_on="xy",
+        on="xy",
         how="left",
     )
     # Fill any remaining missing entries as a safeguard (should be none now)
