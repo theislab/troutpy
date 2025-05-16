@@ -15,15 +15,15 @@ def celltype_communication(sdata, kind="heatmap", celltype_key="cell type", vmax
     ----------
     sdata : SpatialData object
         The spatial data object containing interaction scores.
-    kind : str, optional
+    kind : str
         Type of plot, either 'heatmap' or 'chord'. Default is 'heatmap'.
-    celltype_key : str, optional
+    celltype_key : str
         Key for cell type colors in `sdata['table'].uns`. Default is 'cell type'.
-    vmax : float, optional
+    vmax : float
         Max value for colormap scaling. Default is None.
-    vmin : float, optional
+    vmin : float
         Min value for colormap scaling. Default is None.
-    cmap : str, optional
+    cmap : str
         Colormap for heatmap or chord diagram. Default is 'BuPu'.
     **kwargs : dict
         Additional arguments passed to the plotting functions.
@@ -65,17 +65,17 @@ def gene_communication(
     ----------
     sdata : SpatialData object
         The spatial data object containing interaction scores.
-    kind : str, optional
+    kind : str
         Type of plot, either 'heatmap' or 'chord'. Default is 'heatmap'.
-    celltype_key : str, optional
+    celltype_key : str
         Key for cell type colors in `sdata['table'].uns`. Default is 'cell type'.
     gene
         Name of the gene to be plotted
-    vmax : float, optional
+    vmax : float
         Max value for colormap scaling. Default is None.
-    vmin : float, optional
+    vmin : float
         Min value for colormap scaling. Default is None.
-    cmap : str, optional
+    cmap : str
         Colormap for heatmap or chord diagram. Default is 'BuPu'.
     **kwargs : dict
         Additional arguments passed to the plotting functions.
@@ -137,11 +137,11 @@ def target_score_by_celltype(
         The key in `obs` that contains gene names.
     min_counts : int, default=100
         Minimum count threshold for genes to be included.
-    min_value : float, optional
+    min_value : float
         Genes presenting the highest target score below this will be filtered out in visualization
-    max_value : float, optional
+    max_value : float
         Genes presenting the highest target score above this will be filtered out in visualization
-    title : str, optional
+    title : str
         Custom title for the plot.
     cluster_axis : str, default="both"
         Determines clustering:

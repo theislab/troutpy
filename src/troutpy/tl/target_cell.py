@@ -24,23 +24,23 @@ def calculate_target_cells(
 
     Parameters
     ----------
-    sdata (SpatialData)
+    sdata
         SpatialData object containing spatial and transcript data.
-    layer (str, optional)
+    layer: str
         The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
-    xcoord (str, optional)
+    xcoord: str
         Column name for the x-coordinate of transcripts. Default is 'x'.
-    ycoord (str, optional)
+    ycoord: str
         Column name for the y-coordinate of transcripts. Default is 'y'.
-    xcellcoord (str, optional)
+    xcellcoord: str
         Column name for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    ycellcoord (str, optional)
+    ycellcoord: str
         Column name for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    celltype_key (str, optional)
+    celltype_key: str
         Column name in `adata.obs` that contains cell type annotations. Default is 'cell type'.
-    gene_id_key (str, optional)
+    gene_id_key: str
         Column name in `sdata.points[layer]` that contains gene identity. Default is 'feature_name'.
-    copy (bool, optional)
+    copy: bool
         If True, returns a copy of the modified SpatialData object. Default is False.
 
     Returns
@@ -104,14 +104,19 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
 
     Parameters
     ----------
-    - sdata (SpatialData): A spatial data object that contains transcript and cell type information. The relevant data is accessed from the `sdata.points[layer]`
-    - layer (str, optional): The key for the layer in `sdata.points` that contains the transcript data (default: 'extracellular_transcripts').
-    - celltype_key (str, optional): The column name representing cell types in the transcript data (default: 'cell type').
-    - feature_key (str, optional): The column name representing the feature (e.g., transcript or gene) in the transcript data (default: 'feature_name').
+    sdata:
+        A spatial data object that contains transcript and cell type information. The relevant data is accessed from the `sdata.points[layer]`
+    layer: str
+        The key for the layer in `sdata.points` that contains the transcript data (default: 'extracellular_transcripts').
+    celltype_key: str
+        The column name representing cell types in the transcript data (default: 'cell type').
+    feature_key: str
+        The column name representing the feature (e.g., transcript or gene) in the transcript data (default: 'feature_name').
 
     Returns
     -------
-    pd.DataFrame: A pandas DataFrame where the rows represent features (e.g., transcripts), and the columns represent cell types. Each entry in the DataFrame is the proportion of that feature associated with the respective cell type.
+    celltype_by_feature: pandas.DataFrame
+        A pandas DataFrame where the rows represent features (e.g., transcripts), and the columns represent cell types. Each entry in the DataFrame is the proportion of that feature associated with the respective cell type.
     """
     # Extract transcript data from the specified layer
     transcripts = sdata.points[layer][[feature_key, closest_celltype_key]].compute()
@@ -137,25 +142,26 @@ def compute_target_score(
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    sdata:
         The input spatial data object.
-    - layer (str, optional)
+    layer: str
         The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
-    - gene_key (str, optional)
+    gene_key: str
         Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
-    - coords_key
+    coords_key: list
         Column names for spatial coordinates of transcripts and cell centroids.
-    - lambda_decay (float, optional)
+    lambda_decay: float
         The exponential decay factor for distances.
-    - copy (bool, optional)
+    copy: bool
         If True, returns a modified copy of the SpatialData object.
-    - celltype_key (str, optional)
+    celltype_key: str
         Key for cell type annotations in the cell table.
 
     Returns
     -------
-    - sdata (SpatialData)
+    sdata: spatialdata.SpatialData
         Updated SpatialData object with target cell scores added.
+
     """
     # define xcoord and ycoord
     if coords_key is None:

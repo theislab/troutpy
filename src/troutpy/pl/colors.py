@@ -9,12 +9,15 @@ def get_palette(name="default", n_colors=None):
 
     Parameters
     ----------
-    - name (str): Name of the palette ("default", "coolwarm", "viridis", etc.).
-    - n_colors (int, optional): Number of colors to return. If None, return all.
+    name: str
+        Name of the palette ("default", "coolwarm", "viridis", etc.).
+    n_colors: int
+        Number of colors to return. If None, return all.
 
     Returns
     -------
-    - list of hex color codes.
+    palette:
+        list of hex color codes.
     """
     palettes = {
         "30colors": [

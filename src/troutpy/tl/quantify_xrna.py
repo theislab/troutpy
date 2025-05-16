@@ -50,8 +50,8 @@ def spatial_variability(
 
     Returns
     -------
-    - sdata(SpatialData)
-        Sdata containing Moran's I values for each gene, indexed by gene names.
+    sdata: spatialdata.SpatialData
+        Spatial data containing Moran's I values for each gene, indexed by gene names.
     """
     if "segmentation_free_table" in sdata:
         print("Using precomputed segmentation free table")
@@ -89,18 +89,18 @@ def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    sdata (SpatialData)
         The SpatialData object to modify.
-    - layer (str, optional)
+    layer (str)
         The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
-    - gene_key (str, optional)
+    gene_key (str)
         The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
-    - copy
+    copy
         If `True`, returns a copy of the `SpatialData` object with the new table added.
 
     Returns
     -------
-    - SpatialData | None
+    SpatialData | None
         If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
     """
     # Check if the specified points layer exists
@@ -260,13 +260,13 @@ def spatial_colocalization(
     sdata : SpatialData
         The spatial transcriptomics dataset in SpatialData format.
 
-    extracellular_layer : str, default="segmentation_free_table"
+    extracellular_layer : str
         The key in `sdata` pointing to an AnnData object containing extracellular transcript counts.
 
-    threshold_colocalized : int, default=1
+    threshold_colocalized : int
         Minimum count of a gene at a spot to consider it as colocalized.
 
-    copy : bool, default=False
+    copy : bool
         If True, returns a modified copy of sdata, otherwise modifies in place.
 
     Returns
@@ -319,13 +319,13 @@ def in_out_correlation(
     sdata : SpatialData
         A SpatialData object containing both extracellular and cellular AnnData objects.
 
-    extracellular_layer : str, optional (default="segmentation_free_table")
+    extracellular_layer : str
         Key for the extracellular AnnData object in sdata.
 
-    cellular_layer : str, optional (default="table")
+    cellular_layer : str
         Key for the cellular AnnData object in sdata.
 
-    n_neighbors : int, optional (default=5)
+    n_neighbors : int
         Number of nearest extracellular bins to consider for aggregation.
 
     Returns

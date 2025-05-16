@@ -39,7 +39,7 @@ def top_bottom_probes_of_metric(
     bottom_n : int, default=10
         Number of bottom genes to display.
 
-    title : str, optional
+    title : str
         Title for the plot.
 
     save : bool, default=False
@@ -48,7 +48,7 @@ def top_bottom_probes_of_metric(
     figures_path : str, default=""
         Directory path to save the figure.
 
-    custom_plot_filename : str, optional
+    custom_plot_filename : str
         Custom filename for saving the plot.
 
     palette : str, default="default"

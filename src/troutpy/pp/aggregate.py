@@ -2,6 +2,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import scanpy as sc  # Assumed available based on usage in original code
+import spatialdata
 from scipy.ndimage import maximum_filter
 from scipy.spatial import KDTree
 from shapely import linearrings, polygons
@@ -40,11 +41,11 @@ def create_grid_squares(sdata: SpatialData, layer: str = "transcripts", square_s
 
     Parameters
     ----------
-    sdata:
+    sdata: spatialdata.SpatialData
         The spatial data object containing transcript coordinates.
-    layer:
+    layer: str
         The key to access transcript coordinates in sdata.
-    square_size:
+    square_size: int
         The size of each square grid cell.
 
     Returns
@@ -65,7 +66,7 @@ def create_grid_squares(sdata: SpatialData, layer: str = "transcripts", square_s
 
 
 def aggregate_extracellular_transcripts(
-    sdata,
+    sdata: spatialdata.SpatialData,
     layer: str = "transcripts",
     gene_key: str = "feature_name",
     method: str = "bin",

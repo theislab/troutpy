@@ -270,9 +270,9 @@ def spatial_transcripts(
         A SpatialData object containing:
           - sdata[shapes_key]  including a 'geometry' column of shapely Polygons
           - sdata['transcripts'] including `gene_key` and `color_key`
-    gene_key
+    gene_key: str
         Column in transcripts to filter by gene_list.
-    gene_list
+    gene_list: str
         List of genes to keep. If None, all transcripts are used.
     color_key
         Column in transcripts used for coloring points (will be cast to pandas.Categorical).

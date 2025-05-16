@@ -28,11 +28,11 @@ def segmentation_free_clustering(
         Column name for the y-coordinates of transcripts.
     gene_key
         Column name for the feature names.
-    method (str, optional)
+    method: str
         Clustering method to use. Options:
             - 'points2regions': Uses the Points2Regions algorithm for clustering.
             - 'sainsc': Placeholder for another clustering method.
-    transcript_id_key (str, optional)
+    transcript_id_key: str
         Column name for the transcript IDs.
     copy (bool)
         If True, returns a copy of the clustering results. If False, updates `sdata` in-place.
