@@ -23,17 +23,17 @@ def global_distribution_from_source(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata: spatialdata.SpatialData
         Spatial data object containing 'source_score' and 'xrna_metadata' layers.
-    cluster_key : str, default "kmeans_from_distribution"
+    cluster_key : str
         Column in sdata['xrna_metadata'].var containing cluster assignments.
-    gene_key : str, default "gene"
+    gene_key : str
         Column that contains gene names.
-    distance_key : str, default "distance"
+    distance_key : str
         Column that contains the distances.
-    n_bins : int, default 20
+    n_bins : int
         Number of bins for the histogram representation.
-    how : str, default "full"
+    how : str
         - "full": Show clustermap of all genes, sorted by cluster, with row colors.
         - "collapsed": Show clustermap of mean distribution per cluster, with color-coded labels.
         - "lineplot": Show a line plot of the collapsed distributions per cluster.
@@ -175,13 +175,13 @@ def distributions_by_cluster(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         Spatial data object containing a 'source_score' layer with an obs DataFrame.
-    gene_key : str, default "gene"
+    gene_key : str
         Column name that contains the gene names.
-    distance_key : str, default "distance"
+    distance_key : str
         Column name that contains the distance from the source cell.
-    n_bins : int, default 20
+    n_bins : int
         Number of bins to use for the histograms.
     """
     # Extract the cluster labels from the SpatialData object
@@ -265,17 +265,24 @@ def gene_distribution_from_source(
 
     Parameters
     ----------
-    - sdata (SpatialData): The spatial dataset containing gene expression and diffusion data.
-    - cool_pattern (list): List of gene names to analyze.
-    - gene_key (str): Column name for gene features (default: 'gene').
-    - distance_key (str): Column name for distance values (default: 'distance').
-    - bins (int): Number of bins for histogram (default: 30).
-    - bar_color (str): Color of histogram bars (default: 'lightblue').
-    - n_cols (int): Number of columns in the subplot grid (default: 3).
+    sdata: spatialdata.SpatialData
+        The spatial dataset containing gene expression and diffusion data.
+    cool_pattern: list
+        List of gene names to analyze.
+    gene_key: str
+        Column name for gene features (default: 'gene').
+    distance_key: str
+        Column name for distance values (default: 'distance').
+    bins: int
+        Number of bins for histogram (default: 30).
+    bar_color: str
+        Color of histogram bars (default: 'lightblue').
+    n_cols: int
+        Number of columns in the subplot grid (default: 3).
 
     Raises
     ------
-    - ValueError: If no valid genes are found in the dataset.
+        ValueError: If no valid genes are found in the dataset.
     """
     diffusion_results = sdata["xrna_metadata"].var
     global_distances = sdata["source_score"].obs[distance_key].dropna().values
@@ -351,27 +358,27 @@ def source_score_by_celltype(
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         A SpatialData object containing `source_score` data.
-    gene_key : str, default="gene"
+    gene_key : str
         The key in `obs` that contains gene names.
-    min_counts : int, default=100
+    min_counts : int
         Minimum count threshold for genes to be included.
-    min_value : float, optional
+    min_value : float
         Genes presenting the highest source score below this will be filtered out in visualization
-    max_value : float, optional
+    max_value : float
         Genes presenting the highest source score above this will be filtered out in visualization
-    title : str, optional
+    title : str
         Custom title for the plot.
-    cluster_axis : str, default="both"
+    cluster_axis : str
         Determines clustering:
         - "none" (no clustering)
         - "x" (cluster columns only)
         - "y" (cluster rows only)
         - "both" (cluster rows and columns)
-    cmap : str, default="coolwarm"
+    cmap : str
         Colormap for the heatmap.
-    figsize : tuple, default=(10, 8)
+    figsize : tuple
         Size of the figure.
 
     Returns

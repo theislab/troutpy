@@ -105,7 +105,7 @@ def crosstab(
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         The input spatial data object containing the categorical variables.
     xvar : str
         The categorical variable for the x-axis.

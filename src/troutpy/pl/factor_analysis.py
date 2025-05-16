@@ -26,11 +26,11 @@ def rank_factor_genes_loadings(
     **kwargs,
 ) -> list[plt.Axes] | None:
     """
-    Plot top scoring genes for each factor from NMF/LDA.
+    Plot top scoring genesex for each factor from NMF/LDA.
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         The SpatialData object containing the factorized data.
     layer : str
         The layer name in `sdata` where the factorized results are stored.
@@ -44,15 +44,9 @@ def rank_factor_genes_loadings(
         Whether to share y-axis scale across subplots, by default True.
     show : bool
         Whether to show the plot, by default True.
-    save : str | None
+    save : str
         Path to save the figure, by default None.
-    ax : plt.Axes | None
-        Axes object to use for plotting, by default None.
 
-    Returns
-    -------
-    list[plt.Axes] | None
-        List of matplotlib Axes objects or None if show=True.
     """
     adata = sdata[layer]
     gene_loadings = adata.varm["gene_loadings"].T  # Factors x Genes

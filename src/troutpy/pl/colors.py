@@ -16,7 +16,7 @@ def get_palette(name="default", n_colors=None):
 
     Returns
     -------
-    palette:
+    palette: str
         list of hex color codes.
     """
     palettes = {
@@ -112,11 +112,13 @@ def get_colormap(name="default"):
 
     Parameters
     ----------
-    - name (str): Name of the colormap ("default", "coolwarm", "viridis", etc.).
+    name: str
+        Name of the colormap ("default", "coolwarm", "viridis", etc.).
 
     Returns
     -------
-    - matplotlib.colors.Colormap object.
+    list
+        matplotlib.colors.Colormap object.
     """
     colormaps = {
         "30colors": mcolors.LinearSegmentedColormap.from_list("custom_cmap", get_palette("30colors")),

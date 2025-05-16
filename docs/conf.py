@@ -9,10 +9,11 @@ import sys
 from datetime import datetime
 from importlib.metadata import metadata
 from pathlib import Path
+import os
 
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE / "extensions"))
-
+sys.path.insert(0, os.path.abspath("../src"))
 
 # -- Project information -----------------------------------------------------
 
@@ -90,6 +91,11 @@ source_suffix = {
     ".ipynb": "myst-nb",
     ".myst": "myst-nb",
 }
+
+autodoc_mock_imports = [
+    "mpl_chord_diagram",
+    # add others here if they’re missing
+]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),

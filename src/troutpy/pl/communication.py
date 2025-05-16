@@ -13,7 +13,7 @@ def celltype_communication(sdata, kind="heatmap", celltype_key="cell type", vmax
 
     Parameters
     ----------
-    sdata : SpatialData object
+    sdata : spatialdata.SpatialData
         The spatial data object containing interaction scores.
     kind : str
         Type of plot, either 'heatmap' or 'chord'. Default is 'heatmap'.
@@ -25,7 +25,7 @@ def celltype_communication(sdata, kind="heatmap", celltype_key="cell type", vmax
         Min value for colormap scaling. Default is None.
     cmap : str
         Colormap for heatmap or chord diagram. Default is 'BuPu'.
-    **kwargs : dict
+    kwargs : dict
         Additional arguments passed to the plotting functions.
     """
     interaction_strength = sdata["source_score"].uns["interaction_strength"]
@@ -63,13 +63,13 @@ def gene_communication(
 
     Parameters
     ----------
-    sdata : SpatialData object
+    sdata : spatialdata.SpatialData
         The spatial data object containing interaction scores.
     kind : str
         Type of plot, either 'heatmap' or 'chord'. Default is 'heatmap'.
     celltype_key : str
         Key for cell type colors in `sdata['table'].uns`. Default is 'cell type'.
-    gene
+    gene: str
         Name of the gene to be plotted
     vmax : float
         Max value for colormap scaling. Default is None.
@@ -77,7 +77,7 @@ def gene_communication(
         Min value for colormap scaling. Default is None.
     cmap : str
         Colormap for heatmap or chord diagram. Default is 'BuPu'.
-    **kwargs : dict
+    kwargs : dict
         Additional arguments passed to the plotting functions.
     """
     gene_interaction_strength = sdata["source_score"].uns["gene_interaction_strength"]
@@ -124,18 +124,18 @@ def target_score_by_celltype(
     title: str | None = "Target Score by Cell Type",
     cluster_axis: str = "both",
     cmap: str = "coolwarm",
-    figsize: tuple = (10, 8),
+    figsize: tuple = None,
 ) -> None:
     """
     Plots a heatmap or clustered heatmap of target scores by cell type.
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         A SpatialData object containing `target_score` data.
-    gene_key : str, default="feature_name"
+    gene_key : str
         The key in `obs` that contains gene names.
-    min_counts : int, default=100
+    min_counts : int
         Minimum count threshold for genes to be included.
     min_value : float
         Genes presenting the highest target score below this will be filtered out in visualization
@@ -143,15 +143,15 @@ def target_score_by_celltype(
         Genes presenting the highest target score above this will be filtered out in visualization
     title : str
         Custom title for the plot.
-    cluster_axis : str, default="both"
+    cluster_axis : str
         Determines clustering:
         - "none" (no clustering)
         - "x" (cluster columns only)
         - "y" (cluster rows only)
         - "both" (cluster rows and columns)
-    cmap : str, default="coolwarm"
+    cmap : str
         Colormap for the heatmap.
-    figsize : tuple, default=(10, 8)
+    figsize : tuple
         Size of the figure.
 
     Returns
@@ -164,6 +164,8 @@ def target_score_by_celltype(
     target_score["gene"] = sdata["target_score"].obs[gene_key]
     gene_by_celltype_score = target_score.groupby("gene").mean()
 
+    if figsize is None:
+        figsize = (10, 8)
     # Filter genes based on count threshold
     genes = sdata["xrna_metadata"].var.index[sdata["xrna_metadata"].var["count"] > min_counts]
     filtered_gene_by_celltype_score = gene_by_celltype_score.loc[gene_by_celltype_score.index.isin(genes), :]

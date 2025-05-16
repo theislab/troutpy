@@ -422,29 +422,29 @@ def proportion_above_threshold(
 
     Parameters
     ----------
-    - df
+    df
         DataFrame containing feature proportions.
-    - threshold_col
+    threshold_col
         Column name for proportions above the threshold (default: 'proportion_above_threshold').
-    - feature_col
+    feature_col
         Column name for feature names (default: 'feature_name').
-    - top_percentile
+    top_percentile
         Proportion (0-1) of features with the highest proportions to display (default: 0.05 for top 5%).
-    - bottom_percentile
+    bottom_percentile
         Proportion (0-1) of features with the lowest proportions to display (default: 0.05 for bottom 5%).
-    - specific_transcripts
+    specific_transcripts
         List of specific transcript names to plot (optional).
-    - figsize
+    figsize
         Tuple specifying the size of the plot (default: (4, 10)).
-    - orientation
+    orientation
         Orientation of the bars ('h' for horizontal, 'v' for vertical, default: 'h').
-    - bar_color
+    bar_color
         Color of the bars (default: 'black').
-    - title
+    title
         Title of the plot (default: 'Proportion of distant exRNa (>30um) from source').
-    - xlabel
+    xlabel
         Label for the x-axis (default: 'Proportion above threshold').
-    - ylabel
+    ylabel
         Label for the y-axis (default: 'Feature').
     """
     df = df[~df[threshold_col].isna()]
@@ -489,17 +489,17 @@ def nmf_factors_exrna_cells_W(
 
     Parameters
     ----------
-    sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         A spatial transcriptomics dataset that contains the NMF factors in the specified key.
-    nmf_adata_key (str)
+    nmf_adata_key: str
         The key in `sdata` that contains the AnnData object with NMF results. Defaults to 'nmf_data'.
-    save (bool)
+    save: bool
         Whether to save the spatial factor plots to disk. Defaults to True.
-    saving_path (str)
+    saving_path: str
         Path where the plots should be saved if `save` is True. The plots are saved in a `figures` subdirectory.
-    spot_size (int)
+    spot_size: int
         Size of the spots in the spatial plot. Defaults to 30.
-    cmap (str)
+    cmap: str
         Colormap to use for the spatial plots. Defaults to 'viridis'.
 
     Returns
@@ -537,21 +537,21 @@ def nmf_gene_contributions(
 
     Parameters
     ----------
-    sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         A spatial transcriptomics dataset that contains the NMF factors in the specified key.
-    nmf_adata_key (str)
+    nmf_adata_key: str
         The key in `sdata` that contains the AnnData object with NMF results. Defaults to 'nmf_data'.
-    save (bool)
+    save: bool
         Whether to save the heatmap plot to disk. Defaults to True.
-    vmin (float)
+    vmin: float
         Minimum value for the colormap scale. Defaults to 0.0.
-    vmax (float)
+    vmax: float
         Maximum value for the colormap scale. Defaults to 0.02.
-    saving_path (str)
+    saving_path: str
         Path where the plot should be saved if `save` is True. The plot is saved in a `figures` subdirectory.
-    cmap (str)
+    cmap: str
         Colormap to use for the heatmap. Defaults to 'viridis'.
-    figsize (tuple)
+    figsize: tuple
         Size of the heatmap figure. Defaults to (5, 5).
 
     Returns
@@ -585,9 +585,9 @@ def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, a
 
     Parameters
     ----------
-    adata_extracellular_with_nmf (AnnData)
+    adata_extracellular_with_nmf: anndata.AnnData
         An AnnData object containing the extracellular RNA data with the NMF results. The H matrix is expected to be stored in `adata.uns['H_nmf']`.
-    adata_annotated_cellular (AnnData)
+    adata_annotated_cellular: anndata.AnnData
         An AnnData object containing the cellular RNA data with annotated gene expression values.
 
     Returns
@@ -642,25 +642,25 @@ def paired_nmf_factors(
 
     Parameters
     ----------
-    sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         spatial data object containing both extracellular and cell data.
-    layer (str)
+    layer: str
         Layer in sdata to extract the NMF data from (default: 'nmf_data').
-    n_factors (int)
+    n_factors: int
         Number of NMF factors to plot (default: 5).
-    figsize (tuple)
+    figsize: tuple
         Size of the figure for each subplot (default: (12, 6)).
-    spot_size_exrna (float)
+    spot_size_exrna: float
         Size of the spots for extracellular transcript scatter plot (default: 5).
-    spot_size_cells (float)
+    spot_size_cells: float
         Size of the spots for cell scatter plot (default: 10).
-    cmap_exrna (str)
+    cmap_exrna: str
         Colormap for the extracellular transcript NMF factors (default: 'YlGnBu').
-    cmap_cells (str)
+    cmap_cells: str
         Colormap for the cell NMF factors (default: 'Reds').
-    vmax_exrna (str or float)
+    vmax_exrna: str
         Maximum value for extracellular transcript color scale (default: 'p99').
-    vmax_cells (str or float)
+    vmax_cells: str
         Maximum value for cell color scale (default: None).
     """
     # Extract NMF data from sdata
@@ -730,9 +730,12 @@ def plot_nmf_factors_spatial(adata, n_factors, save=True):
 
     Parameters
     ----------
-    adata (AnnData): An AnnData object containing the dataset with NMF factors already added as columns in `adata.obs`.Each factor should be named `NMF_factor_1`, `NMF_factor_2`, ..., `NMF_factor_n`.
-    n_factors (int): The number of NMF factors to plot.
-    save (bool): If `True`, saves the plots to files with filenames `exo_to_cell_spatial_<factor>.png`.
+    adata: anndata.AnnData
+        An AnnData object containing the dataset with NMF factors already added as columns in `adata.obs`.Each factor should be named `NMF_factor_1`, `NMF_factor_2`, ..., `NMF_factor_n`.
+    n_factors: int
+        The number of NMF factors to plot.
+    save: bool
+        If `True`, saves the plots to files with filenames `exo_to_cell_spatial_<factor>.png`.
 
     Returns
     -------

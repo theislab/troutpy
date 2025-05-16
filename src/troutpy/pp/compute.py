@@ -53,7 +53,7 @@ def define_extracellular(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         A spatial data object containing transcriptomic information.
     layer : str
         The layer in `sdata.points` containing the transcript data to process.
@@ -143,7 +143,7 @@ def filter_xrna(
 
     Parameters
     ----------
-        sdata: dict-like
+        sdata: spatialdata.SpatialData
             Spatial data object containing xRNA metadata and transcript information.
         min_counts: int
             Minimum count threshold for xRNA selection.
@@ -151,15 +151,15 @@ def filter_xrna(
             Minimum extracellular proportion threshold for xRNA selection.
         control_probe: bool
             If False, filters out control probes.
-        min_logfoldratio_over_noise: float, default=1
+        min_logfoldratio_over_noise: float
             Minimum log fold-change over noise threshold for xRNA selection.
         min_morani: float
             Minimum Moran's I threshold for spatial autocorrelation.
-        gene_key: str, default='feature_name'
+        gene_key: str
             Key for accessing gene names in transcript tables.
-        filter_cellular: bool, default=False
+        filter_cellular: bool
             If True, also filters the cellular table.
-        copy: bool, default=False
+        copy: bool
             If True, returns a filtered copy of sdata; otherwise, modifies in place.
 
     Returns

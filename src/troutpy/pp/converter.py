@@ -35,13 +35,12 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
 
     Parameters
     ----------
-    sdata : SpatialData
-        A SpatialData object with attributes such as Images, Points, and Tables,
-        conforming to the structure detailed in the SpatialData documentation.
+    sdata : spatialdata.SpatialData
+        A SpatialData object with attributes such as Images, Points, and Tables, conforming to the structure detailed in the SpatialData documentation.
 
     Returns
     -------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         The converted SpatialData object with the modifications applied.
     """
     # ----- 1. Modify the Points/transcripts DataFrame -----

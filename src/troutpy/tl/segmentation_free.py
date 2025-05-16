@@ -18,15 +18,15 @@ def segmentation_free_clustering(
 
     Parameters
     ----------
-    sdata
+    sdata: spatialdata.SpatialData
         A spatial data object containing transcriptomic information.
     params
         A dictionary of parameters for the selected clustering method.For `points2regions`:
     coord_keys
        List of x and y gene columns within sdata[layer]
-    y
+    y: str
         Column name for the y-coordinates of transcripts.
-    gene_key
+    gene_key: str
         Column name for the feature names.
     method: str
         Clustering method to use. Options:
@@ -34,12 +34,12 @@ def segmentation_free_clustering(
             - 'sainsc': Placeholder for another clustering method.
     transcript_id_key: str
         Column name for the transcript IDs.
-    copy (bool)
+    copy: bool
         If True, returns a copy of the clustering results. If False, updates `sdata` in-place.
 
     Returns
     -------
-    Optional[anndata.AnnData]
+    anndata.AnnData
         If `copy` is True, returns an AnnData object containing the clustering results.Otherwise, updates the `sdata` object in-place and returns None.
     """
     # Reset transcript indexing if not unique
