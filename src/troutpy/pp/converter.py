@@ -103,7 +103,7 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
     try:
         table.var["gene_id"] = table.var.index
         table.var.index = table.var["gene_names"]
-    except:
+    except KeyError:
         print("Warning: 'gene_names' column not found in Tables['table']. Using default index.")
     if table.X is None:
         raise ValueError("Tables['table'] must have an expression matrix in .X.")
@@ -127,7 +127,7 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
             default_image = next(iter(morph_focus.values()))
 
         # Create or update the Stainings attribute.
-        #if not hasattr(sdata, "Stainings") or sdata.images is None:
+        # if not hasattr(sdata, "Stainings") or sdata.images is None:
         #    sdata.images = {}
         sdata["default"] = default_image
 
@@ -135,9 +135,7 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
 
 
 def process_image_data(sdata: sd.SpatialData) -> xr.DataArray:
-    """
-    Stitches image tiles into a single global image.
-    """
+    """Stitches image tiles into a single global image."""
     fov_keys = list(sdata.images.data.keys())
     sample_raw = sdata.images.data[fov_keys[0]].data
     sample = sample_raw.compute() if hasattr(sample_raw, "compute") else sample_raw
@@ -162,9 +160,7 @@ def process_image_data(sdata: sd.SpatialData) -> xr.DataArray:
 
 
 def process_label_data(sdata: sd.SpatialData) -> (xr.DataArray, dict):
-    """
-    Stitches label tiles, assigns unique IDs, and returns mapping from (fov, original_cell_ID) to new unique ID.
-    """
+    """Stitches label tiles, assigns unique IDs, and returns mapping from (fov, original_cell_ID) to new unique ID."""
     fov_keys = list(sdata.labels.data.keys())
     sample_raw = sdata.labels.data[fov_keys[0]].data
     sample = sample_raw.compute() if hasattr(sample_raw, "compute") else sample_raw
@@ -193,7 +189,7 @@ def process_label_data(sdata: sd.SpatialData) -> (xr.DataArray, dict):
         id_map.update(tile_map)
         next_id += len(unique_ids)
         rel = np.zeros_like(tile)
-        for (fv, orig), new in tile_map.items():
+        for (_fv, orig), new in tile_map.items():
             rel[tile == orig] = new
         x0 = int(round(x_offs[key] - x_min))
         y0 = int(round(y_offs[key] - y_min))
@@ -205,9 +201,7 @@ def process_label_data(sdata: sd.SpatialData) -> (xr.DataArray, dict):
 
 
 def process_transcript_data(sdata: sd.SpatialData) -> pd.DataFrame:
-    """
-    Concatenates transcript tiles, keeps fov (numeric) for remapping.
-    """
+    """Concatenates transcript tiles, keeps fov (numeric) for remapping."""
     dfs = []
     for key in sdata.points.data.keys():
         fov = int(str(key).split("_", 1)[0])
@@ -269,8 +263,9 @@ def cosmx_converter(sdata: sd.SpatialData, copy_data: bool = False) -> sd.Spatia
     original_table = sdata_out["table"].copy()
     try:
         del original_table.uns["spatialdata_attrs"]
-    except:
-        pass
+    except KeyError:
+        print("Key 'spatialdata_attrs' not found in original_table.uns; skipping deletion.")
+
     # re-parse that AnnData into a SpatialData table layer
     sdata_out["table"] = TableModel.parse(
         original_table,

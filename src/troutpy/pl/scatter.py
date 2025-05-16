@@ -29,9 +29,7 @@ def spatial_inout_expression(
     figures_path: str = "",
     custom_plot_filename: str = None,
 ):
-    """Plots intracellular (foreground) and extracellular (background) expression of a gene,
-    with two vertical colorbars stacked on the right.
-    """
+    """Plots intracellular (foreground) and extracellular (background) expression of a gene, with two vertical colorbars stacked on the right."""
     # --- 1) Data prep ---
     if gene not in sdata[layer_cells].var_names or gene not in sdata[layer_extra].var_names:
         raise ValueError(f"Gene '{gene}' not found in both intracellular and extracellular layers.")
@@ -149,9 +147,7 @@ def diffusion_results(
     figures_path: str = "",
     custom_plot_filename: str | None = None,
 ) -> None:
-    """
-    Styled diffusion scatter plot matching metric_scatter aesthetics.
-    """
+    """Styled diffusion scatter plot matching metric_scatter aesthetics."""
     var_df = sdata["xrna_metadata"].var.copy()
     var_df[x_col] = var_df[x_col].replace([np.inf, -np.inf], np.nan)
     var_df[y_col] = var_df[y_col].replace([np.inf, -np.inf], np.nan)
@@ -159,21 +155,23 @@ def diffusion_results(
 
     # Filter by non-control probes if provided
     if non_control_probes is not None:
-        var_df = var_df[(var_df["control_probe"] == True) | (var_df.index.isin(non_control_probes))]
+        var_df = var_df[(var_df["control_probe"]) | (var_df.index.isin(non_control_probes))]
 
     # Determine palette
+    DEFAULT_COLORS = ["#DC143C", "#1E90FF"]
     if palette == "default":
-        plot_colors = ["#DC143C", "#1E90FF"]
+        plot_colors = DEFAULT_COLORS
     else:
         try:
             plot_colors = get_palette(palette)
-        except Exception:
+        except KeyError:
+            # Try matplotlib colormap fallback
             try:
                 cmap = plt.get_cmap(palette)
                 plot_colors = [cmap(0), cmap(1)]
             except ValueError:
                 print(f"Palette '{palette}' not recognized. Falling back to default colors.")
-                plot_colors = ["#DC143C", "#1E90FF"]
+                plot_colors = DEFAULT_COLORS
 
     color_map = {True: plot_colors[0], False: plot_colors[1]}
     var_df["plot_color"] = var_df["control_probe"].map(color_map)
@@ -215,10 +213,7 @@ def diffusion_results(
     y_min, y_max = var_df[y_col].min(), var_df[y_col].max()
     x_pad = (x_max - x_min) * 0.2
     y_pad = (y_max - y_min) * 0.2
-    if y_min - y_pad < 0:
-        yminimum = y_min
-    else:
-        yminimum = y_min - y_pad
+
     plt.xlim(x_min - x_pad, x_max + x_pad)
     plt.ylim(10e-2, y_max + y_pad)
 
@@ -326,7 +321,7 @@ def spatial_transcripts(
     try:
         pal = troutpy.pl.get_palette(colormap, n_cats)
         cmap = ListedColormap(pal)
-    except Exception:
+    except KeyError:
         cmap = plt.get_cmap(colormap, n_cats)
 
     # 5) Load and optionally clip cell boundaries
@@ -346,7 +341,7 @@ def spatial_transcripts(
     # 6) Create plot
     fig, ax = plt.subplots(figsize=figsize)
     gdf.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=boundary_linewidth)
-    scatter = ax.scatter(trans_df["x"], trans_df["y"], c=codes, cmap=cmap, s=scatter_size, edgecolor="none", alpha=alpha)
+    ax.scatter(trans_df["x"], trans_df["y"], c=codes, cmap=cmap, s=scatter_size, edgecolor="none", alpha=alpha)
 
     # 7) Build legend
     for i, cat in enumerate(cats.cat.categories):

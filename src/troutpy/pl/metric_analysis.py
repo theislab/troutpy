@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -6,7 +8,7 @@ import spatialdata as sd  # Assuming SpatialData is from this package
 from adjustText import adjust_text  # Helps prevent overlapping labels
 from scipy.stats import mannwhitneyu, shapiro, ttest_ind
 
-from troutpy.pl import get_palette
+from troutpy.pl import get_colormap, get_palette
 
 
 def top_bottom_probes_of_metric(
@@ -21,9 +23,7 @@ def top_bottom_probes_of_metric(
     palette: str = "default",
 ) -> None:
     """
-    Creates a horizontal bar plot showing the top and bottom genes based on a
-    specified metric. Bars are colored based on whether the gene is a control
-    probe or not.
+    Creates a horizontal bar plot showing the top and bottom genes based on a specified metric. Bars are colored based on whether the gene is a control probe or not.
 
     Parameters
     ----------
@@ -81,12 +81,12 @@ def top_bottom_probes_of_metric(
         pal = get_palette(palette)
         control_color = pal[0] if len(pal) > 0 else control_color
         gene_color = pal[1] if len(pal) > 1 else gene_color
-    except Exception:
+    except KeyError:
         try:
             cmap = plt.get_cmap(palette)
             control_color = cmap(0.1)
             gene_color = cmap(0.8)
-        except Exception:
+        except KeyError:
             pass  # fallback remains default
 
     colors = plot_df["control_probe"].map({True: control_color, False: gene_color}).tolist()
@@ -131,10 +131,7 @@ def metric_scatter(
     custom_plot_filename: str = None,
     palette: str = "troutpy",
 ) -> None:
-    """
-    Creates a scatter plot of two specified metrics from a SpatialData object,
-    highlighting control vs. non-control probes, with options to label top genes
-    in each metric and save the figure.
+    """Creates a scatter plot of two specified metrics from a SpatialData object, highlighting control vs. non-control probes, with options to label top genes in each metric and save the figure.
 
     Parameters
     ----------
@@ -182,7 +179,7 @@ def metric_scatter(
     else:
         try:
             plot_colors = get_palette(palette)
-        except:  # noqa: E722
+        except ValueError:
             try:
                 cmap = plt.get_cmap(palette)
                 plot_colors = [cmap(0), cmap(1)]
@@ -194,7 +191,7 @@ def metric_scatter(
     var_df["plot_color"] = var_df["control_probe"].map(color_map)
 
     plt.figure(figsize=(6, 6))
-    scatter = plt.scatter(var_df[x], var_df[y], c=var_df["plot_color"], edgecolor="black", linewidth=0.5, alpha=0.8)
+    plt.scatter(var_df[x], var_df[y], c=var_df["plot_color"], edgecolor="black", linewidth=0.5, alpha=0.8)
 
     label_genes = set()
     if label_top_n_x > 0:
@@ -265,9 +262,7 @@ def logfoldratio_over_noise(
     custom_plot_filename: str = None,
     palette: str = "troutpy",
 ) -> None:
-    """
-    Creates a violin plot comparing logfoldratio_over_noise values for control
-    vs non-control probes, and tests for significance using the specified test.
+    """Creates a violin plot comparing logfoldratio_over_noise values for controlvs non-control probes, and tests for significance using the specified test.
 
     Parameters
     ----------
@@ -320,7 +315,7 @@ def logfoldratio_over_noise(
     else:
         try:
             plot_colors = get_palette(palette)
-        except:  # noqa: E722
+        except ValueError:
             try:
                 cmap = plt.get_cmap(palette)
                 plot_colors = [cmap(i) for i in range(2)]
@@ -371,14 +366,7 @@ def gene_metric_heatmap(
     custom_plot_filename: str = None,
     cmap: str = "coolwarm",
 ) -> None:
-    """
-    Creates a heatmap or clustered heatmap of gene metrics, with color
-    differentiation for control probes and optional saving.
-    """
-    import os
-
-    import numpy as np
-
+    """Creates a heatmap or clustered heatmap of gene metrics, with color differentiation for control probes and optional saving."""
     var_df = sdata["xrna_metadata"].var.copy()
 
     valid_metrics = {
@@ -416,7 +404,7 @@ def gene_metric_heatmap(
     # Determine colormap
     try:
         cmap = get_colormap(cmap)  # your custom function
-    except:
+    except ValueError:
         try:
             cmap = plt.get_cmap(cmap)
         except ValueError:

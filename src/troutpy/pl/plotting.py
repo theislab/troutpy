@@ -11,8 +11,6 @@ import seaborn as sns
 from matplotlib.colors import Colormap
 from spatialdata import SpatialData
 
-# from troutpy.pp.compute import compute_crosstab
-
 
 def sorted_heatmap(
     celltype_by_feature,
@@ -272,7 +270,7 @@ def plot_crosstab(
     None
     """
     # Compute the crosstab data
-    crosstab_data = compute_crosstab(data, xvar=xvar, yvar=yvar)
+    crosstab_data = pd.crosstab(data[xvar], data[yvar])
 
     # Normalize the data if required
     if normalize:
@@ -965,12 +963,9 @@ def interactions_with_arrows(
 
 
 def intra_extra_density(
-    sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=["x", "y"], intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
+    sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=None, intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
 ):
-    """
-    Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular
-    transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and
-    extracellular KDEs in side-by-side subplots.
+    """Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and extracellular KDEs in side-by-side subplots.
 
     Parameters
     ----------
@@ -982,6 +977,8 @@ def intra_extra_density(
     - intra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for intracellular data.
     - extra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for extracellular data.
     """
+    if coord_keys is None:
+        coord_keys = ["x", "y"]
     if intra_kde_kwargs is None:
         intra_kde_kwargs = {"fill": True, "cmap": "Blues", "thresh": 0.05}
     if extra_kde_kwargs is None:
@@ -992,7 +989,7 @@ def intra_extra_density(
     if isinstance(transcripts_df, dd.DataFrame):
         transcripts_df = transcripts_df.compute()
 
-    if figsize == None:
+    if figsize is None:
         figsize = (12, 5 * len(genes))
     # Create subplots
     fig, axes = plt.subplots(len(genes), 2, figsize=figsize)

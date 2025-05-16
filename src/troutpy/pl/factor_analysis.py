@@ -153,7 +153,7 @@ def rank_factor_genes_loadings_matrixplot(
     if cmap not in plt.colormaps():
         try:
             cmap = get_colormap(cmap)
-        except:
+        except KeyError:
             pass
 
     # Plot heatmap
@@ -198,7 +198,7 @@ def factors_in_cells(
     if cmap not in plt.colormaps():
         try:
             cmap = get_colormap(cmap)
-        except:
+        except KeyError:
             pass
     if method == "matrixplot":
         sc.pl.matrixplot(loadata, loadata.var.index, groupby=celltype_key, cmap=cmap, **kwargs)

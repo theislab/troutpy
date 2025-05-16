@@ -8,7 +8,6 @@ from shapely import linearrings, polygons
 from shapely.geometry import box
 from spatialdata import SpatialData
 from spatialdata.models import ShapesModel
-from spatialdata.models.models import ShapesModel  # For converting GeoDataFrame
 from tqdm import tqdm
 
 

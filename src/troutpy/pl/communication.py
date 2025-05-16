@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 import spatialdata as sd
 from mpl_chord_diagram import chord_diagram
+from spatialdata import SpatialData
 
 
 def celltype_communication(sdata, kind="heatmap", celltype_key="cell type", vmax=None, vmin=None, cmap="BuPu", dendrogram_ratio=0.1, **kwargs):
@@ -54,9 +55,6 @@ def celltype_communication(sdata, kind="heatmap", celltype_key="cell type", vmax
     plt.show()
 
 
-from spatialdata import SpatialData
-
-
 def gene_communication(
     sdata: SpatialData, kind="heatmap", gene: str = "", celltype_key="cell type", vmax=None, vmin=None, cmap="BuPu", dendrogram_ratio=0.1, **kwargs
 ):
@@ -93,7 +91,7 @@ def gene_communication(
     )
     try:
         colors = sdata["table"].uns[celltype_key + "_colors"]
-    except:
+    except KeyError:
         colpalette = plt.get_cmap("tab20")
         colors = [colpalette(i) for i in range(len(np.unique(source_table.var.index)))]
 
