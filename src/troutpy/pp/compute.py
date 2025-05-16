@@ -304,7 +304,7 @@ def segmentation_free_sainsc(
     transcripts_analysis = transcripts_full.filter(pl.col("gene").is_in(list(common_genes)))
 
     # Filter the signature matrix to match KDE
-    signatures = signatures.loc[signatures.index.isin(common_genes),:]
+    signatures = signatures.loc[signatures.index.isin(common_genes), :]
     #
     # --- 4. Create Brain Object Using LazyKDE (Analysis on overlapping genes) ---
     brain = LazyKDE.from_dataframe(transcripts_analysis, resolution=resolution, binsize=binsize, n_threads=n_threads)

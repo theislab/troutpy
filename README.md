@@ -8,7 +8,6 @@
 
 Package for the analysis of transcripts outside segmented cells in python
 
-
 ![Alt text][images/logo_fish.png]
 
 ## Getting started
@@ -37,8 +36,8 @@ pip install troutpy
 pip install git+https://github.com/theislab/troutpy.git@main
 ```
 
-
 ## Usage
+
 Please have a look at the [Usage documentation](https://troutpy.readthedocs.io/en/latest/) and the [tutorials](https://troutpy.readthedocs.io/en/latest/).
 
 ```python
