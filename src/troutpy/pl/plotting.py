@@ -27,9 +27,9 @@ def sorted_heatmap(
 
     Parameters
     ----------
-    celltype_by_feature (pd.DataFrame)
+    celltype_by_feature: pandas.DataFrame
         DataFrame showing the fraction of each feature by cell type.
-    outpath_dummy (str)
+    outpath_dummy: str
         Path to save the output plots.
     """
     figures_path = os.path.join(output_path, "figures")
@@ -72,35 +72,35 @@ def coupled_scatter(
 
     Parameters
     ----------
-    sdata (sdata)
+    sdata: spatialdata.SpatialData
         A spatial data object that contains transcript and cell information.
-    layer (str, optional)
+    layer: str
         The key for the layer in `sdata.points` that contains transcript data (default: 'extracellular_transcripts').
-    output_path (str, optional)
+    output_path: str
         The directory path where the plot will be saved. If not provided, the plot will not be saved (default: '').
-    transcript_group (str, optional)
+    transcript_group: str
         The key in the transcript data (e.g., distance to the source cell) to be used for coloring the scatter plot (default: 'distance_to_source_cell').
-    save (bool, optional)
+    save: bool
         Whether to save the plot to a file. If `True`, the plot is saved to `output_path` (default: True).
-    format (str, optional)
+    format: str
         The format for saving the plot (e.g., 'pdf', 'png'). This is only used if `save=True` (default: 'pdf').
-    xcoord (str, optional)
+    xcoord: str
         The column name in the transcript data representing the x-coordinate (default: 'x').
-    ycoord (str, optional)
+    ycoord: str
         The column name in the transcript data representing the y-coordinate (default: 'y').
-    xcellcoord (str, optional)
+    xcellcoord: str
         The column name in the cell data representing the x-coordinate of cell centroids (default: 'x_centroid').
-    ycellcoord (str, optional)
+    ycellcoord: str
         The column name in the cell data representing the y-coordinate of cell centroids (default: 'y_centroid').
-    colormap (str, optional)
+    colormap: str
         The colormap to use for coloring the transcripts based on the `transcript_group` values (default: 'Blues').
-    size (float, optional)
+    size: float
         The size of the scatter points for cells and transcripts. Transcripts are scaled down by 0.1 (default: 2).
-    color_cells (str, optional)
+    color_cells: str
         The color to use for the cell centroids (default: 'red').
-    figsize (tuple, optional)
+    figsize: tuple
         The size of the figure in inches (width, height). This controls the dimensions of the plot (default: (10, 7)).
-    vmax (float, optional)
+    vmax: float
         The upper limit for the colormap. If provided, this limits the color scale to values below `vmax` (default: None).
 
     Returns
@@ -167,31 +167,31 @@ def heatmap(
 
     Parameters
     ----------
-    data (pandas.DataFrame, numpy.ndarray)
+    data: pandas.DataFrame
         The data to visualize as a heatmap. Rows and columns will be clustered if specified.
-    output_path (str, optional)
+    output_path: str
         Directory where the heatmap should be saved if `save` is True. Defaults to an empty string.
-    save (bool, optional)
+    save: bool
         Whether to save the generated heatmap to a file. Defaults to False.
-    figsize (tuple, optional)
+    figsize: tuple
         Size of the figure as (width, height). If None, the size is calculated based on the data dimensions. Defaults to None.
-    tag (str, optional)
+    tag: str
         A tag to append to the saved file name. Defaults to an empty string.
-    title (str, optional)
+    title: str
         Title of the heatmap. Defaults to None.
-    cmap (str, optional)
+    cmap: str
         Colormap to use for the heatmap. Defaults to "RdBu_r".
-    annot (bool, optional)
+    annot: bool
         Whether to annotate the heatmap cells with their values. Defaults to False.
-    cbar (bool, optional)
+    cbar: bool
         Whether to display a color bar in the heatmap. Defaults to True.
-    vmax (float, optional)
+    vmax: float
         Maximum value for the colormap. Defaults to None.
-    vmin (float, optional)
+    vmin: float
         Minimum value for the colormap. Defaults to 0.
-    row_cluster (bool, optional)
+    row_cluster: bool
         Whether to perform hierarchical clustering on rows. Defaults to True.
-    col_cluster (bool, optional)
+    col_cluster: bool
         Whether to perform hierarchical clustering on columns. Defaults to True.
 
     Returns
@@ -236,15 +236,15 @@ def plot_crosstab(
     ----------
     data (pd.DataFrame)
         Input dataset containing the variables for the cross-tabulation.
-    xvar (str, optional)
+    xvar (str)
         The variable to use on the x-axis for the cross-tabulation.
-    yvar (str, optional)
+    yvar (str)
         The variable to use on the y-axis for the cross-tabulation.
-    normalize (bool, optional)
+    normalize (bool)
         Whether to normalize the cross-tabulated data (percentages). If True, the data will be normalized.
     axis (int)
         The axis to normalize across. Use `1` for row normalization and `0` for column normalization.
-    kind (str, optional)
+    kind (str)
         The kind of plot to generate. Options include:
             - 'barh': Horizontal bar plot
             - 'bar': Vertical bar plot
@@ -252,17 +252,17 @@ def plot_crosstab(
             - 'clustermap': Clustermap visualization
     save (bool)
         If True, the plot will be saved to a file.
-    figures_path (str, optional)
+    figures_path (str)
         The directory path where the figure should be saved. If not specified, the plot will be saved in the current directory.
-    stacked (bool, optional)
+    stacked (bool)
         If True, the bar plots will be stacked. Only applicable for 'barh' and 'bar' plot kinds.
-    figsize (tuple, optional)
+    figsize (tuple)
         The size of the figure for the plot (width, height).
-    cmap (str, optional)
+    cmap (str)
         The colormap to use for the plot, especially for heatmap and clustermap visualizations.
-    saving_format (str, optional)
+    saving_format (str)
         The format to save the plot in. Options include 'png', 'pdf', etc.
-    sortby (str, optional)
+    sortby (str)
         The column or row to sort the cross-tabulated data by before plotting.
 
     Returns
@@ -364,15 +364,15 @@ def moranI_histogram(svg_df, save=True, figures_path: str = "", bins: int = 200,
 
     Parameters
     ----------
-    svg_df (pandas.DataFrame)
+    svg_df: pandas.DataFrame
         DataFrame containing a column 'I' with Moran's I scores.
-    save (bool, optional)
+    save: bool
         Whether to save the plot as a file.
-    figures_path (str, optional)
+    figures_path: str
         Path to save the figure. Only used if `save=True`.
-    bins (int, optional)
+    bins: int
         Number of bins to use in the histogram.
-    format (str, optional)
+    format: str
         Format in which to save the figure (e.g., 'pdf', 'png').
 
     Returns
@@ -422,29 +422,29 @@ def proportion_above_threshold(
 
     Parameters
     ----------
-    - df
+    df
         DataFrame containing feature proportions.
-    - threshold_col
+    threshold_col
         Column name for proportions above the threshold (default: 'proportion_above_threshold').
-    - feature_col
+    feature_col
         Column name for feature names (default: 'feature_name').
-    - top_percentile
+    top_percentile
         Proportion (0-1) of features with the highest proportions to display (default: 0.05 for top 5%).
-    - bottom_percentile
+    bottom_percentile
         Proportion (0-1) of features with the lowest proportions to display (default: 0.05 for bottom 5%).
-    - specific_transcripts
+    specific_transcripts
         List of specific transcript names to plot (optional).
-    - figsize
+    figsize
         Tuple specifying the size of the plot (default: (4, 10)).
-    - orientation
+    orientation
         Orientation of the bars ('h' for horizontal, 'v' for vertical, default: 'h').
-    - bar_color
+    bar_color
         Color of the bars (default: 'black').
-    - title
+    title
         Title of the plot (default: 'Proportion of distant exRNa (>30um) from source').
-    - xlabel
+    xlabel
         Label for the x-axis (default: 'Proportion above threshold').
-    - ylabel
+    ylabel
         Label for the y-axis (default: 'Feature').
     """
     df = df[~df[threshold_col].isna()]
@@ -480,6 +480,7 @@ def proportion_above_threshold(
     plt.show()
 
 
+# not in docs
 def nmf_factors_exrna_cells_W(
     sdata, nmf_adata_key: str = "nmf_data", save: bool = True, saving_path: str = "", spot_size: int = 30, cmap: str = "viridis"
 ):
@@ -488,17 +489,17 @@ def nmf_factors_exrna_cells_W(
 
     Parameters
     ----------
-    sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         A spatial transcriptomics dataset that contains the NMF factors in the specified key.
-    nmf_adata_key (str, optional)
+    nmf_adata_key: str
         The key in `sdata` that contains the AnnData object with NMF results. Defaults to 'nmf_data'.
-    save (bool, optional)
+    save: bool
         Whether to save the spatial factor plots to disk. Defaults to True.
-    saving_path (str, optional)
+    saving_path: str
         Path where the plots should be saved if `save` is True. The plots are saved in a `figures` subdirectory.
-    spot_size (int, optional)
+    spot_size: int
         Size of the spots in the spatial plot. Defaults to 30.
-    cmap (str, optional)
+    cmap: str
         Colormap to use for the spatial plots. Defaults to 'viridis'.
 
     Returns
@@ -520,6 +521,7 @@ def nmf_factors_exrna_cells_W(
             sc.pl.spatial(adata, color=f"NMF_factor_{factor + 1}", cmap=cmap, title=f"NMF Factor {factor + 1}", spot_size=spot_size)
 
 
+# not in docs
 def nmf_gene_contributions(
     sdata,
     nmf_adata_key: str = "nmf_data",
@@ -535,21 +537,21 @@ def nmf_gene_contributions(
 
     Parameters
     ----------
-    sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         A spatial transcriptomics dataset that contains the NMF factors in the specified key.
-    nmf_adata_key (str, optional)
+    nmf_adata_key: str
         The key in `sdata` that contains the AnnData object with NMF results. Defaults to 'nmf_data'.
-    save (bool, optional)
+    save: bool
         Whether to save the heatmap plot to disk. Defaults to True.
-    vmin (float, optional)
+    vmin: float
         Minimum value for the colormap scale. Defaults to 0.0.
-    vmax (float, optional)
+    vmax: float
         Maximum value for the colormap scale. Defaults to 0.02.
-    saving_path (str, optional)
+    saving_path: str
         Path where the plot should be saved if `save` is True. The plot is saved in a `figures` subdirectory.
-    cmap (str, optional)
+    cmap: str
         Colormap to use for the heatmap. Defaults to 'viridis'.
-    figsize (tuple, optional)
+    figsize: tuple
         Size of the heatmap figure. Defaults to (5, 5).
 
     Returns
@@ -576,15 +578,16 @@ def nmf_gene_contributions(
     plt.close()  # Close the figure to avoid memory issues
 
 
+# not in docs
 def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, adata_annotated_cellular):
     """
     Transfers the gene loadings (H matrix) derived from extracellular RNA analysis to a cellular dataset. It calculates the new W matrix for cellular data by multiplying the gene expression values of the cellular dataset with the filtered H matrix.
 
     Parameters
     ----------
-    adata_extracellular_with_nmf (AnnData)
+    adata_extracellular_with_nmf: anndata.AnnData
         An AnnData object containing the extracellular RNA data with the NMF results. The H matrix is expected to be stored in `adata.uns['H_nmf']`.
-    adata_annotated_cellular (AnnData)
+    adata_annotated_cellular: anndata.AnnData
         An AnnData object containing the cellular RNA data with annotated gene expression values.
 
     Returns
@@ -618,6 +621,7 @@ def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, a
     return adata_annotated_cellular
 
 
+# not in docs
 def paired_nmf_factors(
     sdata,
     layer="nmf_data",
@@ -638,25 +642,25 @@ def paired_nmf_factors(
 
     Parameters
     ----------
-    sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         spatial data object containing both extracellular and cell data.
-    layer (str, optional)
+    layer: str
         Layer in sdata to extract the NMF data from (default: 'nmf_data').
-    n_factors (int, optional)
+    n_factors: int
         Number of NMF factors to plot (default: 5).
-    figsize (tuple, optional)
+    figsize: tuple
         Size of the figure for each subplot (default: (12, 6)).
-    spot_size_exrna (float, optional)
+    spot_size_exrna: float
         Size of the spots for extracellular transcript scatter plot (default: 5).
-    spot_size_cells (float, optional)
+    spot_size_cells: float
         Size of the spots for cell scatter plot (default: 10).
-    cmap_exrna (str, optional)
+    cmap_exrna: str
         Colormap for the extracellular transcript NMF factors (default: 'YlGnBu').
-    cmap_cells (str, optional)
+    cmap_cells: str
         Colormap for the cell NMF factors (default: 'Reds').
-    vmax_exrna (str or float)
+    vmax_exrna: str
         Maximum value for extracellular transcript color scale (default: 'p99').
-    vmax_cells (str or float)
+    vmax_cells: str
         Maximum value for cell color scale (default: None).
     """
     # Extract NMF data from sdata
@@ -719,15 +723,19 @@ def paired_nmf_factors(
         plt.show()
 
 
+# not in docs
 def plot_nmf_factors_spatial(adata, n_factors, save=True):
     """
     Visualizes the spatial distribution of cells, colored by their corresponding NMF factor values, stored in `adata.obs`. It iterates over all specified NMF factors and generates spatial plots for each factor.
 
     Parameters
     ----------
-    adata (AnnData): An AnnData object containing the dataset with NMF factors already added as columns in `adata.obs`.Each factor should be named `NMF_factor_1`, `NMF_factor_2`, ..., `NMF_factor_n`.
-    n_factors (int): The number of NMF factors to plot.
-    save (bool): If `True`, saves the plots to files with filenames `exo_to_cell_spatial_<factor>.png`.
+    adata: anndata.AnnData
+        An AnnData object containing the dataset with NMF factors already added as columns in `adata.obs`.Each factor should be named `NMF_factor_1`, `NMF_factor_2`, ..., `NMF_factor_n`.
+    n_factors: int
+        The number of NMF factors to plot.
+    save: bool
+        If `True`, saves the plots to files with filenames `exo_to_cell_spatial_<factor>.png`.
 
     Returns
     -------
@@ -777,43 +785,43 @@ def spatial_interactions(
 
     Parameters
     ----------
-    sdata (AnnData)
+    sdata: spatialdata.SpatialData
         An AnnData object containing the spatial omics data, including transcript expression and cell positions.
-    layer (str)
+    layer: str
         The layer in the AnnData object that contains the extracellular RNA transcript data.
-    gene (str)
+    gene: str
         The gene of interest to be visualized in terms of its spatial interaction with source and target cells.
-    gene_key (str)
+    gene_key: str
         The column name in the AnnData object used to identify the gene.
-    cell_id_key (str)
+    cell_id_key: str
         The column name in the AnnData object used to identify individual cells.
-    color_target (str)
+    color_target: str
         The color to be used for target cells in the plot.
-    color_source (str)
+    color_source: str
         The color to be used for source cells in the plot.
-    color_transcript (str)
+    color_transcript: str
         The color to be used for the RNA transcripts in the plot.
-    spatial_key (str)
+    spatial_key: str
         The key in the AnnData object that stores the spatial coordinates of the cells.
-    img (Optional[Union[bool, Sequence]])
+    img: str
         A background image to overlay on the plot, such as a tissue section. Can be set to `None` to omit.
-    img_alpha (Optional[float])
+    img_alpha: float
         The transparency level of the background image. Ignored if `img` is `None`.
-    image_cmap (Optional[Colormap])
+    image_cmap: str
         The colormap to be used for the background image, if applicable.
-    size (Optional[Union[float, Sequence[float]]])
+    size: float
         The size of the scatter plot points for the cells and transcripts.
-    alpha (float)
+    alpha: float
         The transparency level for the scatter plot points.
-    title (Optional[Union[str, Sequence[str]]])
+    title: str
         The title of the plot. If `None`, the gene name is used.
-    legend_loc (Optional[str])
+    legend_loc: str
         The location of the legend in the plot.
-    figsize
+    figsize: tuple
         The dimensions of the plot in inches.
-    dpi (Optional[int])
+    dpi: int
         The resolution (dots per inch) for the plot.
-    save (Optional[Union[str, Path]])
+    save: bool
         The path to save the plot image. If `None`, the plot is displayed but not saved.
     kwargs
         Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
@@ -877,52 +885,51 @@ def interactions_with_arrows(
 
     Parameters
     ----------
-    - sdata (AnnData)
+    sdata: spatialdata.SpatialData
         The AnnData object containing the spatial omics data.
-    - layer (str, optional)
+    layer: str
         The key in `sdata` for the extracellular transcript layer to analyze. Default is 'extracellular_transcripts_enriched'.
-    - gene (str, optional)
+    gene: str
         The gene of interest. Default is 'Arc'.
-    - gene_key (str, optional)
+    gene_key: str
         The key for gene names in the data. Default is 'feature_name'.
-    - cell_id_key (str, optional)
+    cell_id_key: str
         The key for cell IDs. Default is 'cell_id'.
-    - color_target (str, optional)
+    color_target: str
         Color for the target cells. Default is 'blue'.
-    - color_source (str, optional)
+    color_source: str
         Color for the source cells. Default is 'red'.
-    - color_transcript (str, optional)
+    color_transcript: str
         Color for the transcript locations. Default is 'green'.
-    - spatial_key (str, optional)
+    spatial_key: str
         The key for spatial coordinates in `sdata`. Default is 'spatial'.
-    - img (Optional[Union[bool, Sequence]], optional)
+    img
         Optional background image (e.g., tissue section) to display behind the plot.
-    - img_alpha (Optional[float], optional)
+    img_alpha: float
         Transparency level for the background image. Default is None (no image).
-    - image_cmap (Optional[Colormap], optional)
+    image_cmap: str
         Colormap for the image. Default is None.
-    - size (Optional[Union[float, Sequence[float]]], optional)
+    size: float
         Size of the plotted points (cells and transcripts). Default is 8.
-    - alpha (float, optional)
+    alpha: float
         Transparency level for plotted points. Default is 0.6.
-    - title (Optional[Union[str, Sequence[str]]], optional)
+    title: str
         Title of the plot. Default is the gene name.
-    - legend_loc (Optional[str], optional)
+    legend_loc: str
         Location of the legend on the plot. Default is 'best'.
-    - figsize (Tuple[float, float], optional)
+    figsize: tuple
         Size of the plot. Default is (10, 10).
-    - dpi (Optional[int], optional)
+    dpi: int
         Resolution of the plot. Default is 100.
-    - save (Optional[Union[str, Path]], optional)
+    save: str
         If provided, the path where the plot will be saved.
-    - kwargs
+    kwargs
         Additional arguments passed to the `scatter` and `imshow` functions for customization.
 
     Returns
     -------
-    - None
+    None
         The function displays or saves a plot of interactions between cells and transcripts.
-
     """
     # Extract relevant data
     transcripts = sdata.points[layer]
@@ -969,13 +976,20 @@ def intra_extra_density(
 
     Parameters
     ----------
-    - sdata: SpatialData object containing transcript locations and metadata.
-    - genes: list of str, gene names to plot.
-    - layer: str, layer within sdata.points where transcripts are stored (default: "transcripts").
-    - gene_key: str, column name where the gene name is stored (default: "feature_name").
-    - coord_keys: list of str, column names for spatial coordinates (default: ["x", "y"]).
-    - intra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for intracellular data.
-    - extra_kde_kwargs: dict, optional arguments for seaborn's kdeplot for extracellular data.
+    sdata: spatialdata.SpatialData
+        SpatialData object containing transcript locations and metadata.
+    genes: str
+        list of str, gene names to plot.
+    layer: str
+        layer within sdata.points where transcripts are stored (default: "transcripts").
+    gene_key: str
+        column name where the gene name is stored (default: "feature_name").
+    coord_keys: list
+        column names for spatial coordinates (default: ["x", "y"]).
+    intra_kde_kwargs
+        dict arguments for seaborn's kdeplot for intracellular data.
+    extra_kde_kwargs
+        dict arguments for seaborn's kdeplot for extracellular data.
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]

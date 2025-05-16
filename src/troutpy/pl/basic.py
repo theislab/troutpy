@@ -105,33 +105,33 @@ def crosstab(
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         The input spatial data object containing the categorical variables.
     xvar : str
         The categorical variable for the x-axis.
     yvar : str
         The categorical variable for the y-axis.
-    layer : str, optional
+    layer : str
         The layer in `sdata.points` to extract data from (default is "transcripts").
-    normalize : bool, optional
+    normalize : bool
         Whether to normalize proportions (default is True).
-    axis : int, optional
+    axis : int
         Axis to normalize across (1 = row, 0 = column).
-    kind : str, optional
+    kind : str
         Plot type: 'barh', 'bar', 'heatmap', 'clustermap'.
-    save : bool, optional
+    save : bool
         Whether to save the plot (default is True).
-    figures_path : str, optional
+    figures_path : str
         Path to save the plot.
-    stacked : bool, optional
+    stacked : bool
         Whether bar plots should be stacked (default is True).
-    figsize : tuple, optional
+    figsize : tuple
         Automatically computed based on the number of categories unless manually specified.
-    cmap : str, optional
+    cmap : str
         Custom color palette.
-    saving_format : str, optional
+    saving_format : str
         File format to save the plot (e.g., 'png', 'pdf').
-    sortby : str, optional
+    sortby : str
         Column/row to sort before plotting.
 
     Returns
@@ -216,29 +216,29 @@ def histogram(
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         The input spatial data object.
     x : str
         The name of the numeric column to plot on the x-axis.
-    hue : str, optional
+    hue : str
         The column name used for color grouping (optional).
-    layer : str, optional
+    layer : str
         The layer in sdata.points to extract data from (default is "transcripts").
-    group_key : str, optional
+    group_key : str
         If provided, creates subplots by the unique values of this column.
-    figures_path : str, optional
+    figures_path : str
         Path to save the plot if `save` is True.
-    save : bool, optional
+    save : bool
         Whether to save the figure as a PDF.
-    title : str, optional
+    title : str
         Overall title for the plot.
-    custom_plot_filename : str, optional
+    custom_plot_filename : str
         Custom filename to use when saving the figure.
-    palette : str, optional
+    palette : str
         Color palette name for seaborn (default is "tab10").
-    bins : int, optional
+    bins : int
         Number of histogram bins (default is 30).
-    kde : bool, optional
+    kde : bool
         Whether to overlay a kernel density estimate (default is False).
 
     Returns

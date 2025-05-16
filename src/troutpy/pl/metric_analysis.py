@@ -27,31 +27,31 @@ def top_bottom_probes_of_metric(
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         SpatialData object that contains 'xrna_metadata' with 'var' DataFrame.
 
     metric : str
         The metric to sort genes by. Must exist as a column in sdata['xrna_metadata'].var.
 
-    top_n : int, default=10
+    top_n : int
         Number of top genes to display.
 
-    bottom_n : int, default=10
+    bottom_n : int
         Number of bottom genes to display.
 
-    title : str, optional
+    title : str
         Title for the plot.
 
-    save : bool, default=False
+    save : bool
         Whether to save the figure.
 
-    figures_path : str, default=""
+    figures_path : str
         Directory path to save the figure.
 
-    custom_plot_filename : str, optional
+    custom_plot_filename : str
         Custom filename for saving the plot.
 
-    palette : str, default="default"
+    palette : str
         Color palette name. First tries troutpy palettes, then matplotlib colormaps, else fallback to defaults.
     """
     import os
@@ -135,13 +135,13 @@ def metric_scatter(
 
     Parameters
     ----------
-    sdata : sd.SpatialData
+    sdata : spatialdata.SpatialData
         A SpatialData object containing 'xrna_metadata' with 'var' DataFrame.
     x : str
         Metric for x-axis.
     y : str
         Metric for y-axis.
-    non_control_probes : Optional[List[str]]
+    non_control_probes : str
         List of specific non-control probes to include in the plot.
     label_top_n_x : int
         Number of top genes based on x to label.
@@ -151,7 +151,7 @@ def metric_scatter(
         Number of bottom genes based on x to label.
     label_bottom_n_y : int
         Number of bottom genes based on y to label.
-    title : Optional[str]
+    title : str
         Custom title for the plot.
     figures_path : str
         Directory to save the figure.
@@ -266,22 +266,24 @@ def logfoldratio_over_noise(
 
     Parameters
     ----------
-    sdata: SpatialData object that contains 'xrna_metadata' with 'var' DataFrame.
-    control_key: The column in var indicating which probes are controls.
-    test_method: Statistical test to use. Options:
+    sdata: spatialdata.SpatialData
+        SpatialData object that contains 'xrna_metadata' with 'var' DataFrame.
+    control_key: str
+        The column in var indicating which probes are controls.
+    test_method: str
+        Statistical test to use. Options:
                  - "t-test" → Welch's t-test
                  - "mannwhitney" → Mann-Whitney U-test
                  - "auto" (default) → Chooses test based on normality test.
-    figures_path: Directory to save the figure.
-    save: If True, saves the figure as a PDF in the specified path.
-    custom_plot_filename: Custom filename for the saved plot.
-    palette: Matplotlib palette name or list of two colors. Default is ["lightgrey", "black"].
+    figures_path: str
+        Directory to save the figure.
+    save: str
+        If True, saves the figure as a PDF in the specified path.
+    custom_plot_filename: str
+        Custom filename for the saved plot.
+    palette: str
+        Matplotlib palette name or list of two colors. Default is ["lightgrey", "black"].
     """
-    import os
-
-    import numpy as np
-    import pandas as pd
-
     var_df = sdata["xrna_metadata"].var.copy()
 
     var_df["control_probe_cat"] = var_df[control_key].map({True: "Control Probes", False: "Non-Control Probes"})

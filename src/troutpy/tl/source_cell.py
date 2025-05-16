@@ -19,18 +19,18 @@ def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    - sdata: spatialdata.SpatialData
         The SpatialData object to modify.
-    - layer (str, optional)
+    - layer: str
         The name of the layer in `sdata.points` from which to extract gene names.Default is 'transcripts'.
-    - gene_key (str, optional)
+    - gene_key: str
         The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
-    - copy (bool)
+    - copy: bool
         If `True`, returns a copy of the `SpatialData` object with the new table added.
 
     Returns
     -------
-    - sdata (SpatialData)
+    - sdata: spatialdata.SpatialData
         If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
 
     """
@@ -68,20 +68,20 @@ def compute_source_cells(sdata: SpatialData, expression_threshold=1, gene_key="g
 
     Parameters
     ----------
-    - sdata (SpatialData object)
+    sdata: spatialdata.SpatialData
         The input spatial data object containing spatial transcriptomics data.
-    - expression_threshold (float, optional, default=1)
+    expression_threshold: float
         Threshold for filtering transcripts based on expression levels.
-    - gene_key (str, optional, default='feature_name')
+    gene_key: str
         Column name for gene identifiers in the transcripts data.
-    - layer (str, optional, default='transcripts')
+    layer: str
         Layer in `sdata.points` containing the transcript information.
-    - copy (bool, optional, default=False)
+    copy: bool
         If True, returns a modified copy of the spatial data object. Otherwise, modifies in place.
 
     Returns
     -------
-    - sdata (SpatialData)
+    sdata: spatialdata.SpatialData
         The modified spatial data object with added `source` metadata if `copy=True`. Otherwise, modifies the input object in place and returns None.
     """
     # Create a copy of the table containing spatial transcriptomics data
@@ -123,21 +123,21 @@ def distance_to_source_cell(
 
     Parameters
     ----------
-    - sdata (AnnData)
+    - sdata
         The AnnData object containing both transcript and cellular data.
-    - layer (str, optional)
+    - layer: str
         The layer in `sdata` containing the transcript data. Default is 'transcripts'.
-    - xcoord (str, optional)
+    - xcoord: str
         The column name in the transcript data for the x-coordinate. Default is 'x'.
-    - ycoord (str, optional)
+    - ycoord: str
         The column name in the transcript data for the y-coordinate. Default is 'y'.
-    - xcellcoord (str, optional)
+    - xcellcoord: str
         The column name in the cellular data for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    - ycellcoord (str, optional)
+    - ycellcoord: str
         The column name in the cellular data for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    - gene_key (str, optional)
+    - gene_key: str
         The column name for the gene identifier. Default is 'feature_name'.
-    - copy (bool, optional)
+    - copy: str
         Whether to return a copy of the `sdata` object with updated distances, or modify in place. Default is False.
 
     Returns
@@ -241,14 +241,14 @@ def get_proportion_expressed_per_cell_type(adata: SpatialData, cell_type_key="ce
 
     Parameters
     ----------
-    - adata (AnnData)
+    adata: anndata.AnnData
         An AnnData object containing the single-cell or spatial transcriptomics dataset.The `obs` attribute should contain cell type annotations.
-    - cell_type_key (str, optional)
+    cell_type_key: str
         The key in `adata.obs` corresponding to cell type annotations, by default 'cell type'.
 
     Returns
     -------
-    - proportions (pd.DataFrame)
+    proportion: pandas.DataFrame
         A DataFrame where rows correspond to features (genes) and columns correspond to cell types. Each entry represents the mean expression of the feature in the specified cell type.
     """
     cell_types = adata.obs[cell_type_key].unique().dropna()
@@ -470,28 +470,22 @@ def compute_source_score(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         A SpatialData object containing transcript positions and cell annotations.
-    layer : str, optional
+    layer : str
         The layer name in `sdata.points` containing the transcript table (default is "transcripts").
-    gene_key : str, optional
+    gene_key : str
         The column name used for gene identifiers in both transcripts and cells (default is "gene").
-    coord_keys : list of str, optional
+    coord_keys : str
         Names of the columns containing spatial coordinates [x, y]. Defaults to ["x", "y"].
-    lambda_decay : float, optional
+    lambda_decay : float
         Decay constant for the exponential distance function. Controls how spatial distance penalizes the score (default is 0.1).
-    copy : bool, optional
+    copy : bool
         Whether to return a deep copy of the `sdata` object or modify in place (default is False).
-    celltype_key : str, optional
+    celltype_key : str
         Column name used to identify cell types in the cell annotation table (default is "cell type").
-    n_jobs : int, optional
+    n_jobs : int
         Number of parallel jobs to use for gene-wise computation. Default (-1) uses all available cores.
-
-    Returns
-    -------
-    SpatialData or None
-        If `copy` is True, returns the updated SpatialData object.
-        If `copy` is False, modifies `sdata.tables["source_score"]` in place and returns None.
 
     Notes
     -----

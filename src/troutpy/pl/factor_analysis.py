@@ -26,33 +26,27 @@ def rank_factor_genes_loadings(
     **kwargs,
 ) -> list[plt.Axes] | None:
     """
-    Plot top scoring genes for each factor from NMF/LDA.
+    Plot top scoring genesex for each factor from NMF/LDA.
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         The SpatialData object containing the factorized data.
     layer : str
         The layer name in `sdata` where the factorized results are stored.
-    n_genes : int, optional
+    n_genes : int
         Number of top genes to display per factor, by default 20.
-    fontsize : int, optional
+    fontsize : int
         Font size for gene names, by default 8.
-    ncols : int, optional
+    ncols : int
         Number of panels per row, by default 4.
-    sharey : bool, optional
+    sharey : bool
         Whether to share y-axis scale across subplots, by default True.
-    show : bool, optional
+    show : bool
         Whether to show the plot, by default True.
-    save : str | None, optional
+    save : str
         Path to save the figure, by default None.
-    ax : plt.Axes | None, optional
-        Axes object to use for plotting, by default None.
 
-    Returns
-    -------
-    list[plt.Axes] | None
-        List of matplotlib Axes objects or None if show=True.
     """
     adata = sdata[layer]
     gene_loadings = adata.varm["gene_loadings"].T  # Factors x Genes
@@ -124,15 +118,15 @@ def rank_factor_genes_loadings_matrixplot(
         The spatial data object containing gene expression information.
     layer : str
         The layer in `sdata` that contains the AnnData object.
-    n_genes : int, optional
+    n_genes : int
         Number of top genes to plot per factor, by default 20.
-    cmap : str, optional
+    cmap : str
         Colormap for visualization, by default "bwr".
-    vmin, vmax : float, optional
+    vmin, vmax : float
         Color scaling limits.
-    show : bool, optional
+    show : bool
         Whether to display the plot, by default True.
-    save : str, optional
+    save : str
         Path to save the figure, by default None.
     """
     adata: AnnData = sdata[layer]
@@ -184,12 +178,18 @@ def factors_in_cells(
 
     Parameters
     ----------
-    - sdata (anndata.AnnData): The SpatialData object containing the data.
-    - layer (str): The layer from which to extract the factors (default: 'table').
-    - method (str): The plotting method ('matrixplot', 'dotplot', 'violin').
-    - celltype_key (str): The key in `.obs` to group by (default: 'cell_type').
-    - title (str): Title for the plot (default: '').
-    - **kwargs: Additional keyword arguments passed to the plotting function.
+    sdata: spatialdata.Spatialdata
+        The SpatialData object containing the data.
+    layer: str
+        The layer from which to extract the factors (default: 'table').
+    method: str
+        The plotting method ('matrixplot', 'dotplot', 'violin').
+    celltype_key: str
+        The key in `.obs` to group by (default: 'cell_type').
+    title: str
+        Title for the plot (default: '').
+    kwargs
+        Additional keyword arguments passed to the plotting function.
     """
     loadata = sc.AnnData(sdata[layer].obsm["factors_cell_loadings"])
     loadata.var.index = [f"Factor {i + 1}" for i in range(loadata.shape[1])]

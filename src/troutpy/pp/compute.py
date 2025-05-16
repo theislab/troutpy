@@ -4,11 +4,11 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 import polars as pl
+import spatialdata
 import spatialdata as sd
 from sainsc import LazyKDE  # assuming LazyKDE is available
 from scipy.sparse import coo_matrix
 from sklearn.neighbors import KDTree
-from spatialdata import SpatialData
 
 
 def compute_extracellular_counts(data_extracell):  # would be good to change the name of this function
@@ -17,7 +17,7 @@ def compute_extracellular_counts(data_extracell):  # would be good to change the
 
     Parameters
     ----------
-    data_extracell (pd.DataFrame)
+    data_extracell: pandas.DataFrame
         Data with extracellular transcripts.
 
     Returns
@@ -40,7 +40,7 @@ def compute_extracellular_counts(data_extracell):  # would be good to change the
 
 
 def define_extracellular(
-    sdata: SpatialData,
+    sdata: spatialdata.SpatialData,
     layer: str = "transcripts",
     method: str = "segmentation_free",
     min_prop_of_extracellular: float = 0.8,
@@ -53,7 +53,7 @@ def define_extracellular(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         A spatial data object containing transcriptomic information.
     layer : str
         The layer in `sdata.points` containing the transcript data to process.
@@ -63,10 +63,10 @@ def define_extracellular(
             - 'sainsc': Uses sainsc-derived signature matching.
             - 'nuclei': Uses overlap with nuclear annotations to classify extracellular transcripts.
             - 'cells': Classifies transcripts not assigned to a cell as extracellular.
-    min_prop_of_extracellular : float, optional
+    min_prop_of_extracellular : float
         Minimum proportion of transcripts in a cluster required to be extracellular for it to be classified as such
         (used only with the 'spots2regions' method).
-    unassigned_tag : str, optional
+    unassigned_tag : str
         Tag indicating transcripts not assigned to any cell.
     copy : bool
         If True, returns a copy of the updated spatial data. If False, updates the `sdata` object in-place.
@@ -143,23 +143,23 @@ def filter_xrna(
 
     Parameters
     ----------
-        sdata: dict-like
+        sdata: spatialdata.SpatialData
             Spatial data object containing xRNA metadata and transcript information.
-        min_counts: int, optional
+        min_counts: int
             Minimum count threshold for xRNA selection.
-        min_extracellular_proportion: float, optional
+        min_extracellular_proportion: float
             Minimum extracellular proportion threshold for xRNA selection.
-        control_probe: bool, optional
+        control_probe: bool
             If False, filters out control probes.
-        min_logfoldratio_over_noise: float, default=1
+        min_logfoldratio_over_noise: float
             Minimum log fold-change over noise threshold for xRNA selection.
-        min_morani: float, optional
+        min_morani: float
             Minimum Moran's I threshold for spatial autocorrelation.
-        gene_key: str, default='feature_name'
+        gene_key: str
             Key for accessing gene names in transcript tables.
-        filter_cellular: bool, default=False
+        filter_cellular: bool
             If True, also filters the cellular table.
-        copy: bool, default=False
+        copy: bool
             If True, returns a filtered copy of sdata; otherwise, modifies in place.
 
     Returns

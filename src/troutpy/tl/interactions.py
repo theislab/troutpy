@@ -81,7 +81,7 @@ def get_gene_interaction_strength(
         If True, saves the chord diagram plot to the specified output path (default: False).
     output_path
         The directory path where the plot will be saved. If `save=True`, this path will be used to store the file (default: ''). A 'figures' subdirectory is created if it doesn't exist.
-    format (str, optional)
+    format: str
         The file format for saving the plot (e.g., 'pdf', 'png'). This is used only if `save=True` (default: 'pdf').
 
     Returns

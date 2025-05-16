@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import scipy.stats as stats
+import spatialdata
 import spatialdata as sd
 import squidpy as sq
 from scipy.spatial import cKDTree
@@ -50,8 +51,8 @@ def spatial_variability(
 
     Returns
     -------
-    - sdata(SpatialData)
-        Sdata containing Moran's I values for each gene, indexed by gene names.
+    sdata: spatialdata.SpatialData
+        Spatial data containing Moran's I values for each gene, indexed by gene names.
     """
     if "segmentation_free_table" in sdata:
         print("Using precomputed segmentation free table")
@@ -89,18 +90,18 @@ def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    sdata: spatialdata.SpatialData
         The SpatialData object to modify.
-    - layer (str, optional)
+    layer: str
         The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
-    - gene_key (str, optional)
+    gene_key: str
         The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
-    - copy
+    copy: bool
         If `True`, returns a copy of the `SpatialData` object with the new table added.
 
     Returns
     -------
-    - SpatialData | None
+    spatialdata.SpatialData
         If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
     """
     # Check if the specified points layer exists
@@ -260,13 +261,13 @@ def spatial_colocalization(
     sdata : SpatialData
         The spatial transcriptomics dataset in SpatialData format.
 
-    extracellular_layer : str, default="segmentation_free_table"
+    extracellular_layer : str
         The key in `sdata` pointing to an AnnData object containing extracellular transcript counts.
 
-    threshold_colocalized : int, default=1
+    threshold_colocalized : int
         Minimum count of a gene at a spot to consider it as colocalized.
 
-    copy : bool, default=False
+    copy : bool
         If True, returns a modified copy of sdata, otherwise modifies in place.
 
     Returns
@@ -316,21 +317,21 @@ def in_out_correlation(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         A SpatialData object containing both extracellular and cellular AnnData objects.
 
-    extracellular_layer : str, optional (default="segmentation_free_table")
+    extracellular_layer : str
         Key for the extracellular AnnData object in sdata.
 
-    cellular_layer : str, optional (default="table")
+    cellular_layer : str
         Key for the cellular AnnData object in sdata.
 
-    n_neighbors : int, optional (default=5)
+    n_neighbors : int
         Number of nearest extracellular bins to consider for aggregation.
 
     Returns
     -------
-    correlation_results : pd.DataFrame
+    correlation_results : pandas.DataFrame
         A DataFrame containing correlation values for each gene, with gene names as the indexand columns ['SpearmanR', 'PValue'].
     """
     try:
@@ -408,14 +409,15 @@ def assess_diffussion(sdata: SpatialData, gene_key: str = "gene", distance_key: 
 
     Parameters
     ----------
-        sdata (SpatialData): The spatial transcriptomics dataset.
-        gene_key (str): The key for gene/transcript names in source_score.obs.
-        distance_key (str): The key for RNA displacement distances.
-        copy (bool): Whether to return a modified copy of sdata.
+        sdata: spatialdata.SpatialData
+            The spatial transcriptomics dataset.
+        gene_key: str
+            The key for gene/transcript names in source_score.obs.
+        distance_key: str
+            The key for RNA displacement distances.
+        copy: bool
+            Whether to return a modified copy of sdata.
 
-    Returns
-    -------
-        If copy=True, returns a modified SpatialData object with results in sdata['xrna_metadata']. Otherwise, modifies sdata in place.
     """
     results = []
 
@@ -472,7 +474,7 @@ def assess_diffussion(sdata: SpatialData, gene_key: str = "gene", distance_key: 
 
 
 def cluster_distribution_from_source(
-    sdata: SpatialData,
+    sdata: spatialdata.SpatialData,
     gene_key: str = "gene",
     distance_key: str = "distance",
     n_clusters: int = 3,
@@ -484,25 +486,17 @@ def cluster_distribution_from_source(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         Spatial data object containing a 'source_score' layer with an obs DataFrame.
-    gene_key : str, default "feature_name"
+    gene_key : str
         Column name that contains the gene names.
-    distance_key : str, default "distance"
+    distance_key : str
         Column name that contains the distance from the source cell.
-    n_clusters : int, default 3
+    n_clusters : int
         Number of clusters to form.
-    n_bins : int, default 20
+    n_bins : int
         Number of bins for the histogram representation.
 
-    Returns
-    -------
-    gene_cluster_df : DataFrame
-        A DataFrame with columns 'gene' and 'cluster' indicating the cluster assignment.
-    hist_df : DataFrame
-        A DataFrame where each row is a gene and the columns are the normalized histogram counts.
-    bin_edges : ndarray
-        The bin edges used for the histograms.
     """
     # Get the observation DataFrame from the 'source_score' layer.
     obs_df = sdata["source_score"].obs
@@ -570,17 +564,19 @@ def compare_intra_extra_distribution(
 
     Parameters
     ----------
-    - sdata: SpatialData object containing transcript locations and metadata.
-    - layer: str, layer within sdata.points where transcripts are stored (default: "transcripts").
-    - gene_key: str, column name where the gene name is stored (default: "feature_name").
-    - copy: bool, whether to return a modified copy of sdata (default: False).
-    - coord_keys: list of str, column names containing x and y transcript positions (default: ["x", "y"]).
-    - n_bins: int, number of bins for the 2D histograms (default: 30).
+    sdata: spatialdata.SpatialData
+        SpatialData object containing transcript locations and metadata.
+    layer: str
+        Layer within sdata.points where transcripts are stored (default: "transcripts").
+    gene_key: str
+        Column name where the gene name is stored (default: "feature_name").
+    copy: bool
+        Whether to return a modified copy of sdata (default: False).
+    coord_keys: str
+        Column names containing x and y transcript positions (default: ["x", "y"]).
+    n_bins: int
+        Number of bins for the 2D histograms (default: 30).
 
-    Returns
-    -------
-    - If copy=True, returns a DataFrame with computed metrics.
-    - If copy=False, updates sdata["xrna_metadata"].var with the computed metrics.
     """
     transcripts_df = sdata[layer]  # Extract transcript data
     if isinstance(transcripts_df, dd.DataFrame):

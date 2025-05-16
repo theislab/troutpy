@@ -20,13 +20,13 @@ def latent_factor(
     ----------
     adata
         The AnnData object containing the gene expression matrix (`adata.X`) along with cell and gene annotations.
-    n_components
+    n_components: int
         The number of components (latent factors) to extract from the NMF model.
     save
         If True, the factor loadings (`H`) and factor scores (`W`) will be saved as Parquet files to the specified output path.
-    random_state (int, optional)
+    random_state: int
         The random seed used for initializing the NMF model. If None, the random seed is not fixed.
-    copy
+    copy: bool
         Wether to save the spatialdata object as a new object
     method
 
