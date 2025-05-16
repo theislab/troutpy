@@ -258,7 +258,7 @@ def spatial_colocalization(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         The spatial transcriptomics dataset in SpatialData format.
 
     extracellular_layer : str
