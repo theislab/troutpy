@@ -127,9 +127,9 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
             default_image = next(iter(morph_focus.values()))
 
         # Create or update the Stainings attribute.
-        if not hasattr(sdata, "Stainings") or sdata.Stainings is None:
-            sdata.Stainings = {}
-        sdata.Stainings["default"] = default_image
+        #if not hasattr(sdata, "Stainings") or sdata.images is None:
+        #    sdata.images = {}
+        sdata["default"] = default_image
 
     return sdata if copy else None
 

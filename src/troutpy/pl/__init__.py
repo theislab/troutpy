@@ -17,5 +17,5 @@ from .plotting import (
     sorted_heatmap,
     spatial_interactions,
 )
-from .scatter import diffusion_results, spatial_inout_expression
+from .scatter import diffusion_results, spatial_inout_expression, spatial_transcripts
 from .source import distributions_by_cluster, gene_distribution_from_source, global_distribution_from_source, source_score_by_celltype

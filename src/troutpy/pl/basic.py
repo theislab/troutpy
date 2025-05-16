@@ -187,8 +187,9 @@ def crosstab(
     plt.figure(figsize=figsize)
 
     if kind in ["barh", "bar"]:
-        crosstab_data.T.plot(kind=kind, stacked=stacked, colormap=cmap)
+        crosstab_data.T.plot(kind=kind, stacked=stacked, colormap=cmap, figsize=figsize)
         plt.title(f"{xvar} vs {yvar}")
+        plt.xlabel("Total number of cells")
 
     elif kind == "heatmap":
         sns.heatmap(crosstab_data, cmap=cmap, annot=True, fmt=".2f")
