@@ -10,7 +10,6 @@ Package for the analysis of transcripts outside segmented cells in python
 
 ![alt text](images/logo_fish.png)
 
-
 ## Getting started
 
 Please refer to the [documentation][],
