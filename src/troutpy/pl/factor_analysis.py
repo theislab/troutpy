@@ -114,7 +114,7 @@ def rank_factor_genes_loadings_matrixplot(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         The spatial data object containing gene expression information.
     layer : str
         The layer in `sdata` that contains the AnnData object.
@@ -178,7 +178,7 @@ def factors_in_cells(
 
     Parameters
     ----------
-    sdata: spatialdata.Spatialdata
+    sdata: spatialdata.SpatialData
         The SpatialData object containing the data.
     layer: str
         The layer from which to extract the factors (default: 'table').
