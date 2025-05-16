@@ -10,7 +10,7 @@ from scipy.spatial.distance import euclidean
 from scipy.stats import poisson, spearmanr
 from spatialdata import SpatialData
 
-from ..pp.aggregate import aggregate_extracellular_transcripts
+from troutpy.pp.aggregate import aggregate_extracellular_transcripts
 
 
 def spatial_variability(
@@ -53,10 +53,9 @@ def spatial_variability(
     - sdata(SpatialData)
         Sdata containing Moran's I values for each gene, indexed by gene names.
     """
-    try:
-        sdata["segmentation_free_table"]
+    if "segmentation_free_table" in sdata:
         print("Using precomputed segmentation free table")
-    except:
+    else:
         print("Computing segmentation-free aggregation of extracellular transcripts...")
         aggregate_extracellular_transcripts(sdata, layer, gene_key, aggr_method, square_size, copy, key_added)
 
@@ -134,18 +133,18 @@ def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 def quantify_overexpression(
     sdata: SpatialData,
     codeword_key: str = "control_probe",
-    control_codewords: list = [True],
+    control_codewords: list = None,
     gene_key: str = "gene",
     layer: str = "transcripts",
     percentile_threshold: float = 100,
     copy=False,
 ) -> SpatialData:
-    """
-    Compare counts per gene with counts per non-gene feature. Additionally, perform a Poisson test
-    to check if gene extracellular expression is significantly higher than controls.
-    """
+    """Compare counts per gene with counts per non-gene feature. Additionally, perform a Poisson test to check if gene extracellular expression is significantly higher than controls."""
     # Compute the data
     data = sdata.points[layer][np.unique(["extracellular", codeword_key, gene_key]).tolist()].compute()
+
+    if control_codewords is None:
+        control_codewords = [True]
 
     # Ensure control_codewords is a list
     if isinstance(control_codewords, str):
@@ -161,10 +160,7 @@ def quantify_overexpression(
     n2c = dict(zip(data[gene_key], is_control, strict=False))
     bool_control = []
     for g in gene_counts.keys():
-        try:
-            bool_control.append(n2c[g])
-        except:
-            bool_control.append(True)
+        bool_control.append(n2c.get(g, True))
 
     # Compute percentile-based threshold
     threshold = np.percentile(control_counts.values, percentile_threshold)
@@ -257,8 +253,7 @@ def spatial_colocalization(
     copy: bool = False,
 ) -> SpatialData | None:
     """
-    Computes the proportion of colocalized transcripts for extracellular RNA
-    based on counts stored in a specified AnnData layer.
+    Computes the proportion of colocalized transcripts for extracellular RNA based on counts stored in a specified AnnData layer.
 
     Parameters
     ----------
@@ -340,7 +335,7 @@ def in_out_correlation(
     """
     try:
         adata_extracellular = sdata[extracellular_layer]
-    except:
+    except KeyError:
         KeyError(
             "Extracellular layer not found. Please make ensure ´extracellular_layer´ and that extracellular grouping has been performed. Otherwise, please run trouty.tl.aggregate_extracellular_transcripts"
         )
@@ -409,9 +404,7 @@ def in_out_correlation(
 
 
 def assess_diffussion(sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", copy: bool = False):
-    """
-    Computes goodness-of-fit metrics for the diffusion pattern of extracellular RNA by testing against a Rayleigh distribution.
-    Also estimates the diffusion coefficient (D) based on the mean squared displacement (MSD).
+    """Computes goodness-of-fit metrics for the diffusion pattern of extracellular RNA by testing against a Rayleigh distribution. Also estimates the diffusion coefficient (D) based on the mean squared displacement (MSD).
 
     Parameters
     ----------
@@ -436,7 +429,7 @@ def assess_diffussion(sdata: SpatialData, gene_key: str = "gene", distance_key: 
 
         # Fit a Rayleigh distribution
         param = stats.rayleigh.fit(distances)
-        fitted_cdf = stats.rayleigh.cdf(np.sort(distances), *param)
+        # fitted_cdf = stats.rayleigh.cdf(np.sort(distances), *param)
 
         # Goodness-of-Fit Tests
         ks_stat, ks_pval = stats.kstest(distances, "rayleigh", args=param)
@@ -487,13 +480,7 @@ def cluster_distribution_from_source(
     copy=False,
     layer: str = "transcripts",
 ):
-    """
-    Clusters genes based on the distribution of distances of extracellular transcripts
-    from their source cell.
-
-    For each gene in sdata['source_score'].obs, the function computes a normalized histogram
-    (using n_bins) over the distance range. These histogram vectors are then standardized
-    and clustered using KMeans.
+    """Clusters genes based on the distribution of distances of extracellular transcripts from their source cell. For each gene in sdata['source_score'].obs, the function computes a normalized histogram (using n_bins) over the distance range. These histogram vectors are then standardized and clustered using KMeans.
 
     Parameters
     ----------
@@ -563,9 +550,7 @@ def cluster_distribution_from_source(
 
 
 def compute_js_divergence(P, Q, eps=1e-10):
-    """
-    Compute the Jensen-Shannon divergence between two probability distributions.
-    """
+    """Compute the Jensen-Shannon divergence between two probability distributions."""
     P, Q = P + eps, Q + eps  # Avoid division by zero
     M = 0.5 * (P + Q)
     return 0.5 * (np.sum(P * np.log(P / M)) + np.sum(Q * np.log(Q / M)))
@@ -577,7 +562,7 @@ def compare_intra_extra_distribution(
     layer: str = "transcripts",
     gene_key: str = "gene",
     copy: bool = False,
-    coord_keys: list = ["x", "y"],
+    coord_keys: list = None,  # ["x", "y"] by default # type: ignore
     n_bins: int = 30,
 ):
     """
@@ -602,6 +587,8 @@ def compare_intra_extra_distribution(
         transcripts_df = transcripts_df.compute()  # Convert to Pandas if Dask
 
     results = []
+    if coord_keys is None:
+        coord_keys = ["x", "y"]
 
     for gene, gene_transcripts in transcripts_df.groupby(gene_key):
         intracellular = gene_transcripts[~gene_transcripts["extracellular"]]

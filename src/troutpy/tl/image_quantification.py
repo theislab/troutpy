@@ -56,7 +56,7 @@ def image_intensities_per_transcript(
     transcripts["y_scaled"] = (transcripts["y"] - miny) * multi_factor_y
 
     if extracellular:
-        transcripts = transcripts[transcripts["extracellular"] == True]  # Select extracellular transcripts
+        transcripts = transcripts[transcripts["extracellular"]]  # Select extracellular transcripts
     else:
         transcripts = transcripts
 

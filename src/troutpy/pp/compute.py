@@ -105,9 +105,9 @@ def define_extracellular(
         # Here we define extracellular transcripts as those that:
         # 1. Are not assigned to any cell (cell_id equals unassigned_tag), and
         # 2. Have a match_cell_signature that is not False (i.e. have a cell-like signature locally).
-        cosine_sim_threshold = np.nanpercentile(data.loc[data["overlaps_cell"] == True, "cosine_similarity"], percentile_threshold)
+        cosine_sim_threshold = np.nanpercentile(data.loc[data["overlaps_cell"], "cosine_similarity"], percentile_threshold)
         data["match_cell_signature"] = data["cosine_similarity"] > cosine_sim_threshold
-        data["extracellular"] = (data["overlaps_cell"] == False) & (data["match_cell_signature"] == False)
+        data["extracellular"] = (not data["overlaps_cell"]) & (not data["match_cell_signature"])
         print(f"Cosine similarity threshold for extracellular definition: {cosine_sim_threshold}")
     # Method: Based on nuclei overlap
     elif method == "nuclei":
@@ -176,7 +176,7 @@ def filter_xrna(
     elif min_extracellular_proportion is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["extracellular_proportion"] > min_extracellular_proportion].index
     elif control_probe is False:
-        selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["control_probe"] == False].index
+        selected_genes = sdata["xrna_metadata"].var[not sdata["xrna_metadata"].var["control_probe"]].index
     elif min_logfoldratio_over_noise is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["logfoldratio_over_noise"] > min_logfoldratio_over_noise].index
     elif min_morani is not None:
@@ -189,35 +189,32 @@ def filter_xrna(
 
     # Filter other related tables safely
     for key in ["segmentation_free_table", "xrna_metadata"]:
-        if key in sdata:
+        if key in sdata and hasattr(sdata[key], "var"):
+            mask = sdata[key].var.index.isin(selected_genes)
             try:
-                sdata[key] = sdata[key][:, sdata[key].var.index.isin(selected_genes)]
-            except Exception:
+                sdata[key] = sdata[key][:, mask]
+            except (KeyError, IndexError, ValueError):
+                # Could log a warning here if desired
                 pass
 
     # Filter source_score and target_score by obs
     for key in ["source_score", "target_score"]:
         if key in sdata:
-            try:
-                sdata[key] = sdata[key][sdata[key].obs[gene_key].isin(selected_genes), :]
-            except Exception:
-                pass
+            if key in sdata and gene_key in sdata[key].obs.columns:
+                mask = sdata[key].obs[gene_key].isin(selected_genes)
+                sdata[key] = sdata[key][mask, :]
 
     # Filter cellular table if requested
     if filter_cellular and "table" in sdata:
-        try:
-            sdata["table"] = sdata["table"][:, sdata["table"].var.index.isin(selected_genes)]
-        except Exception:
-            pass
+        if "table" in sdata and hasattr(sdata["table"], "var"):
+            mask = sdata["table"].var.index.isin(selected_genes)
+            sdata["table"] = sdata["table"][:, mask]
 
     return sdata if copy else None
 
 
 def process_dataframe(df: pl.DataFrame, binsize: float, n_threads: int = 4):
-    """
-    Process a Polars DataFrame by binning spatial coordinates,
-    converting the gene column to categorical, and constructing sparse matrices for each gene.
-    """
+    """Process a Polars DataFrame by binning spatial coordinates, converting the gene column to categorical, and constructing sparse matrices for each gene."""
     # Compute bin coordinates.
     df = df.with_columns((df["x"] / binsize).floor().alias("bin_x"), (df["y"] / binsize).floor().alias("bin_y"))
     # Shift coordinates so that bins start at zero.
@@ -242,14 +239,15 @@ def process_dataframe(df: pl.DataFrame, binsize: float, n_threads: int = 4):
     with Pool(n_threads) as pool:
         gene_results = pool.map(process_gene_partial, gene_groups)
 
-    results = {gene: matrix for gene, matrix in gene_results}
+    results = {}
+    for gene, matrix in gene_results:
+        results[gene] = matrix
+
     return results, shape, df
 
 
 def process_gene(group, shape):
-    """
-    Process a group corresponding to one gene to build a sparse matrix.
-    """
+    """Process a group corresponding to one gene to build a sparse matrix."""
     gene_name = group["gene"][0]
     x = group["bin_x"].to_numpy()
     y = group["bin_y"].to_numpy()
@@ -304,7 +302,7 @@ def segmentation_free_sainsc(
     transcripts_analysis = transcripts_full.filter(pl.col("gene").is_in(list(common_genes)))
 
     # Filter the signature matrix to match KDE
-    signatures = signatures.loc[signatures.index.isin(common_genes),:]
+    signatures = signatures.loc[signatures.index.isin(common_genes), :]
     #
     # --- 4. Create Brain Object Using LazyKDE (Analysis on overlapping genes) ---
     brain = LazyKDE.from_dataframe(transcripts_analysis, resolution=resolution, binsize=binsize, n_threads=n_threads)
@@ -399,11 +397,10 @@ def segmentation_free_sainsc(
     transi = sdata.points["transcripts"].compute().copy()
     transi["xy"] = transi["x"].round(4).astype(str) + "_" + transi["y"].round(4).astype(str)
     # Drop duplicated columns if needed
-    # columns_to_remove = ["closest_cell_type", "cosine_similarity", "assignment_score"]
-    try:
-        transi = transi.drop(columns=[col for col in columns_to_remove if col in transi.columns])
-    except Exception:
-        pass
+    columns_to_remove = ["closest_cell_type", "cosine_similarity", "assignment_score"]
+    cols_to_drop = [col for col in columns_to_remove if col in transi.columns]
+    transi = transi.drop(columns=cols_to_drop)
+
     # Then merge safely
     transi = pd.merge(
         transi,

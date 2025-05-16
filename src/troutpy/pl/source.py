@@ -19,11 +19,7 @@ def global_distribution_from_source(
     n_bins: int = 20,
     how: str = "full",
 ):
-    """
-    Plots either:
-    1. A clustermap of all genes' distance distributions, sorted by cluster, with row colors.
-    2. A collapsed clustermap showing the mean distribution per cluster, with color-coded labels.
-    3. A line plot showing the mean distribution for each cluster, if 'how' is 'lineplot'.
+    """Plots either (a) A clustermap of all genes' distance distributions, sorted by cluster, with row colors, (b) A collapsed clustermap showing the mean distribution per cluster, with color-coded labels or (3) A line plot showing the mean distribution for each cluster, if 'how' is 'lineplot'.
 
     Parameters
     ----------
@@ -74,7 +70,7 @@ def global_distribution_from_source(
     # Sorting by cluster
     hist_df_sorted = hist_df.sort_values(cluster_key)
     clusters = hist_df_sorted[cluster_key]
-    clust_key = hist_df_sorted[cluster_key]
+    # clust_key = hist_df_sorted[cluster_key]
     hist_df_sorted = hist_df_sorted.drop(columns=[cluster_key])
     # Create column names as intervals
     bin_intervals = [f"({bin_edges[i]:.2f}, {bin_edges[i + 1]:.2f}]" for i in range(len(bin_edges) - 1)]
@@ -92,13 +88,13 @@ def global_distribution_from_source(
     # Compute global expected Rayleigh parameter from all distances in the data.
     global_distances = sdata["source_score"].obs[distance_key].dropna().values
     global_distances = global_distances[global_distances > 0]  # Filter out non-positive distances
-    global_param = stats.rayleigh.fit(global_distances, floc=0)
-    global_sigma = global_param[1]
+    # global_param = stats.rayleigh.fit(global_distances, floc=0)
+    # global_sigma = global_param[1]
 
     # Create expected Rayleigh PDF for comparison
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
-    bin_width = np.diff(bin_edges)[0]
-    expected_pdf = stats.rayleigh.pdf(bin_centers, loc=0, scale=global_sigma) * bin_width
+    # bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    # bin_width = np.diff(bin_edges)[0]
+    # expected_pdf = stats.rayleigh.pdf(bin_centers, loc=0, scale=global_sigma) * bin_width
 
     # Create clustermap based on `how` argument
     if how == "full":
@@ -175,11 +171,7 @@ def distributions_by_cluster(
     distance_key: str = "distance",
     n_bins: int = 20,
 ):
-    """
-    Plots the average normalized distance distribution for each cluster, overlaid with the
-    expected (theoretical) diffusion pattern from a Rayleigh distribution computed from the
-    global data (purely diffusion-based). Also displays statistics on how well the genes in the
-    cluster match the expected diffusion pattern.
+    """Plots the average normalized distance distribution for each cluster, overlaid with the expected (theoretical) diffusion pattern from a Rayleigh distribution computed from the global data (purely diffusion-based). Also displays statistics on how well the genes in the cluster match the expected diffusion pattern.
 
     Parameters
     ----------
@@ -332,8 +324,8 @@ def gene_distribution_from_source(
             ax.set_ylabel("Density")
             ax.legend()
 
-        except Exception as e:
-            print(f"Error processing gene {gene}: {e}")
+        except KeyError:
+            KeyError(f"Error processing gene {gene}")
 
     # Remove any unused subplots if the number of genes is less than n_rows * n_cols
     for j in range(i + 1, len(axes)):

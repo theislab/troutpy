@@ -19,15 +19,7 @@ def pie(
     custom_plot_filename: str = None,
     palette: str = "tab20",
 ):
-    """
-    Generates pie charts showing the proportion of different categories for a specified categorical variable.
-    If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`.
-    """
-    import math
-    import os
-
-    import matplotlib.pyplot as plt
-
+    """Generates pie charts showing the proportion of different categories for a specified categorical variable. If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`."""
     data = sdata.points[layer][[groupby] + ([group_key] if group_key else [])].compute()
 
     # Determine all categories globally
@@ -37,7 +29,7 @@ def pie(
     if palette not in plt.colormaps():
         try:
             palette = get_palette(palette)
-        except:
+        except KeyError:
             palette = plt.cm.tab20.colors  # fallback
     else:
         cmap = plt.get_cmap(palette)
@@ -166,7 +158,7 @@ def crosstab(
     # Handle custom colormap
     try:
         cmap = get_colormap(cmap)
-    except:
+    except KeyError:
         cmap = None  # Use default colors if custom palette fails
 
     # **Compute automatic figsize based on category counts**
@@ -259,7 +251,7 @@ def histogram(
     if palette not in plt.colormaps():
         try:
             palette = get_palette(palette)
-        except:
+        except KeyError:
             palette = None  # Fallback if not found
 
     if group_key:
