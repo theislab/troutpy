@@ -107,7 +107,7 @@ def define_extracellular(
         # 2. Have a match_cell_signature that is not False (i.e. have a cell-like signature locally).
         cosine_sim_threshold = np.nanpercentile(data.loc[data["overlaps_cell"], "cosine_similarity"], percentile_threshold)
         data["match_cell_signature"] = data["cosine_similarity"] > cosine_sim_threshold
-        data["extracellular"] = (not data["overlaps_cell"]) & (not data["match_cell_signature"])
+        data["extracellular"] = (~data["overlaps_cell"]) & (~data["match_cell_signature"])
         print(f"Cosine similarity threshold for extracellular definition: {cosine_sim_threshold}")
     # Method: Based on nuclei overlap
     elif method == "nuclei":
@@ -137,6 +137,8 @@ def filter_xrna(
     gene_key="feature_name",
     filter_cellular=False,
     copy=False,
+    genes_in_segmented=False,
+    table_key="table",
 ):
     """
     Filters xRNA based on specified criteria and updates the sdata object.
@@ -161,6 +163,10 @@ def filter_xrna(
             If True, also filters the cellular table.
         copy: bool
             If True, returns a filtered copy of sdata; otherwise, modifies in place.
+        genes_in_segmented: bool
+            Whether to filter genes only present in segmented cells, which should be in sdata[table_key].var.index
+        table_key: str
+            Name of the table included in sdata, containing an anndata of segmented cells.
 
     Returns
     -------
@@ -173,16 +179,16 @@ def filter_xrna(
     # Select genes based on the first provided criterion
     if min_counts is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["count"] > min_counts].index
-    elif min_extracellular_proportion is not None:
+    if min_extracellular_proportion is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["extracellular_proportion"] > min_extracellular_proportion].index
-    elif control_probe is False:
-        selected_genes = sdata["xrna_metadata"].var[not sdata["xrna_metadata"].var["control_probe"]].index
-    elif min_logfoldratio_over_noise is not None:
+    if control_probe == True:
+        selected_genes = sdata["xrna_metadata"].var[~sdata["xrna_metadata"].var["control_probe"]].index
+    if min_logfoldratio_over_noise is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["logfoldratio_over_noise"] > min_logfoldratio_over_noise].index
-    elif min_morani is not None:
+    if min_morani is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["moran_I"] > min_morani].index
-    else:
-        return sdata if copy else None
+    if genes_in_segmented == True:
+        selected_genes = [g for g in sdata["xrna_metadata"].var.index if g in sdata[table_key].var.index]
 
     # Filter transcripts
     sdata["transcripts"] = sdata["transcripts"][sdata["transcripts"][gene_key].compute().isin(selected_genes)]
@@ -353,8 +359,8 @@ def segmentation_free_sainsc(
 
     # Build mapping dictionaries.
     bin2celltype = dict(zip(output_df["bin_x_y_id"], output_df["cell type"], strict=False))
-    bin2cosine = dict(zip(output_df["bin_x_y_id"], output_df["cosine_similarity"], strict=False))
-    bin2assign = dict(zip(output_df["bin_x_y_id"], output_df["assignment_score"], strict=False))
+    bin2cosine = dict(zip(output_df["bin_x_y_id"], list(output_df["cosine_similarity"]), strict=False))
+    bin2assign = dict(zip(output_df["bin_x_y_id"], list(output_df["assignment_score"]), strict=False))
 
     # --- 9. Merge Bin-level Features for Transcripts That Were Successfully Binned ---
     # Merge on the unique "xy" identifier.

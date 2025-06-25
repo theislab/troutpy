@@ -117,7 +117,7 @@ def gene_communication(
 
 def target_score_by_celltype(
     sdata: sd.SpatialData,
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     min_counts: int = 100,
     min_value: float | None = None,
     max_value: float | None = None,

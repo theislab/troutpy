@@ -16,7 +16,7 @@ def calculate_target_cells(
     xcellcoord: str = "x_centroid",
     ycellcoord: str = "y_centroid",
     celltype_key: str = "cell type",
-    gene_id_key: str = "feature_name",
+    gene_id_key: str = "gene",
     copy: bool = False,
 ) -> SpatialData | None:
     """
@@ -39,7 +39,7 @@ def calculate_target_cells(
     celltype_key: str
         Column name in `adata.obs` that contains cell type annotations. Default is 'cell type'.
     gene_id_key: str
-        Column name in `sdata.points[layer]` that contains gene identity. Default is 'feature_name'.
+        Column name in `sdata.points[layer]` that contains gene identity. Default is 'gene'.
     copy: bool
         If True, returns a copy of the modified SpatialData object. Default is False.
 
@@ -98,7 +98,7 @@ def calculate_target_cells(
 
 
 # deprecated
-def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_celltype_key="closest_target_cell_type", feature_key="feature_name"):
+def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_celltype_key="closest_target_cell_type", feature_key="gene"):
     """
     It calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,and then normalizes the result to provide the proportion of each feature associated with each cell type.
 
@@ -111,7 +111,7 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
     celltype_key: str
         The column name representing cell types in the transcript data (default: 'cell type').
     feature_key: str
-        The column name representing the feature (e.g., transcript or gene) in the transcript data (default: 'feature_name').
+        The column name representing the feature (e.g., transcript or gene) in the transcript data (default: 'gene').
 
     Returns
     -------
@@ -131,7 +131,7 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
 def compute_target_score(
     sdata: SpatialData,
     layer: str = "transcripts",
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     coords_key: list = None,  # type: ignore
     lambda_decay=0.1,
     copy=False,
@@ -147,7 +147,7 @@ def compute_target_score(
     layer: str
         The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
     gene_key: str
-        Column name in the transcript data representing gene identifiers. Default is 'feature_name'.
+        Column name in the transcript data representing gene identifiers. Default is 'gene'.
     coords_key: list
         Column names for spatial coordinates of transcripts and cell centroids.
     lambda_decay: float
@@ -205,7 +205,7 @@ def compute_target_score(
         for cell_type in all_cell_types:
             target_scores_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
 
-    # probabilities_table['feature_name']=extracellular_transcripts['feature_name']
+    # probabilities_table['gene']=extracellular_transcripts['gene']
     prob_table = sc.AnnData(target_scores_table)
     prob_table.obs[gene_key] = list(extracellular_transcripts[gene_key].astype(str))
     prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()

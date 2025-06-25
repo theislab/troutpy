@@ -9,6 +9,7 @@ from .quantify_xrna import (
     compute_js_divergence,
     create_xrna_metadata,
     extracellular_enrichment,
+    identify_noisy_genes,
     in_out_correlation,
     quantify_overexpression,
     spatial_colocalization,
