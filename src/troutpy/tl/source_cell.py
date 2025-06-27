@@ -9,9 +9,6 @@ from scipy.spatial import cKDTree
 from sklearn.neighbors import KDTree
 from spatialdata import SpatialData
 from tqdm import tqdm
-import anndata as ad
-from scipy import sparse
-
 
 warnings.filterwarnings("ignore")
 
@@ -450,6 +447,7 @@ def store_results_in_sdata(sdata, prob_table, closest_table, extracellular_trans
 
     sdata["table"].obs["urna_source_score"] = list(np.sum(cell_source_table, axis=1))
 
+
 def compute_contribution_score(sdata):
     """
     Compute a segmentation score for each cell based on the expression of genes weighted by their intracellular proportion (1 - extracellular proportion).
@@ -499,7 +497,7 @@ def compute_contribution_score(sdata):
     ordered_genes = [gene for gene in genes if gene in common_genes]
     gene_weights = gene_meta.loc[ordered_genes, "extracellular_proportion"]
 
-    extracellular_weights =  gene_weights.values  # numpy array
+    extracellular_weights = gene_weights.values  # numpy array
 
     # Compute the numerator and denominator for the weighted average per cell.
     # Numerator: dot product of cell expression with extracellular weights.
@@ -512,5 +510,3 @@ def compute_contribution_score(sdata):
 
     # Store the score in the AnnData object under obs
     adata.obs["urna_contribution_score"] = score
-
-

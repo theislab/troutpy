@@ -17,10 +17,11 @@ from .quantify_xrna import (
 )
 from .segmentation_free import segmentation_free_clustering
 from .source_cell import (
+    compute_contribution_score,
     compute_distant_cells_proportion,
     compute_source_cells,
     compute_source_score,
     distance_to_source_cell,
-    get_proportion_expressed_per_cell_type,compute_contribution_score
+    get_proportion_expressed_per_cell_type,
 )
 from .target_cell import calculate_target_cells, compute_target_score, define_target_by_celltype

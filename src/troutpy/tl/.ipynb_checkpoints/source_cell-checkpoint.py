@@ -512,5 +512,3 @@ def compute_contribution_score(sdata):
 
     # Store the score in the AnnData object under obs
     adata.obs["urna_contribution_score"] = score
-
-
