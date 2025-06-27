@@ -108,6 +108,7 @@ def rank_factor_genes_loadings_matrixplot(
     vmax: float | None = None,
     show: bool = True,
     save: str | None = None,
+    figsize: tuple = None,
 ):
     """
     Plot ranking of genes using a matrixplot based on factor loadings.
@@ -151,11 +152,15 @@ def rank_factor_genes_loadings_matrixplot(
             pass
 
     # Plot heatmap
-    plt.figure(figsize=(len(factor_names) * 0.3, len(gene_list) * 0.3))
+    if figsize == None:
+        plt.figure(figsize=(len(factor_names) * 0.3, len(gene_list) * 0.1))
+    else:
+        plt.figure(figsize=figsize)
     sns.heatmap(factor_matrix, xticklabels=factor_names, yticklabels=gene_list, cmap=cmap, vmin=vmin, vmax=vmax, cbar_kws={"label": "Gene loading"})
     plt.xlabel("Factors")
     plt.ylabel("Genes")
     plt.title("Top Genes per Factor")
+    plt.grid(False)
 
     if save:
         plt.savefig(save, bbox_inches="tight", dpi=300)

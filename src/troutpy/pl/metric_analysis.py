@@ -120,12 +120,14 @@ def metric_scatter(
     sdata: sd.SpatialData,
     x: str,
     y: str,
+    size: int = 1,
     non_control_probes: list[str] | None = None,
     label_top_n_x: int = 0,
     label_top_n_y: int = 0,
     label_bottom_n_x: int = 0,
     label_bottom_n_y: int = 0,
     title: str | None = None,
+    linewidth: str = 0.5,
     figures_path: str = "",
     save: bool = False,
     custom_plot_filename: str = None,
@@ -191,7 +193,7 @@ def metric_scatter(
     var_df["plot_color"] = var_df["control_probe"].map(color_map)
 
     plt.figure(figsize=(6, 6))
-    plt.scatter(var_df[x], var_df[y], c=var_df["plot_color"], edgecolor="black", linewidth=0.5, alpha=0.8)
+    plt.scatter(var_df[x], var_df[y], c=var_df["plot_color"], edgecolor="black", s=size, linewidth=linewidth, alpha=0.9)
 
     label_genes = set()
     if label_top_n_x > 0:

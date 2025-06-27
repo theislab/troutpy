@@ -9,6 +9,9 @@ from scipy.spatial import cKDTree
 from sklearn.neighbors import KDTree
 from spatialdata import SpatialData
 from tqdm import tqdm
+import anndata as ad
+from scipy import sparse
+
 
 warnings.filterwarnings("ignore")
 
@@ -258,199 +261,6 @@ def get_proportion_expressed_per_cell_type(adata: SpatialData, cell_type_key="ce
     return proportions
 
 
-def compute_source_score_old(
-    sdata: SpatialData,
-    layer: str = "transcripts",
-    gene_key: str = "gene",
-    coord_keys: list = None,  # type: ignore
-    lambda_decay: float = 0.1,
-    copy: bool = False,
-    celltype_key: str = "cell type",
-):
-    """
-    Computes the probabilities of each extracellular transcript originating from a specific cell.
-
-    Parameters
-    ----------
-    sdata
-        The input spatial data object.
-    layer
-        The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
-    gene_key
-        Column name in the transcript data representing gene identifiers. Default is 'gene'.
-    xcoord, ycoord
-        Column names for spatial coordinates of transcripts and cell centroids.
-    lambda_decay
-        The exponential decay factor for distances.
-    copy
-        If True, returns a modified copy of the SpatialData object.
-    celltype_key
-        Key for cell type annotations in the cell table.
-
-    Returns
-    -------
-    sdata
-        Updated SpatialData object with source scores added in sdata.tables['source_score'], including distance to closest cell
-    """
-    if coord_keys is None:
-        coord_keys = ["x", "y"]
-    xcoord = coord_keys[0]
-    ycoord = coord_keys[1]
-
-    transcripts = sdata.points[layer].compute()
-    cells = sdata["table"].to_df()
-    coord_cells = sdata["table"].obsm["spatial"]
-    cell_types = sdata["table"].obs[celltype_key]
-    all_cell_types = cell_types.unique()
-
-    # Ensure necessary columns exist
-    required_cols = [xcoord, ycoord, gene_key]
-    for col in required_cols:
-        if col not in transcripts.columns and col not in cells.columns:
-            raise ValueError(f"Required column '{col}' is missing.")
-
-    # Filter for extracellular transcripts only
-    extracellular_transcripts = transcripts[transcripts["extracellular"]]
-    probabilities_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
-
-    # Precompute KDTree for all cell coordinates
-    closet_cell_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=["closest_cell", "closest_celltype", "distance"])
-
-    # Process each gene
-    for gene in tqdm(cells.columns.unique(), desc="Processing genes"):
-        # Filter transcripts and cells for the current gene
-        gene_transcripts = extracellular_transcripts[extracellular_transcripts[gene_key] == gene]
-
-        gene_mask = cells[gene] > 0  # Mask for cells expressing the gene
-        if not gene_mask.any() or gene_transcripts.empty:
-            continue
-        transcript_coords = gene_transcripts[[xcoord, ycoord]].to_numpy()
-        gene_cells = cells.loc[gene_mask]
-        coord_cells_filt = coord_cells[gene_mask]
-        cell_types_filt = cell_types[gene_mask]
-
-        # Compute distances between transcripts and filtered cells
-        kdtree = KDTree(coord_cells_filt)
-        distances, cell_indices = kdtree.query(transcript_coords, k=len(coord_cells_filt))
-
-        # compute_min_dist
-        distances_min = np.min(distances, axis=1)
-        distances_idx = cell_indices[:, 0]
-        cell_id_min = gene_cells.index[distances_idx]
-        cell_type_min = cell_types_filt[distances_idx]
-
-        # Get the gene-specific expression values
-        cell_exprs = gene_cells[gene].to_numpy()
-
-        # Compute exponential decay scores
-        exp_decay = np.exp(-lambda_decay * distances)
-        scores = exp_decay * cell_exprs[cell_indices]
-
-        # Aggregate scores by cell type
-        for i, transcript_idx in enumerate(gene_transcripts.index):
-            cell_indices_i = cell_indices[i]
-            scores_i = scores[i]
-            types_i = cell_types_filt.iloc[cell_indices_i].to_numpy()
-
-            # add min_distance
-            closet_cell_table.loc[transcript_idx, "distance"] = distances_min[i]
-            closet_cell_table.loc[transcript_idx, "closest_cell"] = cell_id_min[i]
-            closet_cell_table.loc[transcript_idx, "closest_celltype"] = cell_type_min[i]
-            for cell_type in all_cell_types:
-                probabilities_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
-
-    # We format all probabilieies as an anndata, stored in sdata.tables['source_score']
-    prob_table = sc.AnnData(probabilities_table)
-    prob_table.obs[gene_key] = list(extracellular_transcripts[gene_key])
-    prob_table.obs["distance"] = list(closet_cell_table["distance"].astype(float))
-    # prob_table.obs["feature_name"] = list(closet_cell_table["feature_name"].astype(str))
-    prob_table.obs["closest_cell"] = list(closet_cell_table["closest_cell"].astype(str))
-    prob_table.obs["closest_celltype"] = list(closet_cell_table["closest_celltype"].astype(str))
-
-    prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
-    sdata.tables["source_score"] = prob_table
-    return sdata.copy() if copy else None
-
-
-def process_gene(gene, extracellular_transcripts, cells, coord_cells, cell_types, gene_key, xcoord, ycoord, lambda_decay, all_cell_types):
-    """
-    Computes the source probability scores and nearest cell info for extracellular transcripts of a specific gene.
-
-    Parameters
-    ----------
-    gene : str
-        The gene symbol for which the computation is performed.
-    extracellular_transcripts : pd.DataFrame
-        DataFrame of all extracellular transcripts, filtered from the spatial data.
-    cells : pd.DataFrame
-        DataFrame of all cells with gene expression values.
-    coord_cells : np.ndarray
-        Numpy array containing spatial coordinates of cells.
-    cell_types : pd.Series
-        Series mapping each cell to its cell type.
-    gene_key : str
-        The column name in `extracellular_transcripts` and `cells` representing gene identifiers.
-    xcoord : str
-        Column name for the x spatial coordinate.
-    ycoord : str
-        Column name for the y spatial coordinate.
-    lambda_decay : float
-        The decay constant controlling how rapidly the distance effect decreases.
-    all_cell_types : list
-        List of all cell types found in the dataset, used to initialize result tables.
-
-    Returns
-    -------
-    tuple or None
-        A tuple (gene_prob_df, gene_closest_df) containing:
-        - gene_prob_df: DataFrame with summed source probabilities for each cell type.
-        - gene_closest_df: DataFrame with the closest cell, closest cell type, and distance.
-        Returns None if no matching cells or transcripts exist for the gene.
-    """
-    # Filter transcripts and cells for this gene
-    gene_transcripts = extracellular_transcripts[extracellular_transcripts[gene_key] == gene]
-    gene_mask = cells[gene] > 0  # Mask for cells expressing the gene
-
-    if (not gene_mask.any()) or gene_transcripts.empty:
-        return None
-
-    gene_cells = cells.loc[gene_mask]
-    coord_cells_filt = coord_cells[gene_mask]
-    cell_types_filt = cell_types[gene_mask]
-    transcript_coords = gene_transcripts[[xcoord, ycoord]].to_numpy()
-
-    tree = cKDTree(coord_cells_filt)
-    distances, cell_indices = tree.query(transcript_coords, k=len(coord_cells_filt))
-
-    distances_min = np.min(distances, axis=1)
-    closest_idxs = cell_indices[:, 0]
-    closest_cell_ids = gene_cells.index[closest_idxs].to_numpy()
-    closest_cell_types = cell_types_filt.iloc[closest_idxs].to_numpy()
-
-    cell_exprs = gene_cells[gene].to_numpy()
-    exp_decay = np.exp(-lambda_decay * distances)
-    scores = exp_decay * cell_exprs[cell_indices]
-
-    n_transcripts = len(gene_transcripts)
-    prob_results = np.zeros((n_transcripts, len(all_cell_types)), dtype=float)
-    cell_type_to_idx = {ct: i for i, ct in enumerate(all_cell_types)}
-
-    for i in range(n_transcripts):
-        types_i = cell_types_filt.iloc[cell_indices[i]].to_numpy()
-        scores_i = scores[i]
-        type_indices = np.array([cell_type_to_idx[t] for t in types_i])
-        score_sum = np.bincount(type_indices, weights=scores_i, minlength=len(all_cell_types))
-        prob_results[i, :] = score_sum
-
-    gene_prob_df = pd.DataFrame(prob_results, index=gene_transcripts.index, columns=all_cell_types)
-
-    gene_closest_df = pd.DataFrame(
-        {"distance": distances_min, "closest_cell": closest_cell_ids, "closest_celltype": closest_cell_types}, index=gene_transcripts.index
-    )
-
-    return (gene_prob_df, gene_closest_df)
-
-
 def compute_source_score(
     sdata,
     layer: str = "transcripts",
@@ -462,55 +272,48 @@ def compute_source_score(
     n_jobs: int = -1,
 ):
     """
-    Calculates probabilistic source assignments for extracellular transcripts using cell proximity and gene expression.
-
-    For each extracellular transcript, this function estimates the likelihood that it originated
-    from each cell type based on spatial proximity and expression, and records the nearest cell
-    along with its type and distance.
+    Compute a source score for extracellular transcripts based on nearby cell types
+    and gene expression profiles, using exponential distance decay.
 
     Parameters
     ----------
     sdata : spatialdata.SpatialData
-        A SpatialData object containing transcript positions and cell annotations.
+        SpatialData object with a transcript layer and an AnnData table.
     layer : str
-        The layer name in `sdata.points` containing the transcript table (default is "transcripts").
+        Name of the layer in sdata.points containing transcripts. Default is "transcripts".
     gene_key : str
-        The column name used for gene identifiers in both transcripts and cells (default is "gene").
-    coord_keys : str
-        Names of the columns containing spatial coordinates [x, y]. Defaults to ["x", "y"].
+        Column name in transcript table corresponding to gene names. Default is "gene".
+    coord_keys : list
+        List of coordinate column names to use (e.g., ["x", "y"]). Default is ["x", "y"].
     lambda_decay : float
-        Decay constant for the exponential distance function. Controls how spatial distance penalizes the score (default is 0.1).
+        Decay rate for the exponential function applied to distances. Default is 0.1.
     copy : bool
-        Whether to return a deep copy of the `sdata` object or modify in place (default is False).
+        If True, return a copy of the SpatialData object with results added. Default is False.
     celltype_key : str
-        Column name used to identify cell types in the cell annotation table (default is "cell type").
+        Column name in adata.obs specifying cell type labels. Default is "cell type".
     n_jobs : int
-        Number of parallel jobs to use for gene-wise computation. Default (-1) uses all available cores.
+        Number of parallel jobs to run (-1 uses all processors). Default is -1.
 
-    Notes
-    -----
-    The function creates a new `AnnData` table under `sdata.tables["source_score"]` that contains:
-    - Probability assignments for each cell type.
-    - Distance to the nearest cell.
-    - Nearest cell and cell type labels.
-    - Spatial coordinates of the extracellular transcripts.
+    Returns
+    -------
+    SpatialData or None
+        Updated SpatialData object with added transcript-level and cell-level source scores.
+        Returns None if copy=False (modifies sdata in place).
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]
     xcoord, ycoord = coord_keys[:2]
 
     transcripts = sdata.points[layer].compute()
-    cells = sdata["table"].to_df()
-    coord_cells = sdata["table"].obsm["spatial"]
-    cell_types = sdata["table"].obs[celltype_key]
+    adata = sdata["table"]
+    coord_cells = adata.obsm["spatial"]
+
+    cells = extract_expression_matrix(adata)
+    cell_types = adata.obs[celltype_key]
     all_cell_types = cell_types.unique()
 
-    required_cols = [xcoord, ycoord, gene_key]
-    for col in required_cols:
-        if (col not in transcripts.columns) and (col not in cells.columns):
-            raise ValueError(f"Required column '{col}' is missing.")
+    extracellular_transcripts = get_extracellular_transcripts(transcripts)
 
-    extracellular_transcripts = transcripts[transcripts["extracellular"]]
     genes_to_process = extracellular_transcripts[gene_key].unique()
 
     results = Parallel(n_jobs=n_jobs)(
@@ -518,22 +321,196 @@ def compute_source_score(
         for gene in tqdm(genes_to_process, desc="Processing genes")
     )
 
-    probabilities_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
-    closet_cell_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=["closest_cell", "closest_celltype", "distance"])
+    probabilities_table, closet_cell_table, cell_source_table = build_result_tables(
+        results, extracellular_transcripts, adata, genes_to_process, all_cell_types
+    )
 
-    for res in results:
+    store_results_in_sdata(sdata, probabilities_table, closet_cell_table, extracellular_transcripts, xcoord, ycoord, gene_key, cell_source_table)
+
+    return sdata.copy() if copy else None
+
+
+def extract_expression_matrix(adata):
+    """Extract expression matrix from AnnData object."""
+    return pd.DataFrame(
+        adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X,
+        index=adata.obs_names,
+        columns=adata.var_names,
+    )
+
+
+def get_extracellular_transcripts(transcripts):
+    """Filter for extracellular transcripts."""
+    if "extracellular" not in transcripts.columns:
+        raise ValueError("Column 'extracellular' missing from transcript table.")
+    extracellular_transcripts = transcripts[transcripts["extracellular"]]
+    if extracellular_transcripts.empty:
+        raise ValueError("No extracellular transcripts found.")
+    return extracellular_transcripts
+
+
+def process_gene(gene, extracellular_transcripts, cells, coord_cells, cell_types, gene_key, xcoord, ycoord, lambda_decay, all_cell_types):
+    """Process a single gene to compute transcript scores and closest cells."""
+    gene_transcripts = extracellular_transcripts[extracellular_transcripts[gene_key] == gene]
+    if gene not in cells.columns:
+        return None
+
+    gene_mask = cells[gene] > 0
+    if not gene_mask.any() or gene_transcripts.empty:
+        return None
+
+    gene_cells = cells.loc[gene_mask]
+    coord_cells_filt = coord_cells[gene_mask]
+    cell_types_filt = cell_types[gene_mask]
+    transcript_coords = gene_transcripts[[xcoord, ycoord]].to_numpy()
+
+    tree = cKDTree(coord_cells_filt)
+    distances, cell_indices = tree.query(transcript_coords, k=len(gene_cells))
+
+    distances_min = distances[:, 0]
+    closest_idxs = cell_indices[:, 0]
+    closest_cell_ids = gene_cells.index[closest_idxs].to_numpy()
+    closest_cell_types = cell_types_filt.iloc[closest_idxs].to_numpy()
+
+    cell_exprs = gene_cells[gene].to_numpy()
+    exp_decay = np.exp(-lambda_decay * distances)
+    scores = exp_decay * cell_exprs[cell_indices]
+
+    gene_prob_df = compute_probability_table(scores, cell_indices, cell_types_filt, all_cell_types, gene_transcripts)
+    gene_closest_df = build_closest_cell_table(distances_min, closest_cell_ids, closest_cell_types, gene_transcripts)
+    gene_by_cell_scores = sum_scores_per_cell(gene_cells, scores, cell_indices)
+
+    return gene_prob_df, gene_closest_df, gene_by_cell_scores
+
+
+def compute_probability_table(scores, cell_indices, cell_types_filt, all_cell_types, gene_transcripts):
+    """Build transcript-by-celltype score probability table."""
+    n_transcripts = len(gene_transcripts)
+    prob_results = np.zeros((n_transcripts, len(all_cell_types)), dtype=float)
+    cell_type_to_idx = {ct: i for i, ct in enumerate(all_cell_types)}
+
+    for i in range(n_transcripts):
+        types_i = cell_types_filt.iloc[cell_indices[i]].to_numpy()
+        scores_i = scores[i]
+        type_indices = np.array([cell_type_to_idx[t] for t in types_i])
+        score_sum = np.bincount(type_indices, weights=scores_i, minlength=len(all_cell_types))
+        prob_results[i, :] = score_sum
+
+    return pd.DataFrame(prob_results, index=gene_transcripts.index, columns=all_cell_types)
+
+
+def build_closest_cell_table(distances, closest_cell_ids, closest_cell_types, gene_transcripts):
+    """Construct DataFrame with closest cell and cell type info."""
+    return pd.DataFrame(
+        {"distance": distances, "closest_cell": closest_cell_ids, "closest_celltype": closest_cell_types},
+        index=gene_transcripts.index,
+    )
+
+
+def sum_scores_per_cell(gene_cells, scores, cell_indices):
+    """Aggregate transcript scores per cell."""
+    all_cell_ids = gene_cells.index.to_numpy()
+    gene_by_cell_scores = pd.Series(0.0, index=all_cell_ids)
+
+    for i in range(len(scores)):
+        cell_idx_i = cell_indices[i]
+        scores_i = scores[i]
+        cell_ids_i = gene_cells.index[cell_idx_i]
+        gene_by_cell_scores[cell_ids_i] += scores_i
+
+    return gene_by_cell_scores
+
+
+def build_result_tables(results, extracellular_transcripts, adata, genes_to_process, all_cell_types):
+    """Initialize and fill summary tables for all genes."""
+    prob_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
+    closest_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=["closest_cell", "closest_celltype", "distance"])
+    cell_score_table = pd.DataFrame(0, index=adata.obs_names, columns=genes_to_process)
+
+    for i, res in enumerate(results):
         if res is None:
             continue
-        gene_prob_df, gene_closest_df = res
-        probabilities_table.loc[gene_prob_df.index, :] = gene_prob_df
-        closet_cell_table.loc[gene_closest_df.index, :] = gene_closest_df
+        gene_prob_df, gene_closest_df, gene_by_cell_df = res
+        prob_table.loc[gene_prob_df.index, :] = gene_prob_df
+        closest_table.loc[gene_closest_df.index, :] = gene_closest_df
+        cell_score_table.loc[gene_by_cell_df.index, genes_to_process[i]] = gene_by_cell_df.values.flatten()
 
-    prob_table = sc.AnnData(probabilities_table)
-    prob_table.obs[gene_key] = extracellular_transcripts[gene_key].values
-    prob_table.obs["distance"] = closet_cell_table["distance"].astype(float).values
-    prob_table.obs["closest_cell"] = closet_cell_table["closest_cell"].astype(str).values
-    prob_table.obs["closest_celltype"] = closet_cell_table["closest_celltype"].astype(str).values
-    prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
+    return prob_table, closest_table, cell_score_table
 
-    sdata.tables["source_score"] = prob_table
-    return sdata.copy() if copy else None
+
+def store_results_in_sdata(sdata, prob_table, closest_table, extracellular_transcripts, xcoord, ycoord, gene_key, cell_source_table):
+    """Store transcript- and cell-level results in the sdata object."""
+    prob_adata = sc.AnnData(prob_table)
+    prob_adata.obs[gene_key] = extracellular_transcripts[gene_key].values
+    prob_adata.obs["distance"] = closest_table["distance"].astype(float).values
+    prob_adata.obs["closest_cell"] = closest_table["closest_cell"].astype(str).values
+    prob_adata.obs["closest_celltype"] = closest_table["closest_celltype"].astype(str).values
+    prob_adata.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
+    sdata.tables["source_score"] = prob_adata
+
+    sdata["table"].obs["urna_source_score"] = list(np.sum(cell_source_table, axis=1))
+
+def compute_contribution_score(sdata):
+    """
+    Compute a segmentation score for each cell based on the expression of genes weighted by their intracellular proportion (1 - extracellular proportion).
+
+    Parameters
+    ----------
+    sdata : dict
+        A spatialdata object with keys 'table' and 'xrna_metadata'.
+        - sdata['table'] is an AnnData object containing expression data in layers['raw']
+          and cell metadata in .obs.
+        - sdata['xrna_metadata'].var is a DataFrame with gene names as the index and
+          an 'extracellular proportion' column.
+
+    Returns
+    -------
+    sdata : dict
+        The same sdata object with a new column 'segmentation_score' in sdata['table'].obs.
+    """
+    # Retrieve the AnnData object with cells in .obs and genes in .var
+    adata = sdata["table"]
+
+    # Retrieve raw expression data; assume shape (n_cells, n_genes)
+    raw_expr = adata.layers["raw"]
+
+    # If raw_expr is a sparse matrix, convert to a dense array
+    if hasattr(raw_expr, "toarray"):
+        raw_expr = raw_expr.toarray()
+
+    # Get gene names from the AnnData object
+    genes = adata.var_names
+
+    # Retrieve gene metadata containing the extracellular proportions
+    gene_meta = sdata["xrna_metadata"].var
+
+    # Identify the genes common to both the expression data and the metadata
+    common_genes = gene_meta.index.intersection(genes)
+    if len(common_genes) == 0:
+        raise ValueError("No common genes found between adata and gene metadata.")
+
+    # Subset the expression matrix to only those common genes
+    # Here we assume adata.var_names preserves order; get indices corresponding to common genes.
+    common_idx = [i for i, gene in enumerate(genes) if gene in common_genes]
+    raw_expr = raw_expr[:, common_idx]
+
+    # Reorder gene_meta so that it matches the ordering in the expression data.
+    # This assumes that the order of genes in adata.var_names is the desired order.
+    ordered_genes = [gene for gene in genes if gene in common_genes]
+    gene_weights = gene_meta.loc[ordered_genes, "extracellular_proportion"]
+
+    extracellular_weights =  gene_weights.values  # numpy array
+
+    # Compute the numerator and denominator for the weighted average per cell.
+    # Numerator: dot product of cell expression with extracellular weights.
+    # Denominator: total expression (for the common genes) per cell.
+    numerator = raw_expr.dot(extracellular_weights)
+    denominator = raw_expr.sum(axis=1)
+
+    # Avoid division by zero (if a cell has zero expression for these genes)
+    score = np.divide(numerator, denominator, out=np.full_like(numerator, np.nan), where=denominator != 0)
+
+    # Store the score in the AnnData object under obs
+    adata.obs["urna_contribution_score"] = score
+
+

@@ -9,6 +9,7 @@ from .quantify_xrna import (
     compute_js_divergence,
     create_xrna_metadata,
     extracellular_enrichment,
+    identify_noisy_genes,
     in_out_correlation,
     quantify_overexpression,
     spatial_colocalization,
@@ -20,6 +21,6 @@ from .source_cell import (
     compute_source_cells,
     compute_source_score,
     distance_to_source_cell,
-    get_proportion_expressed_per_cell_type,
+    get_proportion_expressed_per_cell_type,compute_contribution_score
 )
 from .target_cell import calculate_target_cells, compute_target_score, define_target_by_celltype

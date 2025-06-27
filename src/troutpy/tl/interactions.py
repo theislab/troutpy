@@ -153,16 +153,19 @@ def compute_communication_strength(sdata: SpatialData, source_layer: str = "sour
     return sdata.copy() if copy else None
 
 
-def gene_specific_interactions(sdata, copy: bool = False):
+def gene_specific_interactions(sdata, copy: bool = False, gene_key: str = "gene"):
     """
     Group the read-specific interaction scores into gene-specific scores
 
     Parameters
     ----------
-        sdata
+        sdata: spatialdata.SpatialData
             A SpatialData object including precomputed communication strenghts for each exRNA
-        copy
+        copy: bool
             Wether to save the resulting sdata as a copy
+        gene_key: str
+            column in sdata['source_table'] containing gene assignment for each transcript
+
 
     Returns
     -------
@@ -175,7 +178,7 @@ def gene_specific_interactions(sdata, copy: bool = False):
     except:  # noqa: E722
         KeyError("Interaction streght is not computed. Please run troutpy.tl.compute_communication_strength first")
 
-    categories = list(source_table.obs["feature_name"])  # Extract categories
+    categories = list(source_table.obs[gene_key])  # Extract categories
     unique_cats = np.unique(categories)  # Get unique categories
 
     # Initialize result 3D matrix (num_categories, H, W)

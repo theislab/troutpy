@@ -3,14 +3,16 @@ import os
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import scanpy as sc
 from adjustText import adjust_text
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import ListedColormap, Normalize
+from shapely.affinity import affine_transform
 from shapely.geometry import box
 from spatialdata import SpatialData
+from spatialdata.transformations import get_transformation
 
-import troutpy
 import troutpy as tp
 from troutpy.pl import get_palette
 
@@ -262,7 +264,8 @@ def spatial_transcripts(
     title: str = "Cell Boundaries + Transcripts",
 ) -> tuple[plt.Figure, plt.Axes]:
     """
-    Plot cell boundary polygons and transcript points, colored by a categorical variable.
+    Plot cell boundary polygons and transcript points, colored by a categorical variable
+    or a numeric variable, scaling geometries by an affine matrix from get_transformation.
 
     Parameters
     ----------
@@ -272,27 +275,27 @@ def spatial_transcripts(
           - sdata['transcripts'] including `gene_key` and `color_key`
     gene_key: str
         Column in transcripts to filter by gene_list.
-    gene_list: str
+    gene_list: Optional[List[str]]
         List of genes to keep. If None, all transcripts are used.
-    color_key
-        Column in transcripts used for coloring points (will be cast to pandas.Categorical).
-    shapes_key
+    color_key: str
+        Column in transcripts used for coloring points. Can be categorical or numeric.
+    shapes_key: str
         Key in sdata for your polygon boundaries layer.
-    colormap
-        Name of a Matplotlib colormap or, if troutpy is installed, a troutpy palette name.
-    boundary_linewidth
+    colormap: str
+        Name of a Matplotlib colormap or troutpy palette name.
+    boundary_linewidth: float
         Line width of cell boundary outlines.
-    scatter_size
+    scatter_size: float
         Marker size for transcript points.
-    alpha
+    alpha: float
         Transparency for transcript points.
-    use_roi
+    use_roi: bool
         If True, restrict both polygons and points to the bounding box given by `roi`.
-    roi
+    roi: Tuple[float, float, float, float]
         (xmin, xmax, ymin, ymax) bounds to clip to when `use_roi=True`.
-    figsize
+    figsize: Tuple[float, float]
         Width and height of the figure.
-    title
+    title: str
         Title string placed above the plot.
 
     Returns
@@ -303,50 +306,82 @@ def spatial_transcripts(
     # 1) Filter transcripts by gene_list
     trans_ad = sdata["transcripts"].compute()
     if gene_list is not None:
-        mask = trans_ad[gene_key].isin(gene_list)
-        trans_ad = trans_ad[mask]
+        trans_ad = trans_ad[trans_ad[gene_key].isin(gene_list)]
 
-    # add
+    # annotate transcript types
     trans_ad["segstatus"] = trans_ad["overlaps_cell"].astype(str) + "_" + trans_ad["extracellular"].astype(str)
     stat2lab = {"True_False": "cell", "False_True": "extracellular", "False_False": "cell-like"}
     trans_ad["transcript_type"] = trans_ad["segstatus"].map(stat2lab)
 
-    # 2) Create a combined categorical for color_key
+    # 2) Prepare color values based on type (categorical or numeric)
     trans_df = trans_ad.copy()
-    cats = trans_df[color_key].astype("category")
-    codes = cats.cat.codes.values
-    n_cats = len(cats.cat.categories)
+    if pd.api.types.is_numeric_dtype(trans_df[color_key]):
+        is_numeric = True
+        color_values = trans_df[color_key].astype(float)
+        cmap = plt.get_cmap(colormap)
+        norm = Normalize(vmin=color_values.min(), vmax=color_values.max())
+    else:
+        is_numeric = False
+        cats = trans_df[color_key].astype("category")
+        color_values = cats.cat.codes.values
+        n_cats = len(cats.cat.categories)
+        try:
+            import troutpy
 
-    # 3) Build colormap
-    try:
-        pal = troutpy.pl.get_palette(colormap, n_cats)
-        cmap = ListedColormap(pal)
-    except KeyError:
-        cmap = plt.get_cmap(colormap, n_cats)
+            pal = troutpy.pl.get_palette(colormap, n_cats)
+            cmap = ListedColormap(pal)
+        except Exception:
+            cmap = plt.get_cmap(colormap, n_cats)
 
-    # 5) Load and optionally clip cell boundaries
+    # 3) Obtain affine transformation and apply to geometries and points
     cb = sdata[shapes_key]
     df = cb.copy()
-    df["geometry"] = df["geometry"]
+    trans = get_transformation(cb)
+
+    if hasattr(trans, "matrix") and trans.matrix is not None:
+        try:
+            matrix = trans.matrix  # expected 3x3 or 2x3 affine
+            a, b, xoff = matrix[0]
+            d, e, yoff = matrix[1]
+            params = [a, b, d, e, xoff, yoff]
+            df["geometry"] = df["geometry"].apply(lambda geom: affine_transform(geom, params))
+        except Exception as e:
+            print(f"Transformation could not be applied: {e}")
+    else:
+        print("No transformation matrix found. Proceeding without transformation.")
+
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs=None)
 
+    # 4) Optionally clip to ROI
     if use_roi:
         xmin, xmax, ymin, ymax = roi
         roi_poly = box(xmin, ymin, xmax, ymax)
         gdf = gdf[gdf.geometry.intersects(roi_poly)]
-        pt_mask = (trans_df["x"] >= xmin) & (trans_df["x"] <= xmax) & (trans_df["y"] >= ymin) & (trans_df["y"] <= ymax)
-        trans_df = trans_df[pt_mask]
-        codes = codes[pt_mask]
+        mask = (trans_df["x"] >= xmin) & (trans_df["x"] <= xmax) & (trans_df["y"] >= ymin) & (trans_df["y"] <= ymax)
+        trans_df = trans_df[mask]
+        color_values = color_values[mask]  # mask color values too
 
-    # 6) Create plot
+    # 5) Plot
     fig, ax = plt.subplots(figsize=figsize)
     gdf.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=boundary_linewidth)
-    ax.scatter(trans_df["x"], trans_df["y"], c=codes, cmap=cmap, s=scatter_size, edgecolor="none", alpha=alpha)
+    scatter = ax.scatter(
+        trans_df["x"],
+        trans_df["y"],
+        c=color_values,
+        cmap=cmap,
+        s=scatter_size,
+        edgecolor="none",
+        alpha=alpha,
+        norm=norm if is_numeric else None,
+    )
 
-    # 7) Build legend
-    for i, cat in enumerate(cats.cat.categories):
-        ax.scatter([], [], color=cmap(i), label=str(cat), s=20)
-    ax.legend(title=color_key, markerscale=1.5, bbox_to_anchor=(1.02, 1), loc="upper left")
+    # 6) Legend or colorbar
+    if is_numeric:
+        cbar = fig.colorbar(scatter, ax=ax, label=color_key, fraction=0.046, pad=0.04)
+    else:
+        for idx, cat in enumerate(cats.cat.categories):
+            ax.scatter([], [], color=cmap(idx), label=str(cat), s=20)
+        ax.legend(title=color_key, markerscale=1.5, bbox_to_anchor=(1.02, 1), loc="upper left")
 
     ax.set_aspect("equal")
     ax.set_title(title)

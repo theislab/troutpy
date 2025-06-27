@@ -128,7 +128,7 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
         # Create or update the Stainings attribute.
         # if not hasattr(sdata, "Stainings") or sdata.images is None:
         #    sdata.images = {}
-        sdata["default"] = default_image
+        # sdata["default"] = default_image
 
     return sdata if copy else None
 
@@ -218,7 +218,7 @@ def process_transcript_data(sdata: sd.SpatialData) -> pd.DataFrame:
     tx["overlaps_cell"] = tx["cell_ID"] != 0
     tx["overlaps_nuclei"] = tx["CellComp"] == "Nuclear"
     tx["overlaps_nuclei"].fillna(False, inplace=True)
-    tx["control_probe"] = tx["gene"].str.startswith("NegPrb")
+    tx["control_probe"] = tx["gene"].str.startswith(("NegPr", "System"))
     if "global" in sdata["table"].obsm:
         sdata["table"].obsm["spatial"] = sdata["table"].obsm["global"].copy()
     return tx

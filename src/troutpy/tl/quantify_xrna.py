@@ -1,8 +1,10 @@
 import dask.dataframe as dd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scanpy as sc
 import scipy.stats as stats
+import seaborn as sns
 import spatialdata
 import spatialdata as sd
 import squidpy as sq
@@ -10,6 +12,7 @@ from scipy.spatial import cKDTree
 from scipy.spatial.distance import euclidean
 from scipy.stats import poisson, spearmanr
 from spatialdata import SpatialData
+from statsmodels.stats.multitest import multipletests
 
 from troutpy.pp.aggregate import aggregate_extracellular_transcripts
 
@@ -139,11 +142,39 @@ def quantify_overexpression(
     layer: str = "transcripts",
     percentile_threshold: float = 100,
     copy=False,
+    noise_gene_calculation=False,
 ) -> SpatialData:
-    """Compare counts per gene with counts per non-gene feature. Additionally, perform a Poisson test to check if gene extracellular expression is significantly higher than controls."""
+    """Compare extracellular transcript counts per gene to those of control codewords(e.g., negative probes or known noisy features) to estimate overexpression.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        The input SpatialData object with a 'points' layer (typically 'transcripts').
+    codeword_key : str
+        Column name to identify control features in the points table.
+    control_codewords : list
+        List of values in `codeword_key` to treat as control probes. If None,
+        assumes `True`-labeled control probes.
+    gene_key : str
+        Column name indicating the gene identifier.
+    layer : str
+        Layer within `sdata.points` containing transcript data.
+    percentile_threshold : float
+        Percentile of control probe counts to use as noise threshold (e.g., 95).
+    copy : bool
+        If True, return a modified copy of the SpatialData. If False, modify in-place.
+    noise_gene_calculation : bool
+        If True or if no control probes found, automatically infer noisy genes using `identify_noisy_genes`.
+
+    Returns
+    -------
+    SpatialData
+        Returns the modified SpatialData if `copy=True`, otherwise None.
+    """
     # Compute the data
     data = sdata.points[layer][np.unique(["extracellular", codeword_key, gene_key]).tolist()].compute()
 
+    data = data[data["extracellular"]]
     if control_codewords is None:
         control_codewords = [True]
 
@@ -154,6 +185,11 @@ def quantify_overexpression(
     # Get counts per control feature
     is_control = list(data[codeword_key].isin(control_codewords))
     control_data = data[data[codeword_key].isin(control_codewords)]
+    if np.sum(is_control) == 0 or noise_gene_calculation == True:
+        print("No control probe could be found. Automatic noise probe calculation will be performed instead")
+        noisy_genes, results_df = identify_noisy_genes(sdata, fdr_threshold=0.05)
+        control_data = data[data[gene_key].isin(noisy_genes)]
+
     # gene_data = data[~data[codeword_key].isin(control_codewords)]
 
     control_counts = control_data[gene_key].value_counts()
@@ -194,6 +230,96 @@ def quantify_overexpression(
     sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(scores_per_gene)
 
     return sdata if copy else None
+
+
+def identify_noisy_genes(sdata, plot=False, fdr_threshold=0.05):
+    """Identify noisy genes based on statistical enrichment of inside-cell counts compared to expected background levels estimated from outside-cell counts.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        A SpatialData object with at least a 'transcripts' layer and a boolean 'overlaps_cell' column indicating intracellular transcripts.
+    plot : bool
+        Whether to generate a volcano plot of log-fold change vs adjusted p-value.
+    fdr_threshold : float
+        Adjusted p-value cutoff (FDR) for defining significant enrichment.
+
+    Returns
+    -------
+    noisy_genes : list
+        List of gene names identified as likely noise.
+    results_df : pandas.DataFrame
+        DataFrame with observed, expected counts, p-values, log fold changes,and 'noisy' flags per gene.
+    """
+    # Extract transcript data
+    df = sdata["transcripts"][["overlaps_cell", "gene"]].compute()
+    inside = df[df["overlaps_cell"] == True]
+    outside = df[df["overlaps_cell"] == False]
+
+    # Count total transcripts
+    total_inside = len(inside)
+    total_outside = len(outside)
+
+    # Compute background rate from outside (ambient)
+    outside_counts = outside["gene"].value_counts()
+    background_rate = outside_counts / total_outside
+
+    # Observed inside-cell counts
+    inside_counts = inside["gene"].value_counts()
+    min_inside_count = np.percentile(inside_counts, 50)  # take the percentile 50 of genes less expressed inside cells
+    print(str(min_inside_count))
+    # Union of genes
+    all_genes = set(background_rate.index).union(set(inside_counts.index))
+
+    # Compute expected counts and p-values
+    expected = {g: background_rate.get(g, 0) * total_inside for g in all_genes}
+    observed = {g: inside_counts.get(g, 0) for g in all_genes}
+    pvals = {g: poisson.sf(observed[g] - 1, expected[g]) for g in all_genes}
+
+    # Multiple testing correction
+    genes = list(pvals.keys())
+    raw_pvals = list(pvals.values())
+    _, adj_pvals, _, _ = multipletests(raw_pvals, method="fdr_bh")
+
+    # Build results table
+    results_df = pd.DataFrame(
+        {
+            "gene": genes,
+            "observed_inside": [observed[g] for g in genes],
+            "expected_inside": [expected[g] for g in genes],
+            "raw_pval": raw_pvals,
+            "adj_pval": adj_pvals,
+        }
+    ).set_index("gene")
+
+    # Compute log fold change
+    results_df["log2_fc"] = np.log2((results_df["observed_inside"] + 1) / (results_df["expected_inside"] + 1))
+
+    # Identify noisy genes: not significantly enriched AND low inside count
+    results_df["noisy"] = (results_df["adj_pval"] > fdr_threshold) & (results_df["observed_inside"] < min_inside_count)
+
+    noisy_genes = results_df[results_df["noisy"]].index.tolist()
+
+    # Optional plot
+    if plot:
+        sns.scatterplot(
+            data=results_df,
+            x="log2_fc",
+            y=-np.log10(results_df["adj_pval"] + 1e-10),
+            hue="noisy",
+            size=0.2,
+            palette={True: "red", False: "blue"},
+            edgecolor=None,
+        )
+        plt.axhline(-np.log10(fdr_threshold), color="gray", linestyle="--", linewidth=1)
+        plt.xlabel("log2(Observed / Expected inside counts)")
+        plt.ylabel("-log10(FDR-adjusted p-value)")
+        plt.title("Gene enrichment in cells vs ambient background")
+        plt.yscale("linear")
+        plt.grid(True, linestyle="--", alpha=0.3)
+        plt.show()
+
+    return noisy_genes, results_df
 
 
 def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: bool = False, layer: str = "transcripts"):

@@ -5,7 +5,13 @@ import xarray as xr
 
 
 def image_intensities_per_transcript(
-    sdata: sd.SpatialData, image_key: str, scale: str, transcript_key: str, extracellular: bool = False, copy: bool = True
+    sdata: sd.SpatialData,
+    image_key: str,
+    scale: str,
+    transcript_key: str,
+    extracellular: bool = False,
+    copy: bool = True,
+    gene_key: str = "gene",
 ) -> sd.SpatialData:
     """
     Extracts image intensities at transcript locations and adds them as a new layer in the SpatialData object.
@@ -81,7 +87,7 @@ def image_intensities_per_transcript(
         ad = sc.AnnData(ad_data.reshape(ad_data.shape[0], -1))
         ad.var.index = [f"{c}_{z}" for c in intensities.c.values for z in range(ad_data.shape[2])]  # Create combined channel and z-slice names.
 
-    ad.obs["feature_name"] = list(transcripts["feature_name"])  # Add feature names
+    ad.obs[gene_key] = list(transcripts[gene_key])  # Add feature names
     ad.obsm["spatial"] = xy_positions_raw  # Add raw spatial coordinates
 
     # Add the AnnData object as a new spatial data object
