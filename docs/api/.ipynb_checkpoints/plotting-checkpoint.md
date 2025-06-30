@@ -21,9 +21,6 @@
 ## uRNA quantification
 
 ```{eval-rst}
-.. module:: troutpy.pl
-.. currentmodule:: troutpy.pl
-
 .. autosummary::
     :toctree: generated/quantification
     
@@ -45,9 +42,6 @@
 ## Source, target and communication
 
 ```{eval-rst}
-.. module:: troutpy.pl
-.. currentmodule:: troutpy.pl
-
 .. autosummary::
     :toctree: generated/communication
     
@@ -66,9 +60,6 @@
 ## Factor analysis
 
 ```{eval-rst}
-.. module:: troutpy.pl
-.. currentmodule:: troutpy.pl
-
 .. autosummary::
     :toctree: generated/factor_analysis
     
@@ -86,9 +77,6 @@
 ## Colormaps & palettes
 
 ```{eval-rst}
-.. module:: troutpy.pl
-.. currentmodule:: troutpy.pl
-
 .. autosummary::
     :toctree: generated/colormaps
 
