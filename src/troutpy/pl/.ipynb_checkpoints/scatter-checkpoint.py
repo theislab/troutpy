@@ -317,7 +317,7 @@ def spatial_transcripts(
 
             pal = troutpy.pl.get_palette(colormap, n_cats)
             cmap = ListedColormap(pal)
-        except Exception:
+        except KeyError:
             cmap = plt.get_cmap(colormap, n_cats)
 
     # 3) Obtain affine transformation and apply to geometries and points
@@ -332,7 +332,7 @@ def spatial_transcripts(
             d, e, yoff = matrix[1]
             params = [a, b, d, e, xoff, yoff]
             df["geometry"] = df["geometry"].apply(lambda geom: affine_transform(geom, params))
-        except Exception as e:
+        except KeyError:
             print(f"Transformation could not be applied: {e}")
     else:
         print("No transformation matrix found. Proceeding without transformation.")
@@ -364,7 +364,7 @@ def spatial_transcripts(
 
     # 6) Legend or colorbar
     if is_numeric:
-        cbar = fig.colorbar(scatter, ax=ax, label=color_key, fraction=0.046, pad=0.04)
+        fig.colorbar(scatter, ax=ax, label=color_key, fraction=0.046, pad=0.04)
     else:
         for idx, cat in enumerate(cats.cat.categories):
             ax.scatter([], [], color=cmap(idx), label=str(cat), s=20)

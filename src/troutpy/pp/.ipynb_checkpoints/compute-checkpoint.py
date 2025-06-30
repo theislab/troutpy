@@ -4,12 +4,11 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 import polars as pl
-import spatialdata
 import spatialdata as sd
 from sainsc import LazyKDE  # assuming LazyKDE is available
 from scipy.sparse import coo_matrix
 from sklearn.neighbors import KDTree
-
+import spatialdata
 
 def compute_extracellular_counts(data_extracell):  # would be good to change the name of this function
     """
@@ -39,7 +38,7 @@ def compute_extracellular_counts(data_extracell):  # would be good to change the
     return extracellular_counts
 
 def define_urna(
-    sdata: SpatialData,
+    sdata: spatialdata.SpatialData,
     layer: str = "transcripts",
     method: str = "segmentation_free",
     min_prop_of_extracellular: float = 0.8,
@@ -186,7 +185,7 @@ def filter_urna(
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["logfoldratio_over_noise"] > min_logfoldratio_over_noise].index
     if min_morani is not None:
         selected_genes = sdata["xrna_metadata"].var[sdata["xrna_metadata"].var["moran_I"] > min_morani].index
-    if genes_in_segmented == True:
+    if genes_in_segmented:
         selected_genes = [g for g in sdata["xrna_metadata"].var.index if g in sdata[table_key].var.index]
 
     # Filter transcripts
@@ -195,7 +194,7 @@ def filter_urna(
     # Filter other related tables safely
     for key in ["segmentation_free_table", "xrna_metadata"]:
         if key in sdata and hasattr(sdata[key], "var"):
-            mask = sdata[key].var.index.isin(selected_genes)
+            #mask = sdata[key].var.index.isin(selected_genes)
             try:
                 sdata[key] = sdata[key][:, sdata[key].var.index.isin(selected_genes)]
             except KeyError:

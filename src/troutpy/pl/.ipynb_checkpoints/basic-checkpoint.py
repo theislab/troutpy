@@ -7,6 +7,9 @@ import seaborn as sns
 
 from troutpy.pl.colors import get_colormap, get_palette
 
+import matplotlib.pyplot as plt
+import math
+import os
 
 def pie(
     sdata,
@@ -19,9 +22,6 @@ def pie(
     custom_plot_filename: str = None,
     palette: str = "tab20",
 ):
-<<<<<<< HEAD
-    """Generates pie charts showing the proportion of different categories for a specified categorical variable. If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`."""
-=======
     """
     Generates pie charts showing the proportion of different categories for a specified categorical variable. If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`.
 
@@ -50,28 +50,15 @@ def pie(
     -------
     None
     """
->>>>>>> b025d06 (ruff_mods)
     data = sdata.points[layer][[groupby] + ([group_key] if group_key else [])].compute()
-
-    # Determine all categories globally
     all_categories = sorted(data[groupby].dropna().unique())
 
-    # Determine colormap
-    if palette not in plt.colormaps():
-        try:
-            palette = get_palette(palette)
-        except KeyError:
-<<<<<<< HEAD
-            palette = plt.cm.tab20.colors  # fallback
-    else:
+    # Get color mapping
+    if palette in plt.colormaps():
         cmap = plt.get_cmap(palette)
-        palette = [cmap(i) for i in range(len(all_categories))]
-
-    # Build category-color mapping
-    color_mapping = dict(zip(all_categories, palette, strict=False))
-=======
-            palette = None  # Use default colors if custom palette fails
->>>>>>> b025d06 (ruff_mods)
+        color_mapping = {cat: cmap(i / len(all_categories)) for i, cat in enumerate(all_categories)}
+    else:
+        color_mapping = {cat: None for cat in all_categories}  # fallback
 
     if group_key:
         unique_groups = data[group_key].dropna().unique()
@@ -86,8 +73,6 @@ def pie(
         for i, group in enumerate(unique_groups):
             subset = data[data[group_key] == group]
             category_counts = subset[groupby].value_counts().reindex(all_categories, fill_value=0)
-
-            # Apply consistent colors
             colors = [color_mapping[cat] for cat in category_counts.index]
 
             axes[i].pie(category_counts, labels=category_counts.index, colors=colors, autopct="%1.1f%%")
@@ -101,6 +86,7 @@ def pie(
         if save:
             plot_filename = custom_plot_filename or f"pie_{groupby}_by_{group_key}.pdf"
             plt.savefig(os.path.join(figures_path, plot_filename))
+            plt.close()
         else:
             plt.show()
 
@@ -115,9 +101,9 @@ def pie(
         if save:
             plot_filename = custom_plot_filename or f"pie_{groupby}.pdf"
             plt.savefig(os.path.join(figures_path, plot_filename))
+            plt.close()
         else:
             plt.show()
-
 
 def crosstab(
     sdata,

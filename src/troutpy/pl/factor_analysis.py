@@ -152,7 +152,7 @@ def rank_factor_genes_loadings_matrixplot(
             pass
 
     # Plot heatmap
-    if figsize == None:
+    if figsize is None:
         plt.figure(figsize=(len(factor_names) * 0.3, len(gene_list) * 0.1))
     else:
         plt.figure(figsize=figsize)

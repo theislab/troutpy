@@ -9,9 +9,6 @@ from scipy.spatial import cKDTree
 from sklearn.neighbors import KDTree
 from spatialdata import SpatialData
 from tqdm import tqdm
-import anndata as ad
-from scipy import sparse
-
 
 warnings.filterwarnings("ignore")
 
@@ -22,18 +19,18 @@ def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 
     Parameters
     ----------
-    - sdata: spatialdata.SpatialData
+    sdata: spatialdata.SpatialData
         The SpatialData object to modify.
-    - layer: str
+    layer: str
         The name of the layer in `sdata.points` from which to extract gene names.Default is 'transcripts'.
-    - gene_key: str
+    gene_key: str
         The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
-    - copy: bool
+    copy: bool
         If `True`, returns a copy of the `SpatialData` object with the new table added.
 
     Returns
     -------
-    - sdata: spatialdata.SpatialData
+    sdata: spatialdata.SpatialData
         If `copy` is `True`, returns a copy of the modified `SpatialData` object. Otherwise, returns `None`.
 
     """
@@ -272,8 +269,7 @@ def compute_source_score(
     n_jobs: int = -1,
 ):
     """
-    Compute a source score for extracellular transcripts based on nearby cell types
-    and gene expression profiles, using exponential distance decay.
+    Compute a source score for extracellular transcripts based on nearby cell types and gene expression profiles, using exponential distance decay.
 
     Parameters
     ----------

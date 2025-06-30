@@ -10,7 +10,8 @@ import scanpy as sc
 import seaborn as sns
 from matplotlib.colors import Colormap
 from spatialdata import SpatialData
-from troutpy.pp.compute import compute_crosstab
+
+
 def sorted_heatmap(
     celltype_by_feature,
     output_path: str = "",
@@ -721,7 +722,6 @@ def paired_nmf_factors(
         plt.tight_layout()
         plt.show()
 
-
 # not in docs
 def plot_nmf_factors_spatial(adata, n_factors, save=True):
     """
@@ -967,26 +967,17 @@ def interactions_with_arrows(
         plt.savefig(save)
     plt.show()
 
-
 def intra_extra_density(
     sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=None, intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
 ):
-<<<<<<< HEAD
-    """Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and extracellular KDEs in side-by-side subplots.
-=======
     """
     Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and extracellular KDEs in side-by-side subplots.
->>>>>>> b025d06 (ruff_mods)
 
     Parameters
     ----------
     sdata: spatialdata.SpatialData
         SpatialData object containing transcript locations and metadata.
-<<<<<<< HEAD
-    genes: str
-=======
     genes: list
->>>>>>> b025d06 (ruff_mods)
         list of str, gene names to plot.
     layer: str
         layer within sdata.points where transcripts are stored (default: "transcripts").
@@ -994,15 +985,6 @@ def intra_extra_density(
         column name where the gene name is stored (default: "feature_name").
     coord_keys: list
         column names for spatial coordinates (default: ["x", "y"]).
-<<<<<<< HEAD
-    intra_kde_kwargs
-        dict arguments for seaborn's kdeplot for intracellular data.
-    extra_kde_kwargs
-        dict arguments for seaborn's kdeplot for extracellular data.
-    """
-    if coord_keys is None:
-        coord_keys = ["x", "y"]
-=======
     intra_kde_kwargs: dict
         optional arguments for seaborn's kdeplot for intracellular data.
     extra_kde_kwargs: dict
@@ -1010,8 +992,6 @@ def intra_extra_density(
     """
     if coord_keys is None:
         coord_keys=['x','y']
-
->>>>>>> b025d06 (ruff_mods)
     if intra_kde_kwargs is None:
         intra_kde_kwargs = {"fill": True, "cmap": "Blues", "thresh": 0.05}
     if extra_kde_kwargs is None:

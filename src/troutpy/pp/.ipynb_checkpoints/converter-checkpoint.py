@@ -120,10 +120,11 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
     if morph_focus is not None:
         # Assume morph_focus is a DataTree (or similar dict-like object) with keys for different scales.
         if "scale0" in morph_focus:
-            default_image = morph_focus["scale0"]
+            pass
+            #default_image = morph_focus["scale0"]
         else:
             print("Warning: 'scale0' not found in Images['morphology_focus']. Using first available scale.")
-            default_image = next(iter(morph_focus.values()))
+            #default_image = next(iter(morph_focus.values()))
 
         # Create or update the Stainings attribute.
         # if not hasattr(sdata, "Stainings") or sdata.images is None:
