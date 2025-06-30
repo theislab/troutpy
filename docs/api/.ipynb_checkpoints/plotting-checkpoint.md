@@ -9,29 +9,33 @@
 .. autosummary::
     :toctree: generated/basic_plots
     
-    pl.crosstab
-    pl.histogram
-    pl.pie
-    pl.coupled_scatter
-    pl.heatmap
-    pl.sorted_heatmap
-    pl.spatial_transcripts
+    crosstab
+    histogram
+    pie
+    coupled_scatter
+    heatmap
+    sorted_heatmap
+    spatial_transcripts
 ```
 
 ## uRNA quantification
 
 ```{eval-rst}
+.. module:: troutpy.pl
+.. currentmodule:: troutpy
+
 .. autosummary::
     :toctree: generated/quantification
-    pl.gene_metric_heatmap
-    pl.logfoldratio_over_noise
-    pl.metric_scatter
-    pl.top_bottom_probes
-    pl.genes_over_noise
-    pl.intra_extra_density
-    pl.moranI_histogram
-    pl.diffusion_results
-    pl.spatial_inout_expression
+    
+    gene_metric_heatmap
+    logfoldratio_over_noise
+    metric_scatter
+    top_bottom_probes
+    genes_over_noise
+    intra_extra_density
+    moranI_histogram
+    diffusion_results
+    spatial_inout_expression
     
 ```
 
@@ -41,47 +45,55 @@
 ## Source, target and communication
 
 ```{eval-rst}
+.. module:: troutpy.pl
+.. currentmodule:: troutpy
+
 .. autosummary::
     :toctree: generated/communication
-    pl.celltype_communication
-    pl.gene_communication
-    pl.global_distribution_from_source
-    pl.distributions_by_cluster
-    pl.gene_distribution_from_source
-    pl.source_score_by_celltype
-    pl.target_score_by_celltype
-    pl.interactions_with_arrows
-    pl.spatial_interactions
+    
+    celltype_communication
+    gene_communication
+    global_distribution_from_source
+    distributions_by_cluster
+    gene_distribution_from_source
+    source_score_by_celltype
+    target_score_by_celltype
+    interactions_with_arrows
+    spatial_interactions
     
 ```
 
 ## Factor analysis
 
 ```{eval-rst}
+.. module:: troutpy.pl
+.. currentmodule:: troutpy
+
 .. autosummary::
     :toctree: generated/factor_analysis
-    pl.factors_in_cells
-    pl.rank_factor_genes_loadings
-    pl.rank_factor_genes_loadings_matrixplot
-    pl.nmf_factors_exrna_cells_W
-    pl.nmf_gene_contributions
-    pl.paired_nmf_factors
-    pl.apply_exrnaH_to_cellular_to_create_cellularW
-
     
+    factors_in_cells
+    rank_factor_genes_loadings
+    rank_factor_genes_loadings_matrixplot
+    nmf_factors_exrna_cells_W
+    nmf_gene_contributions
+    paired_nmf_factors
+    apply_exrnaH_to_cellular_to_create_cellularW
+ 
 ```
-
-
 
 
 ## Colormaps & palettes
 
 ```{eval-rst}
+.. module:: troutpy.pl
+.. currentmodule:: troutpy
+
 .. autosummary::
     :toctree: generated/colormaps
 
-    pl.get_colormap
-    pl.get_palette
+    get_colormap
+    get_palette
 ```
 
 
