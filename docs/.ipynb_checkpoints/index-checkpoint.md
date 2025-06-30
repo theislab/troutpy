@@ -6,14 +6,24 @@
 :maxdepth: 2
 :caption: API
 
-api/preprocessing.md
-api/tools.md
-api/plotting.md
+Preprocessing <api/preprocessing.md>
+Tools <api/tools.md>
+Plotting  <api/plotting.md>
 
+```
+```{toctree}
+:maxdepth: 1
+:caption: Tutorials
+notebooks/0_format_Xenium_sdata
+
+```
+
+```{toctree}
+:maxdepth: 1
+:caption: Information
 
 changelog.md
 contributing.md
 references.md
 
-notebooks/0_format_Xenium_sdata
 ```
