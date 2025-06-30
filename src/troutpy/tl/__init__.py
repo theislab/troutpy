@@ -1,13 +1,13 @@
 from .estimate_density import colocalization_proportion
-from .factor_analysis import apply_exrna_factors_to_cells, latent_factor
+from .factor_analysis import factors_to_cells, latent_factor
 from .image_quantification import image_intensities_per_transcript
-from .interactions import compute_communication_strength, gene_specific_interactions, get_gene_interaction_strength
-from .quantify_xrna import (
-    assess_diffussion,
+from .interactions import communication_strength, gene_specific_interactions, get_gene_interaction_strength
+from .quantify_urna import (
+    assess_diffusion,
     cluster_distribution_from_source,
     compare_intra_extra_distribution,
     compute_js_divergence,
-    create_xrna_metadata,
+    create_urna_metadata,
     extracellular_enrichment,
     identify_noisy_genes,
     in_out_correlation,

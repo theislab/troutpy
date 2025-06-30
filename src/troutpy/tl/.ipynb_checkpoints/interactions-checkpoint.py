@@ -81,7 +81,7 @@ def get_gene_interaction_strength(
         If True, saves the chord diagram plot to the specified output path (default: False).
     output_path
         The directory path where the plot will be saved. If `save=True`, this path will be used to store the file (default: ''). A 'figures' subdirectory is created if it doesn't exist.
-    format: str
+    format (str, optional)
         The file format for saving the plot (e.g., 'pdf', 'png'). This is used only if `save=True` (default: 'pdf').
 
     Returns
@@ -153,19 +153,16 @@ def communication_strength(sdata: SpatialData, source_layer: str = "source_score
     return sdata.copy() if copy else None
 
 
-def gene_specific_interactions(sdata, copy: bool = False, gene_key: str = "gene"):
+def gene_specific_interactions(sdata, copy: bool = False):
     """
     Group the read-specific interaction scores into gene-specific scores
 
     Parameters
     ----------
-        sdata: spatialdata.SpatialData
+        sdata
             A SpatialData object including precomputed communication strenghts for each exRNA
-        copy: bool
+        copy
             Wether to save the resulting sdata as a copy
-        gene_key: str
-            column in sdata['source_table'] containing gene assignment for each transcript
-
 
     Returns
     -------
@@ -178,7 +175,7 @@ def gene_specific_interactions(sdata, copy: bool = False, gene_key: str = "gene"
     except:  # noqa: E722
         KeyError("Interaction streght is not computed. Please run troutpy.tl.compute_communication_strength first")
 
-    categories = list(source_table.obs[gene_key])  # Extract categories
+    categories = list(source_table.obs["feature_name"])  # Extract categories
     unique_cats = np.unique(categories)  # Get unique categories
 
     # Initialize result 3D matrix (num_categories, H, W)

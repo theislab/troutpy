@@ -76,7 +76,11 @@ def spatial_variability(
     try:
         sdata["xrna_metadata"]
     except KeyError:
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
         create_xrna_metadata(sdata, layer="transcripts", gene_key=gene_key)
+=======
+        create_urna_metadata(sdata, layer="transcripts")
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
 
     for column in svg_df.columns:
         if column in sdata["xrna_metadata"].var.columns:
@@ -87,7 +91,11 @@ def spatial_variability(
     return sdata if copy else None
 
 
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
 def create_xrna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "gene", copy: bool = False) -> SpatialData | None:
+=======
+def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False) -> SpatialData | None:
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
     """
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
@@ -219,7 +227,11 @@ def quantify_overexpression(
     try:
         sdata["xrna_metadata"]
     except KeyError:
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
         create_xrna_metadata(sdata, layer=layer, gene_key=gene_key)
+=======
+        create_urna_metadata(sdata, layer="transcripts")
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
 
     # select columns that will be overwritten
     existing_cols = sdata["xrna_metadata"].var.columns
@@ -342,7 +354,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: b
     Notes
     -----
     - The function assumes that the `sdata` object has a 'points' layer containing a 'transcripts' DataFrame.
-    - If the 'xrna_metadata' attribute does not exist in `sdata`, it will be created using the `create_xrna_metadata` function.
+    - If the 'xrna_metadata' attribute does not exist in `sdata`, it will be created using the `create_urna_metadata` function.
     """
     # Extract and compute the required data
     data = sdata.points[layer][[gene_key, "extracellular"]].compute()
@@ -360,7 +372,11 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: b
     try:
         sdata["xrna_metadata"]
     except KeyError:
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
         create_xrna_metadata(sdata, layer=layer, gene_key=gene_key)
+=======
+        create_urna_metadata(sdata, layer="transcripts")
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
 
     # select columns that will be overwritten
     existing_cols = sdata["xrna_metadata"].var.columns
@@ -523,15 +539,26 @@ def in_out_correlation(
     try:
         sdata["xrna_metadata"]
     except KeyError:
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
         create_xrna_metadata(sdata)
+=======
+        create_urna_metadata(sdata, layer="transcripts")
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
     sdata["xrna_metadata"].var["in_out_spearmanR"] = sdata["xrna_metadata"].var.index.map(gene2spearman)
     sdata["xrna_metadata"].var["in_out_pvalue"] = sdata["xrna_metadata"].var.index.map(gene2pval)
 
     return sdata if copy else None
 
 
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
 def assess_diffussion(sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", copy: bool = False):
     """Computes goodness-of-fit metrics for the diffusion pattern of extracellular RNA by testing against a Rayleigh distribution. Also estimates the diffusion coefficient (D) based on the mean squared displacement (MSD).
+=======
+def assess_diffusion(sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", copy: bool = False):
+    """
+    Computes goodness-of-fit metrics for the diffusion pattern of unassigned RNA by testing against a Rayleigh distribution.
+    Also estimates the diffusion coefficient (D) based on the mean squared displacement (MSD).
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
 
     Parameters
     ----------
@@ -587,7 +614,7 @@ def assess_diffussion(sdata: SpatialData, gene_key: str = "gene", distance_key: 
 
     # Ensure `xrna_metadata` exists in sdata
     if "xrna_metadata" not in sdata:
-        create_xrna_metadata(sdata, layer="transcripts")
+        create_urna_metadata(sdata, layer="transcripts")
 
     for column in diffusion_results.columns:
         if column in sdata["xrna_metadata"].var.columns:
@@ -661,7 +688,11 @@ def cluster_distribution_from_source(
 
     gene_cluster_dict = dict(zip(hist_df.index, clusters, strict=False))
     if "xrna_metadata" not in sdata:
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
         create_xrna_metadata(sdata, layer=layer, gene_key=gene_key)
+=======
+        create_urna_metadata(sdata, layer="transcripts")
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
 
     # Merge results into `xrna_metadata.var`
     sdata["xrna_metadata"].var["kmeans_distribution"] = list(sdata["xrna_metadata"].var.index.map(gene_cluster_dict))
@@ -762,7 +793,11 @@ def compare_intra_extra_distribution(
     try:
         sdata["xrna_metadata"]
     except KeyError:
+<<<<<<< HEAD:src/troutpy/tl/quantify_xrna.py
         create_xrna_metadata(sdata, layer=layer, gene_key=gene_key)
+=======
+        create_urna_metadata(sdata, layer="transcripts")
+>>>>>>> b025d06 (ruff_mods):src/troutpy/tl/.ipynb_checkpoints/quantify_urna-checkpoint.py
 
     # Remove existing columns before adding new ones
     for column in results_df.columns:

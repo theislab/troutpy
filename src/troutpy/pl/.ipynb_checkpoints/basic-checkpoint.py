@@ -19,6 +19,9 @@ def pie(
     custom_plot_filename: str = None,
     palette: str = "tab20",
 ):
+<<<<<<< HEAD
+    """Generates pie charts showing the proportion of different categories for a specified categorical variable. If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`."""
+=======
     """
     Generates pie charts showing the proportion of different categories for a specified categorical variable. If `group_key` is provided, it creates subplots with individual pie charts for each category in `group_key`.
 
@@ -47,6 +50,7 @@ def pie(
     -------
     None
     """
+>>>>>>> b025d06 (ruff_mods)
     data = sdata.points[layer][[groupby] + ([group_key] if group_key else [])].compute()
 
     # Determine all categories globally
@@ -57,7 +61,17 @@ def pie(
         try:
             palette = get_palette(palette)
         except KeyError:
+<<<<<<< HEAD
+            palette = plt.cm.tab20.colors  # fallback
+    else:
+        cmap = plt.get_cmap(palette)
+        palette = [cmap(i) for i in range(len(all_categories))]
+
+    # Build category-color mapping
+    color_mapping = dict(zip(all_categories, palette, strict=False))
+=======
             palette = None  # Use default colors if custom palette fails
+>>>>>>> b025d06 (ruff_mods)
 
     if group_key:
         unique_groups = data[group_key].dropna().unique()

@@ -1,4 +1,4 @@
-from .basic import crosstab, histogram, pie
+from .basic import crosstab, pie
 from .colors import get_colormap, get_palette
 from .communication import celltype_communication, gene_communication, target_score_by_celltype
 from .factor_analysis import factors_in_cells, rank_factor_genes_loadings, rank_factor_genes_loadings_matrixplot
@@ -17,5 +17,5 @@ from .plotting import (
     sorted_heatmap,
     spatial_interactions,
 )
-from .scatter import diffusion_results, spatial_inout_expression, spatial_transcripts
+from .scatter import diffusion_results, spatial_inout_expression
 from .source import distributions_by_cluster, gene_distribution_from_source, global_distribution_from_source, source_score_by_celltype
