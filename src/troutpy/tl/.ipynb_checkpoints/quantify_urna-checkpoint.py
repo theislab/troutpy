@@ -114,11 +114,11 @@ def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 
     Parameters
     ----------
-    - sdata (SpatialData)
+    - sdata: spatialdata.SpatialData
         The SpatialData object to modify.
-    - layer (str, optional)
+    - layer: str
         The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
-    - gene_key (str, optional)
+    - gene_key: str
         The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
     - copy
         If `True`, returns a copy of the `SpatialData` object with the new table added.
@@ -372,18 +372,18 @@ def in_out_correlation(
     sdata : SpatialData
         A SpatialData object containing both extracellular and cellular AnnData objects.
 
-    extracellular_layer : str, optional (default="segmentation_free_table")
+    extracellular_layer : str
         Key for the extracellular AnnData object in sdata.
 
-    cellular_layer : str, optional (default="table")
+    cellular_layer : str
         Key for the cellular AnnData object in sdata.
 
-    n_neighbors : int, optional (default=5)
+    n_neighbors : int
         Number of nearest extracellular bins to consider for aggregation.
 
     Returns
     -------
-    correlation_results : pd.DataFrame
+    correlation_results : pandas.DataFrame
         A DataFrame containing correlation values for each gene, with gene names as the indexand columns ['SpearmanR', 'PValue'].
     """
     try:

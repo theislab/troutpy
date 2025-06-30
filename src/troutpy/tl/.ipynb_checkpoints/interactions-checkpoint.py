@@ -22,7 +22,7 @@ def get_number_of_communication_genes(
     source_proportions
         A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
     target_proportions
-        pandas.DataFrame with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
+        pd.DataFrame with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
     source_proportion_threshold
         The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
     target_proportion_threshold
