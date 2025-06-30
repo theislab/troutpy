@@ -7,7 +7,7 @@ from scipy.sparse.csgraph import connected_components
 from scipy.spatial import KDTree
 from shapely import linearrings, polygons
 from shapely.geometry import box
-from sklearn.neighbors import NearestNeighbors  #KDTree
+from sklearn.neighbors import NearestNeighbors  # KDTree
 from sklearn.preprocessing import OneHotEncoder
 from spatialdata import SpatialData
 from spatialdata.models import ShapesModel
@@ -65,6 +65,7 @@ def create_grid_squares(sdata: SpatialData, layer: str = "transcripts", square_s
     half_widths = [square_size / 2] * len(centroid_coordinates)
 
     return _make_squares(centroid_coordinates, half_widths), centroid_coordinates
+
 
 def aggregate_urna(
     sdata: SpatialData,
@@ -285,7 +286,7 @@ def aggregate_fragments(df, gene_embeddings=None, k=5, dist_thresh=10.0, sim_thr
 
     # Gene embeddings: use provided or one-hot encode
     if gene_embeddings is not None:
-        #embed_dim = len(next(iter(gene_embeddings.values())))
+        # embed_dim = len(next(iter(gene_embeddings.values())))
         embeddings = np.vstack([gene_embeddings[g] for g in df["gene"]])
     else:
         encoder = OneHotEncoder(sparse_output=False)

@@ -11,7 +11,17 @@ from scipy.stats import mannwhitneyu, shapiro, ttest_ind
 from troutpy.pl import get_colormap, get_palette
 
 
-def top_bottom_probes(sdata: sd.SpatialData, metric: str, top_n: int = 10, bottom_n: int = 10, title: str | None = None, figures_path:str='', save:bool=False, custom_plot_filename:str='',palette:str='Blues') -> None:
+def top_bottom_probes(
+    sdata: sd.SpatialData,
+    metric: str,
+    top_n: int = 10,
+    bottom_n: int = 10,
+    title: str | None = None,
+    figures_path: str = "",
+    save: bool = False,
+    custom_plot_filename: str = "",
+    palette: str = "Blues",
+) -> None:
     """
     Creates a horizontal bar plot showing the top and bottom genes based on a specified metric. Bars are colored based on whether the gene is a control probe or not.
 
@@ -347,6 +357,7 @@ def logfoldratio_over_noise(
         plot_filename = custom_plot_filename or "logfoldratio_over_noise_violin.pdf"
         plt.savefig(os.path.join(figures_path, plot_filename))
     plt.show()
+
 
 def gene_metric_heatmap(
     sdata: sd.SpatialData,

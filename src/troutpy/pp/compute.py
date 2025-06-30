@@ -38,6 +38,7 @@ def compute_extracellular_counts(data_extracell):  # would be good to change the
 
     return extracellular_counts
 
+
 def define_urna(
     sdata: spatialdata.SpatialData,
     layer: str = "transcripts",
@@ -195,7 +196,7 @@ def filter_urna(
     # Filter other related tables safely
     for key in ["segmentation_free_table", "xrna_metadata"]:
         if key in sdata and hasattr(sdata[key], "var"):
-            #mask = sdata[key].var.index.isin(selected_genes)
+            # mask = sdata[key].var.index.isin(selected_genes)
             try:
                 sdata[key] = sdata[key][:, sdata[key].var.index.isin(selected_genes)]
             except KeyError:

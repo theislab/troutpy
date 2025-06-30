@@ -102,6 +102,7 @@ def pie(
         else:
             plt.show()
 
+
 def crosstab(
     sdata,
     xvar: str,

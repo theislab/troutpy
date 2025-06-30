@@ -722,6 +722,7 @@ def paired_nmf_factors(
         plt.tight_layout()
         plt.show()
 
+
 # not in docs
 def plot_nmf_factors_spatial(adata, n_factors, save=True):
     """
@@ -967,6 +968,7 @@ def interactions_with_arrows(
         plt.savefig(save)
     plt.show()
 
+
 def intra_extra_density(
     sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=None, intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
 ):
@@ -991,7 +993,7 @@ def intra_extra_density(
         optional arguments for seaborn's kdeplot for extracellular data.
     """
     if coord_keys is None:
-        coord_keys=['x','y']
+        coord_keys = ["x", "y"]
     if intra_kde_kwargs is None:
         intra_kde_kwargs = {"fill": True, "cmap": "Blues", "thresh": 0.05}
     if extra_kde_kwargs is None:

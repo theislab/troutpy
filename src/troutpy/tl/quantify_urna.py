@@ -53,8 +53,7 @@ def spatial_variability(
         Sdata containing Moran's I values for each gene, indexed by gene names.
     """
     if coord_keys is None:
-        coord_keys=["x", "y"]
-
+        coord_keys = ["x", "y"]
 
     # Step 1: Extract and preprocess data
     data = sdata.points["transcripts"][coord_keys + ["extracellular", gene_key]].compute()
@@ -313,8 +312,7 @@ def spatial_colocalization(
     """
     # reassing coords
     if coord_keys is None:
-        coord_keys=["x", "y"]
-
+        coord_keys = ["x", "y"]
 
     # Step 1: Extract and preprocess data
     data = sdata.points["transcripts"][coord_keys + ["extracellular", gene_key]].compute()
@@ -391,7 +389,9 @@ def in_out_correlation(
     try:
         adata_extracellular = sdata[extracellular_layer]
     except KeyError:
-        print("Extracellular layer not found. Please make ensure ´extracellular_layer´ and that extracellular grouping has been performed. Otherwise, please run trouty.tl.aggregate_extracellular_transcripts")
+        print(
+            "Extracellular layer not found. Please make ensure ´extracellular_layer´ and that extracellular grouping has been performed. Otherwise, please run trouty.tl.aggregate_extracellular_transcripts"
+        )
     adata_cellular = sdata[cellular_layer]
 
     # Extract spatial coordinates
@@ -632,7 +632,7 @@ def compare_intra_extra_distribution(
     - If copy=False, updates sdata["xrna_metadata"].var with the computed metrics.
     """
     if coord_keys is None:
-        coord_keys=["x", "y"]
+        coord_keys = ["x", "y"]
     transcripts_df = sdata[layer]  # Extract transcript data
     if isinstance(transcripts_df, dd.DataFrame):
         transcripts_df = transcripts_df.compute()  # Convert to Pandas if Dask
