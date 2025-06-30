@@ -123,31 +123,31 @@ def distance_to_source_cell(
 
     Parameters
     ----------
-    - sdata: spatialdata.SpatialData
+    sdata: spatialdata.SpatialData
         The AnnData object containing both transcript and cellular data.
-    - layer: str
+    layer: str
         The layer in `sdata` containing the transcript data. Default is 'transcripts'.
-    - xcoord: str
+    xcoord: str
         The column name in the transcript data for the x-coordinate. Default is 'x'.
-    - ycoord: str
+    ycoord: str
         The column name in the transcript data for the y-coordinate. Default is 'y'.
-    - xcellcoord: str
+    xcellcoord: str
         The column name in the cellular data for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    - ycellcoord: str
+    ycellcoord: str
         The column name in the cellular data for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    - gene_key: str
+    gene_key: str
         The column name for the gene identifier. Default is 'feature_name'.
-    - copy: str
+    copy: str
         Whether to return a copy of the `sdata` object with updated distances, or modify in place. Default is False.
 
     Returns
     -------
-    - AnnData or None: anndata.AnnData
+    AnnData or None: anndata.AnnData
         If `copy` is True, returns the updated `sdata` object. Otherwise, modifies `sdata` in place and returns None.
 
     Notes
     -----
-    - The function assumes that the transcript data contains a column `transcript_id` and that the cellular data contains cell centroids for spatial coordinates. The KDTree algorithm is used to compute the closest cell for each transcript. The resulting distances are stored in the `distance_to_source_cell` column of the `sdata` object's transcript layer, and the closest source cell is stored in the `closest_source_cell` column. The median distance for each gene is also added to the `xrna_metadata` in the `var` attribute of `sdata`.
+    The function assumes that the transcript data contains a column `transcript_id` and that the cellular data contains cell centroids for spatial coordinates. The KDTree algorithm is used to compute the closest cell for each transcript. The resulting distances are stored in the `distance_to_source_cell` column of the `sdata` object's transcript layer, and the closest source cell is stored in the `closest_source_cell` column. The median distance for each gene is also added to the `xrna_metadata` in the `var` attribute of `sdata`.
     """
     # Extract transcript and cellular data
     adata_bin = sdata["table"].copy()

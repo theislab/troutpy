@@ -3,14 +3,13 @@
 ```
 
 ```{toctree}
-:hidden: true
-:maxdepth: 1
+:maxdepth: 2
+:caption: API
 
-# API Reference
+api/preprocessing.md
+api/tools.md
+api/plotting.md
 
-- [Preprocessing](api/preprocessing.md)
-- [Tools](api/tools.md)
-- [Plotting](api/plotting.md)
 
 changelog.md
 contributing.md
