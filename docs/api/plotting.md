@@ -4,7 +4,7 @@
 
 ```{eval-rst}
 .. module:: troutpy.pl
-.. currentmodule:: troutpy
+.. currentmodule:: troutpy.pl
 
 .. autosummary::
     :toctree: generated/basic_plots
@@ -22,7 +22,7 @@
 
 ```{eval-rst}
 .. module:: troutpy.pl
-.. currentmodule:: troutpy
+.. currentmodule:: troutpy.pl
 
 .. autosummary::
     :toctree: generated/quantification
@@ -46,7 +46,7 @@
 
 ```{eval-rst}
 .. module:: troutpy.pl
-.. currentmodule:: troutpy
+.. currentmodule:: troutpy.pl
 
 .. autosummary::
     :toctree: generated/communication
@@ -67,7 +67,7 @@
 
 ```{eval-rst}
 .. module:: troutpy.pl
-.. currentmodule:: troutpy
+.. currentmodule:: troutpy.pl
 
 .. autosummary::
     :toctree: generated/factor_analysis
@@ -87,7 +87,7 @@
 
 ```{eval-rst}
 .. module:: troutpy.pl
-.. currentmodule:: troutpy
+.. currentmodule:: troutpy.pl
 
 .. autosummary::
     :toctree: generated/colormaps
