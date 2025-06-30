@@ -28,7 +28,6 @@
 .. autosummary::
     :toctree: generated/communication
 
-    tl.compute_contribution_score
     tl.compute_distant_cells_proportion
     tl.compute_source_cells
     tl.compute_source_score
@@ -51,17 +50,14 @@
     tl.compute_contribution_score
 ```
 
-
-
-
 ## Factor analysis
 
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/factors
-
-   tl.factors_to_cells
-   tl.latent_factor
+    
+    tl.factors_to_cells
+    tl.latent_factor
 ```
 
 ## Diffusion-related
@@ -74,9 +70,6 @@
     tl.compute_js_divergence
     
 ```
-
-
-
 
 ## Multimodal quantication
 
