@@ -108,7 +108,7 @@ def spatial_variability(
     return sdata if copy else None
 
 
-def create_urna_metadata(sdata: spatialdata.SpatialData, layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False) -> spatialdata.SpatialData | None:
+def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False) -> SpatialData | None:
     """
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 

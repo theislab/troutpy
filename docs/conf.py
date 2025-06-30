@@ -14,6 +14,8 @@ import os
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE / "extensions"))
 sys.path.insert(0, os.path.abspath("../src"))
+sys.path.insert(0, os.path.abspath("../src/troutpy"))
+
 
 # -- Project information -----------------------------------------------------
 
