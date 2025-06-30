@@ -369,7 +369,7 @@ def in_out_correlation(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         A SpatialData object containing both extracellular and cellular AnnData objects.
 
     extracellular_layer : str
@@ -555,7 +555,7 @@ def cluster_distribution_from_source(
         A DataFrame with columns 'gene' and 'cluster' indicating the cluster assignment.
     hist_df : pandas.DataFrame
         A DataFrame where each row is a gene and the columns are the normalized histogram counts.
-    bin_edges : numpy.array
+    bin_edges : numpy.ndarray
         The bin edges used for the histograms.
     """
     # Get the observation DataFrame from the 'source_score' layer.

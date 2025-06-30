@@ -12,7 +12,6 @@ from sklearn.preprocessing import OneHotEncoder
 from spatialdata import SpatialData
 from spatialdata.models import ShapesModel
 from tqdm import tqdm
-from anndata import AnnData
 
 
 def _make_squares(centroid_coordinates: np.ndarray, half_widths: list[float]) -> ShapesModel:
