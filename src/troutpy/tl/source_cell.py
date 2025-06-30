@@ -448,17 +448,12 @@ def store_results_in_sdata(sdata, prob_table, closest_table, extracellular_trans
 
 
 def compute_contribution_score(sdata):
-    """
-    Compute a segmentation score for each cell based on the expression of genes weighted by their intracellular proportion (1 - extracellular proportion).
+    """Compute a segmentation score for each cell based on the expression of genes weighted by their intracellular proportion (1 - extracellular proportion).
 
     Parameters
     ----------
     sdata : dict
         A spatialdata object with keys 'table' and 'xrna_metadata'.
-        - sdata['table'] is an AnnData object containing expression data in layers['raw']
-          and cell metadata in .obs.
-        - sdata['xrna_metadata'].var is a DataFrame with gene names as the index and
-          an 'extracellular proportion' column.
 
     Returns
     -------

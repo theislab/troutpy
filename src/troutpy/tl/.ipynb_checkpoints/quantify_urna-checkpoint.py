@@ -49,8 +49,9 @@ def spatial_variability(
 
     Returns
     -------
-    - sdata(SpatialData)
+    sdata: spatialdata.SpatialData
         Sdata containing Moran's I values for each gene, indexed by gene names.
+        
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]
@@ -307,8 +308,9 @@ def spatial_colocalization(
 
     Returns
     -------
-    - sdata
+    sdata: spatialdata.SpatialData
         A spatialdata object containing Moran's I values for each gene, in sdata.xrna_metadata.var, indexed by gene names.
+
     """
     # reassing coords
     if coord_keys is None:
