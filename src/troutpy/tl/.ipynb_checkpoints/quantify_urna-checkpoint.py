@@ -51,7 +51,7 @@ def spatial_variability(
     -------
     sdata: spatialdata.SpatialData
         Sdata containing Moran's I values for each gene, indexed by gene names.
-        
+      
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]
