@@ -35,7 +35,7 @@
     tl.calculate_target_cells
     tl.compute_target_score
     tl.define_target_by_celltype
-    tl.cluster_distribution_from_source 
+    tl.cluster_distribution_from_source
     tl.get_gene_interaction_strength
     tl.communication_strength
     tl.gene_specific_interactions
@@ -46,7 +46,7 @@
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/cell_scores
-    
+
     tl.compute_contribution_score
 ```
 
@@ -55,7 +55,7 @@
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/factors
-    
+
     tl.factors_to_cells
     tl.latent_factor
 ```
@@ -68,7 +68,7 @@
 
     tl.assess_diffusion
     tl.compute_js_divergence
-    
+
 ```
 
 ## Multimodal quantication
@@ -76,7 +76,6 @@
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/multimodal
-    
+
     tl.image_intensities_per_transcript
 ```
-
