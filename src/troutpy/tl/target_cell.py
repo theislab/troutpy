@@ -133,21 +133,23 @@ def compute_target_score(
     layer: str = "transcripts",
     gene_key: str = "gene",
     coords_key: list = None,  # type: ignore
-    lambda_decay=0.1,
-    copy=False,
-    celltype_key="cell type",
+    lambda_decay: float = 0.1,
+    copy: bool = False,
+    celltype_key: str = "cell type",
+    k_neighbors: int = 50,
+    batch_size: int = 100_000,
 ):
     """
-    Computes the scores for each extracellular transcript targeting a specific cell type.
+    Computes scores for each extracellular transcript targeting specific cell types using spatial proximity.
 
     Parameters
     ----------
-    sdata:
+    sdata: SpatialData
         The input spatial data object.
     layer: str
-        The layer in `sdata.points` containing the transcript data. Default is 'transcripts'.
+        The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
     gene_key: str
-        Column name in the transcript data representing gene identifiers. Default is 'gene'.
+        Column name in the transcript data representing gene identifiers.
     coords_key: list
         Column names for spatial coordinates of transcripts and cell centroids.
     lambda_decay: float
@@ -156,59 +158,71 @@ def compute_target_score(
         If True, returns a modified copy of the SpatialData object.
     celltype_key: str
         Key for cell type annotations in the cell table.
+    k_neighbors: int
+        Number of nearest cells to consider per transcript.
+    batch_size: int
+        Number of transcripts to process per batch to limit memory usage.
 
     Returns
     -------
-    sdata: spatialdata.SpatialData
-        Updated SpatialData object with target cell scores added.
-
+    sdata : SpatialData
+        SpatialData object with target score table added.
     """
-    # define xcoord and ycoord
+
+    # Coordinate keys
     if coords_key is None:
         coords_key = ["x", "y"]
-    xcoord = coords_key[0]
-    ycoord = coords_key[1]
+    xcoord, ycoord = coords_key
 
-    # Extract transcript and cellular data
+    # Extract data
     transcripts = sdata.points[layer].compute()
     cells = sdata["table"].to_df()
     coord_cells = sdata["table"].obsm["spatial"]
     cell_types = sdata["table"].obs[celltype_key]
     all_cell_types = cell_types.unique()
 
-    # Ensure necessary columns exist
-    required_cols = [xcoord, ycoord]
-    for col in required_cols:
-        if col not in transcripts.columns and col not in cells.columns:
-            raise ValueError(f"Required column '{col}' is missing.")
-
-    # Filter for extracellular transcripts only
+    # Filter extracellular transcripts
     extracellular_transcripts = transcripts[transcripts["extracellular"]]
-    target_scores_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
+    transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
 
-    # Precompute KDTree for all cell coordinates
+    # Output score table
+    target_scores_table = pd.DataFrame(
+        0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float
+    )
+
+    # KDTree on cell centroids
     kdtree = KDTree(coord_cells)
 
-    # Compute scores for each transcript
-    transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
-    distances, cell_indices = kdtree.query(transcript_coords, k=len(coord_cells))
+    n_transcripts = transcript_coords.shape[0]
+    print(f"Computing target scores for {n_transcripts:,} transcripts in batches of {batch_size}...")
 
-    # Compute exponential decay scores for proximity
-    exp_decay = np.exp(-lambda_decay * distances)
+    for start in tqdm(range(0, n_transcripts, batch_size)):
+        end = min(start + batch_size, n_transcripts)
+        coords_batch = transcript_coords[start:end]
+        indices_batch = extracellular_transcripts.index[start:end]
 
-    # Aggregate scores by cell type
-    for i, transcript_idx in enumerate(tqdm(extracellular_transcripts.index)):
-        cell_indices_i = cell_indices[i]
-        scores_i = exp_decay[i]
-        types_i = cell_types.iloc[cell_indices_i].to_numpy()
+        # Query KDTree for k nearest neighbors
+        distances, cell_indices = kdtree.query(coords_batch, k=k_neighbors)
+        exp_decay = np.exp(-lambda_decay * distances)
 
-        for cell_type in all_cell_types:
-            target_scores_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
+        for i, transcript_idx in enumerate(indices_batch):
+            cell_indices_i = cell_indices[i]
+            scores_i = exp_decay[i]
+            types_i = cell_types.iloc[cell_indices_i].to_numpy()
 
-    # probabilities_table['gene']=extracellular_transcripts['gene']
+            for cell_type in all_cell_types:
+                target_scores_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
+
+    # Normalize to probabilities
+    residual = 1e-6  # stability term
+    row_sums = target_scores_table.sum(axis=1) + residual
+    target_scores_table = target_scores_table.div(row_sums, axis=0)
+
+    # Store result as AnnData
     prob_table = sc.AnnData(target_scores_table)
-    prob_table.obs[gene_key] = list(extracellular_transcripts[gene_key].astype(str))
-    prob_table.obsm["spatial"] = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
+    prob_table.obs[gene_key] = extracellular_transcripts[gene_key].astype(str).values
+    prob_table.obsm["spatial"] = transcript_coords
+
     sdata.tables["target_score"] = prob_table
 
     return sdata.copy() if copy else None

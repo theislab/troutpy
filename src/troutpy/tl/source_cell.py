@@ -372,6 +372,12 @@ def process_gene(gene, extracellular_transcripts, cells, coord_cells, cell_types
     exp_decay = np.exp(-lambda_decay * distances)
     scores = exp_decay * cell_exprs[cell_indices]
 
+    ### this part
+    residual = 1e-6  # small stabilizing term
+    row_sums = scores.sum(axis=1, keepdims=True) + residual
+    scores = scores / row_sums
+    #scores=scores.div(scores.sum(axis=1),axis=0)
+
     gene_prob_df = compute_probability_table(scores, cell_indices, cell_types_filt, all_cell_types, gene_transcripts)
     gene_closest_df = build_closest_cell_table(distances_min, closest_cell_ids, closest_cell_types, gene_transcripts)
     gene_by_cell_scores = sum_scores_per_cell(gene_cells, scores, cell_indices)
@@ -448,59 +454,51 @@ def store_results_in_sdata(sdata, prob_table, closest_table, extracellular_trans
 
 
 def compute_contribution_score(sdata):
-    """Compute a segmentation score for each cell based on the expression of genes weighted by their intracellular proportion (1 - extracellular proportion).
+    """Compute a normalized extracellular RNA (uRNA) contribution score for each cell.
+
+    For each gene, a cell's contribution is weighted as extracellular proportionand divided by the number of cells expressing that gene.
 
     Parameters
     ----------
     sdata : dict
         A spatialdata object with keys 'table' and 'xrna_metadata'.
-
-    Returns
-    -------
-    sdata : dict
-        The same sdata object with a new column 'segmentation_score' in sdata['table'].obs.
     """
-    # Retrieve the AnnData object with cells in .obs and genes in .var
     adata = sdata["table"]
+    gene_meta = sdata["xrna_metadata"].var
 
-    # Retrieve raw expression data; assume shape (n_cells, n_genes)
     raw_expr = adata.layers["raw"]
-
-    # If raw_expr is a sparse matrix, convert to a dense array
     if hasattr(raw_expr, "toarray"):
         raw_expr = raw_expr.toarray()
 
-    # Get gene names from the AnnData object
     genes = adata.var_names
+    gene_meta = gene_meta.loc[gene_meta.index.intersection(genes)]
 
-    # Retrieve gene metadata containing the extracellular proportions
-    gene_meta = sdata["xrna_metadata"].var
-
-    # Identify the genes common to both the expression data and the metadata
-    common_genes = gene_meta.index.intersection(genes)
-    if len(common_genes) == 0:
+    if gene_meta.empty:
         raise ValueError("No common genes found between adata and gene metadata.")
 
-    # Subset the expression matrix to only those common genes
-    # Here we assume adata.var_names preserves order; get indices corresponding to common genes.
-    common_idx = [i for i, gene in enumerate(genes) if gene in common_genes]
-    raw_expr = raw_expr[:, common_idx]
+    common_genes = gene_meta.index
+    gene_indices = [adata.var_names.get_loc(g) for g in common_genes]
+    raw_expr = raw_expr[:, gene_indices]  # shape (n_cells, n_common_genes)
 
-    # Reorder gene_meta so that it matches the ordering in the expression data.
-    # This assumes that the order of genes in adata.var_names is the desired order.
-    ordered_genes = [gene for gene in genes if gene in common_genes]
-    gene_weights = gene_meta.loc[ordered_genes, "extracellular_proportion"]
+    # Reorder gene_meta to match
+    gene_meta = gene_meta.loc[common_genes]
+    extracellular_weights = gene_meta["count"].values  # shape (n_genes,)
 
-    extracellular_weights = gene_weights.values  # numpy array
+    n_cells, n_genes = raw_expr.shape
+    contribution_matrix = np.zeros_like(raw_expr, dtype=float)
 
-    # Compute the numerator and denominator for the weighted average per cell.
-    # Numerator: dot product of cell expression with extracellular weights.
-    # Denominator: total expression (for the common genes) per cell.
-    numerator = raw_expr.dot(extracellular_weights)
-    denominator = raw_expr.sum(axis=1)
+    # For each gene, calculate normalized extracellular contribution
+    for i in range(n_genes):
+        gene_expr = raw_expr[:, i]
+        expressing_cells = gene_expr > 0
+        n_expressing = expressing_cells.sum()
 
-    # Avoid division by zero (if a cell has zero expression for these genes)
-    score = np.divide(numerator, denominator, out=np.full_like(numerator, np.nan), where=denominator != 0)
+        if n_expressing > 0:
+            weight = extracellular_weights[i] / n_expressing
+            contribution_matrix[expressing_cells, i] = weight
 
-    # Store the score in the AnnData object under obs
+    # Cell-wise sum of contributions across genes
+    score = contribution_matrix.sum(axis=1)
+
     adata.obs["urna_contribution_score"] = score
+    adata.obs["normalized_urna_contribution_score"]=score/np.sum(raw_expr,axis=1)
