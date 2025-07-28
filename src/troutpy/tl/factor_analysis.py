@@ -1,14 +1,11 @@
+import warnings
+
+import anndata as ad
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 from spatialdata import SpatialData
 
-
-import numpy as np
-import scanpy as sc
-import anndata as ad
-from sklearn.decomposition import NMF, LatentDirichletAllocation
-import warnings
 
 def latent_factor(
     sdata: SpatialData,
@@ -55,7 +52,6 @@ def latent_factor(
     sdata : SpatialData or None
         Modified SpatialData object or None if copy=False.
     """
-
     adata = sdata[layer]
     counts = adata.X.copy()
 
@@ -74,15 +70,12 @@ def latent_factor(
         try:
             from drvi.model import DRVI
             from drvi.utils.tools import (
-                traverse_latent,
                 calculate_differential_vars,
                 set_latent_dimension_stats,
+                traverse_latent,
             )
         except ImportError:
-            raise ImportError(
-                "The 'drvi' package is required for method='DRVI'. "
-                "Please install it with: pip install drvi"
-            )
+            raise ImportError("The 'drvi' package is required for method='DRVI'. Please install it with: pip install drvi")
 
         # DRVI-specific parameters
         encoder_dims = kwargs.pop("encoder_dims", [128, 128])
@@ -145,6 +138,7 @@ def latent_factor(
     sdata[layer] = adata
     return sdata if copy else None
 
+
 def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np.ndarray) -> np.ndarray:
     if gene_loadings_pos.shape != gene_loadings_neg.shape:
         raise ValueError("Input arrays must have the same shape.")
@@ -157,8 +151,7 @@ def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np
     # Raise warning if conflicts found
     if np.any(conflict_mask):
         conflict_indices = np.argwhere(conflict_mask)
-        warnings.warn(f"Conflicts found at {len(conflict_indices)} locations. "
-                      f"Example: {conflict_indices[:5].tolist()}")
+        warnings.warn(f"Conflicts found at {len(conflict_indices)} locations. Example: {conflict_indices[:5].tolist()}")
 
     # Initialize combined output
     combined = np.zeros_like(gene_loadings_pos)
@@ -166,7 +159,6 @@ def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np
     combined[neg_nonzero] = -gene_loadings_neg[neg_nonzero]
 
     return combined
-
 
 
 def factors_to_cells(
