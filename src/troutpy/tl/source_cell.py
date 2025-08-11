@@ -376,7 +376,7 @@ def process_gene(gene, extracellular_transcripts, cells, coord_cells, cell_types
     residual = 1e-6  # small stabilizing term
     row_sums = scores.sum(axis=1, keepdims=True) + residual
     scores = scores / row_sums
-    #scores=scores.div(scores.sum(axis=1),axis=0)
+    # scores=scores.div(scores.sum(axis=1),axis=0)
 
     gene_prob_df = compute_probability_table(scores, cell_indices, cell_types_filt, all_cell_types, gene_transcripts)
     gene_closest_df = build_closest_cell_table(distances_min, closest_cell_ids, closest_cell_types, gene_transcripts)
@@ -501,4 +501,4 @@ def compute_contribution_score(sdata):
     score = contribution_matrix.sum(axis=1)
 
     adata.obs["urna_contribution_score"] = score
-    adata.obs["normalized_urna_contribution_score"]=score/np.sum(raw_expr,axis=1)
+    adata.obs["normalized_urna_contribution_score"] = score / np.sum(raw_expr, axis=1)

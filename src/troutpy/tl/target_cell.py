@@ -168,7 +168,6 @@ def compute_target_score(
     sdata : SpatialData
         SpatialData object with target score table added.
     """
-
     # Coordinate keys
     if coords_key is None:
         coords_key = ["x", "y"]
@@ -186,9 +185,7 @@ def compute_target_score(
     transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
 
     # Output score table
-    target_scores_table = pd.DataFrame(
-        0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float
-    )
+    target_scores_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
 
     # KDTree on cell centroids
     kdtree = KDTree(coord_cells)
