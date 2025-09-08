@@ -4,66 +4,169 @@ from sklearn.decomposition import NMF, LatentDirichletAllocation
 from spatialdata import SpatialData
 
 
+import numpy as np
+import scanpy as sc
+import anndata as ad
+from sklearn.decomposition import NMF, LatentDirichletAllocation
+import warnings
+
 def latent_factor(
     sdata: SpatialData,
-    method="NMF",
+    method: str = "NMF",
     layer: str = "segmentation_free_table",
     n_components: int = 20,
     copy: bool | None = None,
     random_state=None,
+    drvi_model_path: str = None,
     **kwargs,
 ):
     """
-    Applies latent_factor_identification to an AnnData object to reduce the dimensionality of gene expression data.
+    Applies latent factor identification (NMF, LDA, or DRVI) to reduce dimensionality of gene expression data.
 
     Parameters
     ----------
-    adata
-        The AnnData object containing the gene expression matrix (`adata.X`) along with cell and gene annotations.
-    n_components: int
-        The number of components (latent factors) to extract from the NMF model.
-    save
-        If True, the factor loadings (`H`) and factor scores (`W`) will be saved as Parquet files to the specified output path.
-    random_state: int
-        The random seed used for initializing the NMF model. If None, the random seed is not fixed.
-    copy: bool
-        Wether to save the spatialdata object as a new object
-    method
-
+    sdata : SpatialData
+        SpatialData object with the specified layer containing AnnData.
+    method : str
+        One of "NMF", "LDA", or "DRVI".
+    layer : str
+        The AnnData layer in SpatialData to operate on.
+    n_components : int
+        Number of latent dimensions (ignored if DRVI model is loaded).
+    copy : bool
+        If True, return modified SpatialData. If False, operate in-place.
+    random_state : int or None
+        Random seed.
+    drvi_model_path : str
+        Path to a pretrained DRVI model.
+    kwargs : dict
+        Additional parameters for DRVI:
+        - encoder_dims : list[int]
+        - decoder_dims : list[int]
+        - n_epochs : int
+        - kl_warmup : int
+        - is_count_data : bool
+        - early_stopping : bool
+        - accelerator : str
+        - devices : int
 
     Returns
     -------
-    sdata
-        The input spatialdata object with the NMF results added:`spatialdata[layer].obsm['W_nmf']` contains the cell factors (factor scores for each cell) and `spatialdata[layer].uns['H_nmf']` contains the gene loadings (factor loadings for each gene).
-
-    Notes
-    -----
-    - The NMF algorithm is initialized using a random method for factorization (`init='random'`).
-    - The function assumes that the expression matrix (`adata.X`) contains raw gene expression counts.
+    sdata : SpatialData or None
+        Modified SpatialData object or None if copy=False.
     """
-    # Extract the cell count matrix (X) from AnnData object
+
     adata = sdata[layer]
     counts = adata.X.copy()
 
-    # Perform NMF with the specified number of components
     if method == "NMF":
-        nmf_model = NMF(n_components=n_components, init="random", random_state=random_state)
-        cell_loadings = nmf_model.fit_transform(counts, **kwargs)  # Cell factors
-        gene_loadings = nmf_model.components_  # Gene loadings
+        model = NMF(n_components=n_components, init="random", random_state=random_state)
+        cell_loadings = model.fit_transform(counts, **kwargs)
+        gene_loadings = model.components_
+
     elif method == "LDA":
-        lda = LatentDirichletAllocation(n_components=10, random_state=42)
-        lda.fit(counts, **kwargs)  # expression_matrix: cells × genes or spots × genes
+        lda = LatentDirichletAllocation(n_components=n_components, random_state=random_state)
+        lda.fit(counts, **kwargs)
         cell_loadings = lda.transform(counts)
-        gene_loadings = lda.components_  # Gene loadings
+        gene_loadings = lda.components_
 
-    # Add NMF results to the AnnData object
-    adata.obsm["cell_loadings"] = cell_loadings  # Add the cell factors to the AnnData object
-    adata.varm["gene_loadings"] = gene_loadings.transpose()
+    elif method == "DRVI":
+        try:
+            from drvi.model import DRVI
+            from drvi.utils.tools import (
+                traverse_latent,
+                calculate_differential_vars,
+                set_latent_dimension_stats,
+            )
+        except ImportError:
+            raise ImportError(
+                "The 'drvi' package is required for method='DRVI'. "
+                "Please install it with: pip install drvi"
+            )
 
-    # Optionally save the factor loadings and scores to disk
+        # DRVI-specific parameters
+        encoder_dims = kwargs.pop("encoder_dims", [128, 128])
+        decoder_dims = kwargs.pop("decoder_dims", [128, 128])
+        n_epochs = kwargs.pop("n_epochs", 400)
+        kl_warmup = kwargs.pop("kl_warmup", n_epochs)
+        is_count_data = kwargs.pop("is_count_data", True)
+        early_stopping = kwargs.pop("early_stopping", False)
+        accelerator = kwargs.pop("accelerator", None)
+        devices = kwargs.pop("devices", None)
+
+        adata.layers["counts"] = adata.X
+        DRVI.setup_anndata(adata, layer="counts", is_count_data=is_count_data)
+
+        if drvi_model_path:
+            model = DRVI.load(drvi_model_path, adata)
+        else:
+            model = DRVI(
+                adata,
+                n_latent=n_components,
+                encoder_dims=encoder_dims,
+                decoder_dims=decoder_dims,
+            )
+
+            train_args = {
+                "max_epochs": n_epochs,
+                "early_stopping": early_stopping,
+                "plan_kwargs": {"n_epochs_kl_warmup": kl_warmup},
+            }
+            if accelerator:
+                train_args["accelerator"] = accelerator
+            if devices:
+                train_args["devices"] = devices
+
+            model.train(**train_args)
+
+        # Get latent representation and analyze gene effects
+        latent = model.get_latent_representation()
+        embed = ad.AnnData(X=latent, obs=adata.obs.copy())
+        set_latent_dimension_stats(model, embed)
+
+        traverse_adata = traverse_latent(model, embed, n_samples=20, max_noise_std=0.0)
+        calculate_differential_vars(traverse_adata)
+
+        cell_loadings = latent
+        gene_loadings_pos = traverse_adata.varm["combined_score_traverse_effect_pos"]
+        gene_loadings_neg = traverse_adata.varm["combined_score_traverse_effect_neg"]
+        gene_loadings = combine_loadings_arrays(gene_loadings_pos, gene_loadings_neg)
+
+    else:
+        raise ValueError(f"Unsupported method: {method}. Choose from ['NMF', 'LDA', 'DRVI'].")
+
+    # Store results
+    adata.obsm["cell_loadings"] = cell_loadings
+    if method == "DRVI":
+        adata.varm["gene_loadings_positive"] = gene_loadings_pos
+        adata.varm["gene_loadings_negative"] = gene_loadings_neg
+    adata.varm["gene_loadings"] = gene_loadings
+
     sdata[layer] = adata
-
     return sdata if copy else None
+
+def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np.ndarray) -> np.ndarray:
+    if gene_loadings_pos.shape != gene_loadings_neg.shape:
+        raise ValueError("Input arrays must have the same shape.")
+
+    # Boolean masks
+    pos_nonzero = gene_loadings_pos != 0
+    neg_nonzero = gene_loadings_neg != 0
+    conflict_mask = pos_nonzero & neg_nonzero
+
+    # Raise warning if conflicts found
+    if np.any(conflict_mask):
+        conflict_indices = np.argwhere(conflict_mask)
+        warnings.warn(f"Conflicts found at {len(conflict_indices)} locations. "
+                      f"Example: {conflict_indices[:5].tolist()}")
+
+    # Initialize combined output
+    combined = np.zeros_like(gene_loadings_pos)
+    combined[pos_nonzero] = gene_loadings_pos[pos_nonzero]
+    combined[neg_nonzero] = -gene_loadings_neg[neg_nonzero]
+
+    return combined
+
 
 
 def factors_to_cells(
