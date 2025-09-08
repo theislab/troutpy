@@ -451,6 +451,14 @@ def store_results_in_sdata(sdata, prob_table, closest_table, extracellular_trans
     sdata.tables["source_score"] = prob_adata
 
     sdata["table"].obs["urna_source_score"] = list(np.sum(cell_source_table, axis=1))
+    try:
+        adata=sdata['table']
+        raw_expr=adata.layers['raw']
+        cell_expr_sum = np.array(np.sum(raw_expr.todense(), axis=1)).flatten()
+        sdata["table"].obs['normalized_urna_source_score'] = adata.obs['urna_source_score'] / cell_expr_sum
+    except KeyError:
+        print('Normalized urna source score could not be computed')
+    
 
 
 def compute_contribution_score(sdata):

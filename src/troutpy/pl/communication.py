@@ -6,52 +6,69 @@ import spatialdata as sd
 from mpl_chord_diagram import chord_diagram
 from spatialdata import SpatialData
 
-
-def celltype_communication(sdata, kind="heatmap", celltype_key="cell type", vmax=None, vmin=None, cmap="BuPu", dendrogram_ratio=0.1, **kwargs):
+def celltype_communication(
+    sdata,
+    kind="heatmap",
+    celltype_key="cell type",
+    vmax=None,
+    vmin=None,
+    cmap="BuPu",
+    dendrogram_ratio=0.1,
+    **kwargs
+):
     """
     Plot cell type-cell type interaction strength as a heatmap or chord diagram.
-
-    Parameters
-    ----------
-    sdata : spatialdata.SpatialData
-        The spatial data object containing interaction scores.
-    kind : str
-        Type of plot, either 'heatmap' or 'chord'. Default is 'heatmap'.
-    celltype_key : str
-        Key for cell type colors in `sdata['table'].uns`. Default is 'cell type'.
-    vmax : float
-        Max value for colormap scaling. Default is None.
-    vmin : float
-        Min value for colormap scaling. Default is None.
-    cmap : str
-        Colormap for heatmap or chord diagram. Default is 'BuPu'.
-    kwargs : dict
-        Additional arguments passed to the plotting functions.
     """
+
     interaction_strength = sdata["source_score"].uns["interaction_strength"]
     source_table = sdata["source_score"]
     target_table = sdata["target_score"]
 
-    celltype_ints = np.mean(interaction_strength, axis=0)
+    # Sum over genes → interaction strength from source to target
+    celltype_ints = np.sum(interaction_strength, axis=0)
     celltype_ints_table = pd.DataFrame(celltype_ints, index=source_table.var.index, columns=target_table.var.index)
 
+    # Assign colors to cell types
     try:
-        colors = sdata["table"].uns[celltype_key + "_colors"]
+        cols = dict(zip(
+            np.unique(sdata["table"].obs[celltype_key]),
+            sdata["table"].uns[celltype_key + "_colors"]
+        ))
+        colors = [cols[c] for c in source_table.var.index]
     except KeyError:
         colpalette = plt.get_cmap("tab20")
         colors = [colpalette(i) for i in range(len(np.unique(source_table.var.index)))]
 
+    # Plotting
     if kind == "heatmap":
-        sns.clustermap(
-            celltype_ints_table, vmax=vmax, vmin=vmin, cmap=cmap, row_colors=colors, col_colors=colors, dendrogram_ratio=dendrogram_ratio, **kwargs
-        ).fig.suptitle("Interaction strenght")
+        g = sns.clustermap(
+            celltype_ints_table,
+            vmax=vmax,
+            vmin=vmin,
+            cmap=cmap,
+            row_colors=colors,
+            col_colors=colors,
+            dendrogram_ratio=dendrogram_ratio,
+            cbar_pos=(0.02, 0.8, 0.02, 0.15),  # Adjust colorbar position: (x, y, width, height)
+            **kwargs
+        )
+        g.fig.suptitle("Interaction Strength", y=1.05)
+        g.ax_heatmap.grid(False)  # remove grid from heatmap
 
     elif kind == "chord":
-        chord_diagram(celltype_ints, source_table.var.index, directed=True, fontsize=6, colors=colors, **kwargs)
+        chord_diagram(
+            celltype_ints,
+            source_table.var.index,
+            directed=True,
+            fontsize=6,
+            colors=colors,
+            **kwargs
+        )
         plt.title("Interaction Strength", fontweight="bold")
+        plt.grid(False)
+
     else:
         raise ValueError("Invalid plot type. Choose 'heatmap' or 'chord'.")
-
     plt.show()
 
 
