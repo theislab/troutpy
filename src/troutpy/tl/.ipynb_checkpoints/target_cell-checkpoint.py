@@ -165,7 +165,7 @@ def compute_target_score(
 
     Returns
     -------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         SpatialData object with target score table added.
     """
     # Coordinate keys
