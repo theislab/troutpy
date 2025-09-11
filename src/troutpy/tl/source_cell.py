@@ -458,7 +458,7 @@ def store_results_in_sdata(sdata, prob_table, closest_table, extracellular_trans
         sdata["table"].obs['normalized_urna_source_score'] = adata.obs['urna_source_score'] / cell_expr_sum
     except KeyError:
         print('Normalized urna source score could not be computed')
-    
+
 
 
 def compute_contribution_score(sdata):

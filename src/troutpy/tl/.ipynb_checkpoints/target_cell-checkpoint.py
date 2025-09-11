@@ -24,7 +24,7 @@ def calculate_target_cells(
 
     Parameters
     ----------
-    sdata
+    sdata: spatialdata.SpatialData
         SpatialData object containing spatial and transcript data.
     layer: str
         The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
@@ -104,7 +104,7 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
 
     Parameters
     ----------
-    sdata:
+    sdata: spatialdata.SpatialData
         A spatial data object that contains transcript and cell type information. The relevant data is accessed from the `sdata.points[layer]`
     layer: str
         The key for the layer in `sdata.points` that contains the transcript data (default: 'extracellular_transcripts').
@@ -129,7 +129,7 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
 
 
 def compute_target_score(
-    sdata: SpatialData,
+    sdata: sd.SpatialData,
     layer: str = "transcripts",
     gene_key: str = "gene",
     coords_key: list = None,  # type: ignore
@@ -144,7 +144,7 @@ def compute_target_score(
 
     Parameters
     ----------
-    sdata: SpatialData
+    sdata: spatialdata.SpatialData
         The input spatial data object.
     layer: str
         The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
@@ -168,7 +168,6 @@ def compute_target_score(
     sdata : SpatialData
         SpatialData object with target score table added.
     """
-
     # Coordinate keys
     if coords_key is None:
         coords_key = ["x", "y"]
@@ -176,7 +175,7 @@ def compute_target_score(
 
     # Extract data
     transcripts = sdata.points[layer].compute()
-    cells = sdata["table"].to_df()
+    #cells = sdata["table"].to_df()
     coord_cells = sdata["table"].obsm["spatial"]
     cell_types = sdata["table"].obs[celltype_key]
     all_cell_types = cell_types.unique()

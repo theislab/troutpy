@@ -16,9 +16,7 @@ def celltype_communication(
     dendrogram_ratio=0.1,
     **kwargs
 ):
-    """
-    Plot cell type-cell type interaction strength as a heatmap or chord diagram.
-    """
+    """Plot cell type-cell type interaction strength as a heatmap or chord diagram."""
 
     interaction_strength = sdata["source_score"].uns["interaction_strength"]
     source_table = sdata["source_score"]

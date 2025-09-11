@@ -1,17 +1,14 @@
+import warnings
+import anndata as ad
 import numpy as np
 import pandas as pd
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 from spatialdata import SpatialData
+import spatialdata
 
-
-import numpy as np
-import scanpy as sc
-import anndata as ad
-from sklearn.decomposition import NMF, LatentDirichletAllocation
-import warnings
 
 def latent_factor(
-    sdata: SpatialData,
+    sdata: spatialdata.SpatialData,
     method: str = "NMF",
     layer: str = "segmentation_free_table",
     n_components: int = 20,
@@ -25,7 +22,7 @@ def latent_factor(
 
     Parameters
     ----------
-    sdata : SpatialData
+    sdata : spatialdata.SpatialData
         SpatialData object with the specified layer containing AnnData.
     method : str
         One of "NMF", "LDA", or "DRVI".
@@ -55,7 +52,6 @@ def latent_factor(
     sdata : SpatialData or None
         Modified SpatialData object or None if copy=False.
     """
-
     adata = sdata[layer]
     counts = adata.X.copy()
 
@@ -74,15 +70,12 @@ def latent_factor(
         try:
             from drvi.model import DRVI
             from drvi.utils.tools import (
-                traverse_latent,
                 calculate_differential_vars,
                 set_latent_dimension_stats,
+                traverse_latent,
             )
-        except ImportError:
-            raise ImportError(
-                "The 'drvi' package is required for method='DRVI'. "
-                "Please install it with: pip install drvi"
-            )
+        except ImportError as err:
+            raise ImportError("The 'drvi' package is required for method='DRVI'.Please install it with: pip install drvi") from err
 
         # DRVI-specific parameters
         encoder_dims = kwargs.pop("encoder_dims", [128, 128])
@@ -146,6 +139,7 @@ def latent_factor(
     return sdata if copy else None
 
 def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np.ndarray) -> np.ndarray:
+    """Combines positive and negative gene loading arrays from DRVI analysis"""
     if gene_loadings_pos.shape != gene_loadings_neg.shape:
         raise ValueError("Input arrays must have the same shape.")
 
@@ -158,7 +152,7 @@ def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np
     if np.any(conflict_mask):
         conflict_indices = np.argwhere(conflict_mask)
         warnings.warn(f"Conflicts found at {len(conflict_indices)} locations. "
-                      f"Example: {conflict_indices[:5].tolist()}")
+        f"Example: {conflict_indices[:5].tolist()}",stacklevel=2)
 
     # Initialize combined output
     combined = np.zeros_like(gene_loadings_pos)
@@ -177,11 +171,11 @@ def factors_to_cells(
 
     Parameters
     ----------
-    sdata
+    sdata: spatialdata.SpatialData
         The AnnData object containing both extracellular and cellular data.
-    layer_factors
+    layer_factors: str
         The key in `sdata` that contains the extracellular RNA data with NMF factors. Default is 'nmf_data'.
-    copy
+    copy: bool
         Wether to save the `sdata` object in a separate object
 
     Returns

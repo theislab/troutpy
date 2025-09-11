@@ -6,6 +6,7 @@ import spatialdata as sd
 from mpl_chord_diagram import chord_diagram
 from spatialdata import SpatialData
 
+
 def celltype_communication(
     sdata,
     kind="heatmap",
@@ -16,10 +17,7 @@ def celltype_communication(
     dendrogram_ratio=0.1,
     **kwargs
 ):
-    """
-    Plot cell type-cell type interaction strength as a heatmap or chord diagram.
-    """
-
+    """Plot cell type-cell type interaction strength as a heatmap or chord diagram."""
     interaction_strength = sdata["source_score"].uns["interaction_strength"]
     source_table = sdata["source_score"]
     target_table = sdata["target_score"]
@@ -32,7 +30,7 @@ def celltype_communication(
     try:
         cols = dict(zip(
             np.unique(sdata["table"].obs[celltype_key]),
-            sdata["table"].uns[celltype_key + "_colors"]
+            sdata["table"].uns[celltype_key + "_colors"], strict=False
         ))
         colors = [cols[c] for c in source_table.var.index]
     except KeyError:
