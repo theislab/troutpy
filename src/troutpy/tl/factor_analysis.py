@@ -1,10 +1,11 @@
 import warnings
+
 import anndata as ad
 import numpy as np
 import pandas as pd
+import spatialdata
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 from spatialdata import SpatialData
-import spatialdata
 
 
 def latent_factor(
