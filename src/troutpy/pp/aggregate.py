@@ -70,7 +70,7 @@ def create_grid_squares(sdata: SpatialData, layer: str = "transcripts", square_s
 def aggregate_urna(
     sdata: SpatialData,
     layer: str = "transcripts",
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     method: str = "bin",
     square_size: float = 50,
     radius: float = 50,

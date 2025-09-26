@@ -17,7 +17,7 @@ from tqdm import tqdm
 def spatial_variability(
     sdata: SpatialData,
     coord_keys: list = None,  # type: ignore
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     n_neighbors: int = 10,
     kde_resolution: int = 1000,
     square_size: int = 20,
@@ -35,7 +35,7 @@ def spatial_variability(
     coord_keys
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
     gene_key
-        The key for gene identifiers in the dataset (default: 'feature_name').
+        The key for gene identifiers in the dataset (default: 'gene').
     n_neighbors
         Number of neighbors to use for computing spatial neighbors (default: 10).
     kde_resolution
@@ -51,7 +51,7 @@ def spatial_variability(
     -------
     sdata: spatialdata.SpatialData
         Sdata containing Moran's I values for each gene, indexed by gene names.
-      
+
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]
@@ -98,7 +98,7 @@ def spatial_variability(
     try:
         sdata["xrna_metadata"]
     except KeyError:
-        create_urna_metadata(sdata, layer="transcripts")
+        create_urna_metadata(sdata, gene_key=gene_key)
 
     for column in svg_df.columns:
         if column in sdata["xrna_metadata"].var.columns:
@@ -109,7 +109,7 @@ def spatial_variability(
     return sdata if copy else None
 
 
-def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "feature_name", copy: bool = False) -> SpatialData | None:
+def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "gene", copy: bool = False) -> SpatialData | None:
     """
     Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
 
@@ -120,7 +120,7 @@ def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
     layer: str
         The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
     gene_key: str
-        The key in the `layer` dataframe that contains the gene names.Default is 'feature_name'.
+        The key in the `layer` dataframe that contains the gene names.Default is 'gene'.
     copy
         If `True`, returns a copy of the `spatialdata.SpatialData` object with the new table added.
 
@@ -160,7 +160,7 @@ def quantify_overexpression(
     sdata: SpatialData,
     codeword_key: str,
     control_codewords: list,
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     layer: str = "transcripts",
     percentile_threshold: float = 100,
     copy=False,
@@ -208,7 +208,7 @@ def quantify_overexpression(
     try:
         sdata["xrna_metadata"]
     except KeyError:
-        create_urna_metadata(sdata, layer="transcripts")
+        create_urna_metadata(sdata, layer=layer,gene_key=gene_key)
 
     # select columns that will be overwritten
     existing_cols = sdata["xrna_metadata"].var.columns
@@ -221,7 +221,7 @@ def quantify_overexpression(
     return sdata if copy else None
 
 
-def extracellular_enrichment(sdata: SpatialData, gene_key: str = "feature_name", copy: bool = False):
+def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: bool = False,layer:str='transcripts'):
     """
     Computes the proportion of transcripts classified as extracellular or intracellular for each gene and calculates additional metrics, including log fold change of extracellular to intracellular proportions. The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
 
@@ -230,7 +230,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "feature_name",
     sdata
         An spatialData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_key`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
     gene_key
-        The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'feature_name'.
+        The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'gene'.
     copy
         Whether to return a modified copy of the input `sdata` object. If `False`, the input object is modified in place. Defaults to `False`.
 
@@ -244,7 +244,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "feature_name",
     - If the 'xrna_metadata' attribute does not exist in `sdata`, it will be created using the `create_urna_metadata` function.
     """
     # Extract and compute the required data
-    data = sdata.points["transcripts"][[gene_key, "extracellular"]].compute()
+    data = sdata.points[layer][[gene_key, "extracellular"]].compute()
 
     # Create a crosstab to count occurrences of intracellular and extracellular transcripts
     feature_inout = pd.crosstab(data[gene_key], data["extracellular"])
@@ -259,7 +259,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "feature_name",
     try:
         sdata["xrna_metadata"]
     except KeyError:
-        create_urna_metadata(sdata, layer="transcripts")
+         create_urna_metadata(sdata, layer=layer,gene_key=gene_key)
 
     # select columns that will be overwritten
     existing_cols = sdata["xrna_metadata"].var.columns
@@ -275,7 +275,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "feature_name",
 def spatial_colocalization(
     sdata: SpatialData,
     coord_keys: list = None,
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     resolution: int = 1000,
     square_size: int = 20,
     n_threads: int = 1,
@@ -292,7 +292,7 @@ def spatial_colocalization(
     coord_keys
         The keys for spatial coordinates in the dataset (default: ['x', 'y']).
     gene_key
-        The key for gene identifiers in the dataset (default: 'feature_name').
+        The key for gene identifiers in the dataset (default: 'gene').
     n_neighbors
         Number of neighbors to use for computing spatial neighbors (default: 10).
     resolution
@@ -451,7 +451,7 @@ def in_out_correlation(
     try:
         sdata["xrna_metadata"]
     except KeyError:
-        create_urna_metadata(sdata, layer="transcripts")
+        create_urna_metadata(sdata,gene_key=gene_key)
     sdata["xrna_metadata"].var["in_out_spearmanR"] = sdata["xrna_metadata"].var.index.map(gene2spearman)
     sdata["xrna_metadata"].var["in_out_pvalue"] = sdata["xrna_metadata"].var.index.map(gene2pval)
 
@@ -532,7 +532,7 @@ def assess_diffusion(sdata: SpatialData, gene_key: str = "gene", distance_key: s
 
 
 def cluster_distribution_from_source(
-    sdata: SpatialData, gene_key: str = "feature_name", distance_key: str = "distance", n_clusters: int = 3, n_bins: int = 20, copy=False
+    sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", n_clusters: int = 3, n_bins: int = 20, copy=False
 ):
     """Clusters genes based on the distribution of distances of extracellular transcripts from their source cell.
 
@@ -597,7 +597,7 @@ def cluster_distribution_from_source(
 
     gene_cluster_dict = dict(zip(hist_df.index, clusters, strict=False))
     if "xrna_metadata" not in sdata:
-        create_urna_metadata(sdata, layer="transcripts")
+        create_urna_metadata(sdata, gene_key=gene_key)
 
     # Merge results into `xrna_metadata.var`
     sdata["xrna_metadata"].var["kmeans_distribution"] = list(sdata["xrna_metadata"].var.index.map(gene_cluster_dict))
@@ -615,7 +615,7 @@ def compute_js_divergence(P, Q, eps=1e-10):
 def compare_intra_extra_distribution(
     sdata,
     layer: str = "transcripts",
-    gene_key: str = "feature_name",
+    gene_key: str = "gene",
     copy: bool = False,
     coord_keys: list = None,
     n_bins: int = 30,
@@ -630,7 +630,7 @@ def compare_intra_extra_distribution(
     layer: str
         Layer within sdata.points where transcripts are stored (default: "transcripts").
     gene_key: str
-        Column name where the gene name is stored (default: "feature_name").
+        Column name where the gene name is stored (default: "gene").
     copy: bool
         Whether to return a modified copy of sdata (default: False).
     coord_keys: list

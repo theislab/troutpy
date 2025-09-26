@@ -12,9 +12,9 @@ Plotting  <api/plotting.md>
 
 ```
 ```{toctree}
-:maxdepth: 1
+:maxdepth: 2
 :caption: Tutorials
-notebooks/0_format_Xenium_sdata
+notebooks/Basic_tutorial
 
 ```
 

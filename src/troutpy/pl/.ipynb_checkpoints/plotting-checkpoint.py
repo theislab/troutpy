@@ -290,6 +290,7 @@ def plot_crosstab(
     if kind == "barh":
         plt.figure()
         crosstab_data.plot(kind="barh", stacked=stacked, figsize=figsize, width=0.99, colormap=cmap)
+        plt.xlabel('Total number of transcripts')
         plt.title(f"{xvar}_vs_{yvar}")
         if save:
             plt.savefig(os.path.join(figures_path, plot_filename))

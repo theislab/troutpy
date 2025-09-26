@@ -6,7 +6,7 @@
 [badge-tests]: https://img.shields.io/github/actions/workflow/status/theislab/troutpy/test.yaml?branch=main
 [badge-docs]: https://img.shields.io/readthedocs/troutpy
 
-Package for the analysis of unassigned RNA during segmentation in image-based spatial transcriptomics, in python.
+Package for the analysis of transcripts outside segmented cells in python
 
 ![alt text](images/logo_fish.png)
 
@@ -22,11 +22,13 @@ If you don't have Python installed, we recommend installing [Mambaforge][].
 
 There are several alternative options to install troutpy:
 
+<!--
 1) Install the latest release of `troutpy` from [PyPI][]:
 
 ```bash
 pip install troutpy
 ```
+-->
 
 1. Install the latest development version:
 
@@ -41,9 +43,6 @@ Please have a look at the [Usage documentation](https://troutpy.readthedocs.io/e
 ```python
 import troutpy as tp
 ```
-
-## Reproducibility
-Code, notebooks, and instructions to reproduce the results from the paper are available at the [reproducibility repository](https://github.com/theislab/troutpy_reproducibility). This repository also include diverse tutorials and compementary functions that are not core to Troutpy, but are required to reproduce the figures from Marco Salas et al. 2025.
 
 ## Release notes
 
