@@ -12,7 +12,7 @@ Plotting  <api/plotting.md>
 
 ```
 ```{toctree}
-:maxdepth: 2
+:maxdepth: 3
 :caption: Tutorials
 notebooks/Basic_tutorial
 
