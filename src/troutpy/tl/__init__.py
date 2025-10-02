@@ -1,7 +1,7 @@
 from .estimate_density import colocalization_proportion
 from .factor_analysis import factors_to_cells, latent_factor
 from .image_quantification import image_intensities_per_transcript
-from .interactions import communication_strength, gene_specific_interactions, get_gene_interaction_strength
+from .interactions import communication_strength, gene_specific_interactions, get_gene_interaction_strength, cell_contacts_with_urna_sources
 from .quantify_urna import (
     assess_diffusion,
     cluster_distribution_from_source,

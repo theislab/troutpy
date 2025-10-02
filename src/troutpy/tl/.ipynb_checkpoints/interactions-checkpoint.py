@@ -5,6 +5,9 @@ import numpy as np
 import pandas as pd
 from spatialdata import SpatialData
 from tqdm import tqdm
+import pandas as pd
+import numpy as np
+from sklearn.neighbors import BallTree
 
 
 ####### LIKELY DEPRECATED#########
@@ -22,7 +25,7 @@ def get_number_of_communication_genes(
     source_proportions
         A data frame (Gene name x Cell Type) with proportion of cells per cell type expressing corresponding gene
     target_proportions
-        pd.DataFrame with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
+        pandas.DataFrame with proportion of cells per cell type being the physically clostest cell to transcripts of corresponding gene. Defaults to 0.2.
     source_proportion_threshold
         The threshold to consider a cell type to be a significant source of a gene. Defaults to 0.2.
     target_proportion_threshold
@@ -195,3 +198,116 @@ def gene_specific_interactions(sdata, copy: bool = False, gene_key: str = "gene"
     sdata["source_score"].uns["gene_interaction_names"] = unique_cats
 
     return sdata.copy() if copy else None
+
+def cell_contacts_with_urna_sources(
+    sdata, 
+    spatial_key: str = "spatial", 
+    cell_type_key: str = "cell type", 
+    distance: float = 50, 
+    copy: bool = False,
+    uns_prefix: str = "cell_contact"
+):
+    """
+    Compute neighbor count matrices:
+    1. cell-cell contact (spatial neighbors only)
+    2. combined contact (spatial + uRNA neighbors)
+    3. uRNA-specific contact (combined - cell-cell)
+
+    Results are stored in sdata['table'].uns under separate keys: f"{uns_prefix}_cell_cell", f"{uns_prefix}_combined", f"{uns_prefix}_urna_specific".
+
+    Parameters
+    ----------
+    sdata : SpatialData
+        SpatialData object containing:
+        - sdata['table']: AnnData with cell_type annotations and spatial coordinates.
+        - sdata['target_score']: AnnData with transcript-level target info
+        - sdata['source_score']: AnnData with transcript-level source info
+    spatial_key : str
+        Key in sdata['table'].obsm containing spatial coordinates.
+    cell_type_key : str
+        Column in sdata['table'].obs with cell type labels.
+    distance : float
+        Radius to define spatial neighborhoods.
+    copy : bool
+        If True, return the matrices. If False, modify sdata in place and return None.
+    uns_prefix : str
+        Prefix for keys under which matrices will be saved in sdata['table'].uns.
+
+    Returns
+    -------
+    dict of pd.DataFrame or None
+        Dictionary with three DataFrames: {"cell_cell", "combined", "urna_specific"}
+        if copy=True, otherwise None.
+    """
+    adata = sdata['table']
+    cell_ids = adata.obs_names.values
+    cell_types = adata.obs[cell_type_key].values
+    unique_cell_types = np.unique(cell_types)
+    
+    # Step 1: Compute spatial neighbors
+    coords = np.asarray(adata.obsm[spatial_key])
+    tree = BallTree(coords)
+    neighbors_idx = tree.query_radius(coords, r=distance)
+    neighbors_dict = {cell_id: cell_ids[neighbors] for cell_id, neighbors in zip(cell_ids, neighbors_idx)}
+
+    # Step 2: Merge source and target transcript info
+    target_obs = sdata['target_score'].obs[['closest_cell', 'distance']].copy()
+    target_obs.rename(columns={'closest_cell': 'target_cell'}, inplace=True)
+    source_obs = sdata['source_score'].obs[['closest_cell']].copy()
+    source_obs.rename(columns={'closest_cell': 'source_cell'}, inplace=True)
+
+    trans_df = target_obs.join(source_obs, how='inner')
+    trans_df = trans_df[trans_df['distance'] <= distance]
+
+    # Step 3: Filter out transcripts where source already in neighborhood or == target
+    def keep_transcript(row):
+        target = row['target_cell']
+        source = row['source_cell']
+        return (source != target) and (source not in neighbors_dict[target])
+    
+    filtered_trans = trans_df[trans_df.apply(keep_transcript, axis=1)]
+
+    # Step 4: Build extended neighborhoods (spatial + uRNA)
+    extended_neighbors_dict = {cell_id: list(neighs) for cell_id, neighs in neighbors_dict.items()}
+    for target_cell, group in filtered_trans.groupby('target_cell'):
+        sources = group['source_cell'].values
+        extended_neighbors_dict[target_cell] = np.unique(
+            np.concatenate([extended_neighbors_dict[target_cell], sources])
+        )
+
+    # Step 5: Count matrices
+    cell_type_map = dict(zip(cell_ids, cell_types))
+    
+    def count_matrix_from_neighbors(neigh_dict):
+        mat = pd.DataFrame(0, index=unique_cell_types, columns=unique_cell_types, dtype=int)
+        for source_cell, neighbors in neigh_dict.items():
+            source_type = cell_type_map[source_cell]
+            for target_cell in neighbors:
+                try:
+                    target_type = cell_type_map[target_cell]
+                    mat.loc[source_type, target_type] += 1
+                except:
+                    pass
+        return mat
+
+    # cell-cell only
+    cell_cell_mat = count_matrix_from_neighbors(neighbors_dict)
+    # combined (spatial + uRNA)
+    combined_mat = count_matrix_from_neighbors(extended_neighbors_dict)
+    # uRNA-specific = combined - cell-cell
+    urna_specific_mat = combined_mat - cell_cell_mat
+    urna_specific_mat[urna_specific_mat < 0] = 0  # safety check
+
+    # Save results under separate uns keys
+    adata.uns[f"{uns_prefix}_cell_body"] = cell_cell_mat
+    adata.uns[f"{uns_prefix}_combined"] = combined_mat
+    adata.uns[f"{uns_prefix}_urna_specific"] = urna_specific_mat
+
+    results = {
+        "cell_body": cell_cell_mat,
+        "combined": combined_mat,
+        "urna_specific": urna_specific_mat
+    }
+    return results if copy else None
+
+

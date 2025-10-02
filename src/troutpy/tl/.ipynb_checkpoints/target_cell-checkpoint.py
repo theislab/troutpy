@@ -127,9 +127,8 @@ def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_c
 
     return celltype_by_feature
 
-
 def compute_target_score(
-    sdata: sd.SpatialData,
+    sdata,
     layer: str = "transcripts",
     gene_key: str = "gene",
     coords_key: list = None,  # type: ignore
@@ -140,53 +139,56 @@ def compute_target_score(
     batch_size: int = 100_000,
 ):
     """
-    Computes scores for each extracellular transcript targeting specific cell types using spatial proximity.
+    Computes target scores for extracellular transcripts including distance and closest cell info.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        The input spatial data object.
+    sdata: SpatialData
+        SpatialData object containing transcript points and cell table.
     layer: str
-        The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
+        Transcript layer in sdata.points.
     gene_key: str
-        Column name in the transcript data representing gene identifiers.
+        Column in transcript table for gene names.
     coords_key: list
-        Column names for spatial coordinates of transcripts and cell centroids.
+        List of coordinate column names, e.g., ["x", "y"].
     lambda_decay: float
-        The exponential decay factor for distances.
+        Exponential decay factor for distance.
     copy: bool
-        If True, returns a modified copy of the SpatialData object.
+        Return a copy of sdata if True.
     celltype_key: str
-        Key for cell type annotations in the cell table.
+        Column in adata.obs with cell type labels.
     k_neighbors: int
         Number of nearest cells to consider per transcript.
     batch_size: int
-        Number of transcripts to process per batch to limit memory usage.
+        Process transcripts in batches for memory efficiency.
 
     Returns
     -------
-    sdata : spatialdata.SpatialData
-        SpatialData object with target score table added.
+    SpatialData
+        Updated sdata with 'target_score' table including per-transcript distance, closest cell, closest_cell_type.
     """
-    # Coordinate keys
     if coords_key is None:
         coords_key = ["x", "y"]
     xcoord, ycoord = coords_key
 
-    # Extract data
+    # Extract transcript data
     transcripts = sdata.points[layer].compute()
-    #cells = sdata["table"].to_df()
-    coord_cells = sdata["table"].obsm["spatial"]
-    cell_types = sdata["table"].obs[celltype_key]
+    adata = sdata["table"]
+    coord_cells = adata.obsm["spatial"]
+    cell_types = adata.obs[celltype_key]
     all_cell_types = cell_types.unique()
 
-    # Filter extracellular transcripts
     extracellular_transcripts = transcripts[transcripts["extracellular"]]
     transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
 
-    # Output score table
+    # Output tables
     target_scores_table = pd.DataFrame(
         0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float
+    )
+    closest_cell_info = pd.DataFrame(
+        index=extracellular_transcripts.index,
+        columns=["distance", "closest_cell", "closest_cell_type"],
+        dtype=object
     )
 
     # KDTree on cell centroids
@@ -209,19 +211,32 @@ def compute_target_score(
             scores_i = exp_decay[i]
             types_i = cell_types.iloc[cell_indices_i].to_numpy()
 
+            # Compute target scores per cell type
             for cell_type in all_cell_types:
                 target_scores_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
 
+            # Store closest cell info
+            min_idx = np.argmin(distances[i])
+            closest_cell_idx = cell_indices_i[min_idx]
+            closest_cell_info.loc[transcript_idx, "distance"] = distances[i][min_idx]
+            closest_cell_info.loc[transcript_idx, "closest_cell"] = adata.obs_names[closest_cell_idx]
+            closest_cell_info.loc[transcript_idx, "closest_cell_type"] = cell_types.iloc[closest_cell_idx]
+
     # Normalize to probabilities
-    residual = 1e-6  # stability term
+    residual = 1e-6
     row_sums = target_scores_table.sum(axis=1) + residual
     target_scores_table = target_scores_table.div(row_sums, axis=0)
 
-    # Store result as AnnData
+    # Store results as AnnData
     prob_table = sc.AnnData(target_scores_table)
     prob_table.obs[gene_key] = extracellular_transcripts[gene_key].astype(str).values
     prob_table.obsm["spatial"] = transcript_coords
 
+    # Store closest cell info in .obs as well
+    for col in ["distance", "closest_cell", "closest_cell_type"]:
+        prob_table.obs[col] = closest_cell_info[col].values
+
     sdata.tables["target_score"] = prob_table
 
     return sdata.copy() if copy else None
+

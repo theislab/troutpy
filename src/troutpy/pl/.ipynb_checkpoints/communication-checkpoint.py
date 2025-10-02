@@ -6,31 +6,30 @@ import spatialdata as sd
 from mpl_chord_diagram import chord_diagram
 from spatialdata import SpatialData
 
-def celltype_communication(
+def cell_type_contacts(
     sdata,
     kind="heatmap",
     celltype_key="cell type",
     vmax=None,
     vmin=None,
-    cmap="BuPu",
-    dendrogram_ratio=0.1,
+    cmap="BuPu",table_key='table',
+    dendrogram_ratio=0.1,key='cell_contact_combined',
     **kwargs
 ):
     """Plot cell type-cell type interaction strength as a heatmap or chord diagram."""
-
-    interaction_strength = sdata["source_score"].uns["interaction_strength"]
+    interaction_strength = sdata["table"].uns[key]
     source_table = sdata["source_score"]
     target_table = sdata["target_score"]
 
     # Sum over genes → interaction strength from source to target
-    celltype_ints = np.sum(interaction_strength, axis=0)
+    celltype_ints = interaction_strength
     celltype_ints_table = pd.DataFrame(celltype_ints, index=source_table.var.index, columns=target_table.var.index)
 
     # Assign colors to cell types
     try:
         cols = dict(zip(
             np.unique(sdata["table"].obs[celltype_key]),
-            sdata["table"].uns[celltype_key + "_colors"]
+            sdata["table"].uns[celltype_key + "_colors"], strict=False
         ))
         colors = [cols[c] for c in source_table.var.index]
     except KeyError:
@@ -50,7 +49,7 @@ def celltype_communication(
             cbar_pos=(0.02, 0.8, 0.02, 0.15),  # Adjust colorbar position: (x, y, width, height)
             **kwargs
         )
-        g.fig.suptitle("Interaction Strength", y=1.05)
+        g.fig.suptitle(key, y=1.05)
         g.ax_heatmap.grid(False)  # remove grid from heatmap
 
     elif kind == "chord":
@@ -62,12 +61,11 @@ def celltype_communication(
             colors=colors,
             **kwargs
         )
-        plt.title("Interaction Strength", fontweight="bold")
+        plt.title(key, fontweight="bold")
         plt.grid(False)
 
     else:
         raise ValueError("Invalid plot type. Choose 'heatmap' or 'chord'.")
-    plt.show()
 
 
 def gene_communication(
