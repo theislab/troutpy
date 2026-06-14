@@ -13,6 +13,7 @@
     histogram
     pie
     coupled_scatter
+    point_metric_comparison
     heatmap
     sorted_heatmap
     spatial_transcripts
@@ -45,13 +46,16 @@
 .. autosummary::
     :toctree: generated/communication
     
-    celltype_communication
+    cell_type_contacts
+    celltype_contact_matrix
     gene_communication
     global_distribution_from_source
     distributions_by_cluster
     gene_distribution_from_source
     source_score_by_celltype
     target_score_by_celltype
+    spatial_transcripts_source
+    urna_vs_source_score
     interactions_with_arrows
     spatial_interactions
     

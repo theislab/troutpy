@@ -8,40 +8,25 @@ from spatialdata.models import Image2DModel, Labels2DModel, TableModel
 
 
 def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
-    """
-    Converts a SpatialData object (sdata) into the Xenium format.
+    """Convert a 10x Xenium SpatialData object's transcripts and table to the troutpy-expected format.
 
-    The modifications performed are as follows:
-
-    Points / Transcripts:
-      - In sdata.Points['transcripts'] (a pandas DataFrame):
-          * Rename the 'feature_name' column to 'Gene' and convert it to a categorical variable.
-          * Create a boolean column 'control_probe' based on 'codeword_category':
-                if the value is 'predesigned_gene' -> False;
-                otherwise -> True.
-          * Cast 'transcript_id' to a string and ensure the values are unique.
-          * Cast 'overlaps_nucleus' to boolean.
-          * Create a new column 'overlaps_cell' where if 'cell_id' == 'UNASSIGNED' then False, else True.
-
-    Tables:
-      - In sdata.Tables['table'] (an AnnData object):
-          * Check that the .obs DataFrame contains a 'cell_id' column.
-          * Ensure that the .obs index is unique.
-          * Create a new layer named 'raw' in table.layers containing a copy of table.X (the raw expression data).
-
-    Images:
-      - From sdata.Images['morphology_focus'] (a DataTree of images at multiple resolutions):
-          * Extract the highest quality image (scale 'scale0') and store it in sdata.Stainings under the key 'default'.
+    Renames/derives columns on ``sdata.points["transcripts"]`` (``gene``, ``control_probe``,
+    ``transcript_id``, ``overlaps_cell``, ...) and adds a ``"raw"`` layer to ``sdata.table``.
 
     Parameters
     ----------
     sdata : spatialdata.SpatialData
         A SpatialData object with attributes such as Images, Points, and Tables, conforming to the structure detailed in the SpatialData documentation.
+    copy : bool, optional
+        If ``True``, return the modified SpatialData object. Otherwise modify ``sdata`` in
+        place and return ``None``.
+    unassigned_tag : str, optional
+        Value of ``cell_id`` used to mark transcripts that are not assigned to any cell.
 
     Returns
     -------
-    sdata : spatialdata.SpatialData
-        The converted SpatialData object with the modifications applied.
+    spatialdata.SpatialData or None
+        The converted SpatialData object if ``copy=True``; otherwise ``None``.
     """
     # ----- 1. Modify the Points/transcripts DataFrame -----
     try:
@@ -110,32 +95,27 @@ def xenium_converter(sdata, copy=False, unassigned_tag="UNASSIGNED"):
         table.layers = {}
     table.layers["raw"] = table.X.copy()
 
-    # ----- 3. Move Images to Stainings -----
-    try:
-        morph_focus = sdata["morphology_focus"]
-    except (KeyError, AttributeError):
-        print("Warning: SpatialData does not have Images['morphology_focus'].")
-        morph_focus = None
-
-    if morph_focus is not None:
-        # Assume morph_focus is a DataTree (or similar dict-like object) with keys for different scales.
-        if "scale0" in morph_focus:
-            pass
-            # default_image = morph_focus["scale0"]
-        else:
-            print("Warning: 'scale0' not found in Images['morphology_focus']. Using first available scale.")
-            # default_image = next(iter(morph_focus.values()))
-
-        # Create or update the Stainings attribute.
-        # if not hasattr(sdata, "Stainings") or sdata.images is None:
-        #    sdata.images = {}
-        # sdata["default"] = default_image
-
     return sdata if copy else None
 
 
 def process_image_data(sdata: sd.SpatialData) -> xr.DataArray:
-    """Stitches image tiles into a single global image."""
+    """Stitch all FOV image tiles stored in ``sdata.images`` into a single global image.
+
+    Tile positions are read from each tile's ``"global"`` affine transform matrix.
+    Overlapping regions are overwritten (last tile wins).
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        SpatialData object whose ``images`` attribute contains per-FOV image tiles as
+        3-channel (c, y, x) arrays with an affine ``"global"`` transform.
+
+    Returns
+    -------
+    xarray.DataArray
+        Stitched image of shape ``(3, canvas_height, canvas_width)`` with dimensions
+        ``("c", "y", "x")``.
+    """
     fov_keys = list(sdata.images.data.keys())
     sample_raw = sdata.images.data[fov_keys[0]].data
     sample = sample_raw.compute() if hasattr(sample_raw, "compute") else sample_raw
@@ -160,7 +140,28 @@ def process_image_data(sdata: sd.SpatialData) -> xr.DataArray:
 
 
 def process_label_data(sdata: sd.SpatialData) -> (xr.DataArray, dict):
-    """Stitches label tiles, assigns unique IDs, and returns mapping from (fov, original_cell_ID) to new unique ID."""
+    """Stitch per-FOV label tiles into a global label image, assigning globally unique cell IDs.
+
+    Each tile's cell labels are re-mapped to a new contiguous integer range so that
+    no two FOVs share a cell ID. The mapping from ``(fov, original_id)`` to the new
+    global ID is returned for downstream remapping of transcript and table data.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        SpatialData object whose ``labels`` attribute contains per-FOV label tiles with
+        an affine ``"global"`` transform. FOV indices are inferred from the tile key
+        prefix (e.g. ``"1_labels"`` → FOV 1).
+
+    Returns
+    -------
+    global_labels : xarray.DataArray
+        Stitched integer label image of shape ``(canvas_height, canvas_width)``
+        with dimensions ``("y", "x")``.
+    id_map : dict
+        Mapping ``{(fov, original_cell_id): new_global_cell_id}`` for all non-background
+        cells across all FOVs.
+    """
     fov_keys = list(sdata.labels.data.keys())
     sample_raw = sdata.labels.data[fov_keys[0]].data
     sample = sample_raw.compute() if hasattr(sample_raw, "compute") else sample_raw
@@ -201,7 +202,27 @@ def process_label_data(sdata: sd.SpatialData) -> (xr.DataArray, dict):
 
 
 def process_transcript_data(sdata: sd.SpatialData) -> pd.DataFrame:
-    """Concatenates transcript tiles, keeps fov (numeric) for remapping."""
+    """Concatenate per-FOV transcript tiles and prepare global coordinate columns.
+
+    Each tile's local ``x``/``y`` columns are preserved as ``local_x``/``local_y``,
+    global pixel coordinates are promoted to ``x``/``y``, the ``target`` column is
+    renamed to ``gene``, and boolean ``overlaps_cell`` / ``overlaps_nuclei`` columns
+    are derived.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        SpatialData object whose ``points`` attribute contains per-FOV transcript tiles.
+        Each tile must have ``x_global_px``, ``y_global_px``, ``target``, ``cell_ID``,
+        and ``CellComp`` columns.
+
+    Returns
+    -------
+    tx : pandas.DataFrame
+        Concatenated transcript DataFrame with columns ``"x"``, ``"y"``, ``"gene"``,
+        ``"fov"``, ``"transcript_id"``, ``"overlaps_cell"``, ``"overlaps_nuclei"``,
+        and ``"control_probe"``.
+    """
     dfs = []
     for key in sdata.points.data.keys():
         fov = int(str(key).split("_", 1)[0])
@@ -226,7 +247,34 @@ def process_transcript_data(sdata: sd.SpatialData) -> pd.DataFrame:
 
 
 def cosmx_converter(sdata: sd.SpatialData, copy_data: bool = False) -> sd.SpatialData:
-    """Main converter: stitches, remaps cell_IDs by (fov,orig)->global."""
+    """Convert a CosMx multi-FOV SpatialData object into a unified single-coordinate-system object.
+
+    Stitches image and label tiles, concatenates transcript tiles, remaps all
+    per-FOV cell IDs to globally unique integers, and repacks the result into a
+    standard SpatialData structure with a single image, label, points, shapes, and
+    table layer.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        Raw CosMx SpatialData object with per-FOV images, labels, points, and a
+        ``"table"`` AnnData. The table's ``obs`` must contain ``"fov"`` and
+        ``"cell_ID"`` columns for cell ID remapping.
+    copy_data : bool, optional
+        If ``True``, operate on a deep copy of ``sdata`` and return it.
+        Otherwise modify in place and return ``None``. Defaults to ``False``.
+
+    Returns
+    -------
+    spatialdata.SpatialData or None
+        Converted SpatialData object if ``copy_data=True``; otherwise ``None``.
+
+    Raises
+    ------
+    ValueError
+        If ``sdata.table.obs`` does not contain a ``"fov"`` column required for
+        cell ID remapping.
+    """
     sdata_out = copy.deepcopy(sdata) if copy_data else sdata
     # 1) stitch
     img_da = process_image_data(sdata_out)
@@ -256,8 +304,6 @@ def cosmx_converter(sdata: sd.SpatialData, copy_data: bool = False) -> sd.Spatia
     # 7) shapes + metadata
     sdata_out["shapes"] = sd.to_polygons(sdata_out.labels["labels"])
     sdata_out["shapes"].index = sdata_out["shapes"].index.astype(int)
-
-    # format data
 
     sdata_out["table"].obs["region"] = "shapes"
     original_table = sdata_out["table"].copy()

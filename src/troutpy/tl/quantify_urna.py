@@ -1,22 +1,24 @@
+import anndata as ad
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import polars as pl
 import scanpy as sc
-import scipy.stats as stats
-import spatialdata as sd
-import squidpy as sq
-from sainsc import LazyKDE
+from scipy import stats
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import euclidean
 from scipy.stats import poisson, spearmanr
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 from spatialdata import SpatialData
+from spatialdata.models import TableModel
+from statsmodels.stats.multitest import multipletests
 from tqdm import tqdm
 
 
 def spatial_variability(
     sdata: SpatialData,
-    coord_keys: list = None,  # type: ignore
+    coord_keys: list[str] | None = None,
     gene_key: str = "gene",
     n_neighbors: int = 10,
     kde_resolution: int = 1000,
@@ -25,74 +27,81 @@ def spatial_variability(
     method: str = "moran",
     copy: bool = False,
 ):
-    """
-    Computes spatial variability of extracellular RNA using Moran's I.
+    """Compute spatial variability of extracellular RNA using Moran's I (or another autocorrelation statistic).
+
+    Extracellular transcripts are binned onto a spatial grid with ``LazyKDE``, and
+    spatial autocorrelation is computed per gene on the resulting grid using
+    :mod:`squidpy`. Results are stored in ``sdata["xrna_metadata"].var``.
 
     Parameters
     ----------
-    sdata
-        The spatial transcriptomics dataset in SpatialData format.
-    coord_keys
-        The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    gene_key
-        The key for gene identifiers in the dataset (default: 'gene').
-    n_neighbors
-        Number of neighbors to use for computing spatial neighbors (default: 10).
-    kde_resolution
-        The kde_resolution for kernel density estimation (default: 1000).
-    square_size
-        The square_size for kernel density estimation (default: 20).
-    n_threads
-        The number of threads for LazyKDE processing (default: 1).
-    method
-        The mode for spatial autocorrelation computation (default: "moran").
+    sdata : spatialdata.SpatialData
+        SpatialData object with a ``"transcripts"`` points layer containing
+        ``coord_keys``, ``"extracellular"``, and ``gene_key`` columns.
+    coord_keys : list of str, optional
+        Spatial coordinate column names. Defaults to ``["x", "y"]``.
+    gene_key : str, optional
+        Column in the transcript layer with gene identifiers. Defaults to ``"gene"``.
+    n_neighbors : int, optional
+        Number of neighbors used to build the spatial neighbor graph. Defaults to ``10``.
+    kde_resolution : int, optional
+        Grid resolution passed to ``LazyKDE``. Defaults to ``1000``.
+    square_size : int, optional
+        Bin size (in coordinate units) for the KDE grid. Defaults to ``20``.
+    n_threads : int, optional
+        Number of threads for LazyKDE processing. Defaults to ``1``.
+    method : str, optional
+        Spatial autocorrelation statistic passed to
+        :func:`squidpy.gr.spatial_autocorr`. Defaults to ``"moran"``.
+    copy : bool, optional
+        If ``True``, return the updated SpatialData object; otherwise modify in
+        place and return ``None``. Defaults to ``False``.
 
     Returns
     -------
-    sdata: spatialdata.SpatialData
-        Sdata containing Moran's I values for each gene, indexed by gene names.
-
+    spatialdata.SpatialData or None
+        Updated SpatialData with ``f"{method}_*"`` columns added to
+        ``sdata["xrna_metadata"].var`` if ``copy=True``; otherwise ``None``.
     """
+    try:
+        from sainsc import LazyKDE
+    except ImportError as err:
+        raise ImportError("The 'sainsc' package is required for spatial_variability. Please install it with: pip install troutpy[spatial-stats]") from err
+    try:
+        import squidpy as sq
+    except ImportError as err:
+        raise ImportError("The 'squidpy' package is required for spatial_variability. Please install it with: pip install troutpy[spatial-stats]") from err
+
     if coord_keys is None:
         coord_keys = ["x", "y"]
 
-    # Step 1: Extract and preprocess data
+    # Extract extracellular transcripts and bin them onto a spatial grid
     data = sdata.points["transcripts"][coord_keys + ["extracellular", gene_key]].compute()
     data = data[data["extracellular"]]
     data[gene_key] = data[gene_key].astype(str)
+    data.columns = ["x", "y", "extracellular", "gene"]
 
-    # Rename columns for clarity
-    newnames = ["x", "y", "extracellular", "gene"]
-    data.columns = newnames
-
-    # Convert to Polars DataFrame for LazyKDE processing
     trans = pl.from_pandas(data)
-
-    # Step 2: Compute kernel density estimates
     embryo = LazyKDE.from_dataframe(trans, resolution=kde_resolution, binsize=square_size, n_threads=n_threads)
 
-    # Step 3: Extract counts for all genes
+    # Extract per-gene counts on the grid
     expr = embryo.counts.get(embryo.counts.genes()[0]).todense()
     allres = np.zeros([expr.size, len(embryo.counts.genes())])
 
     for n, gene in enumerate(tqdm(embryo.counts.genes(), desc="Extracting gene counts")):
         allres[:, n] = embryo.counts.get(gene).todense().flatten()
 
-    # Create spatial grid coordinates
     x_coords, y_coords = np.meshgrid(np.arange(expr.shape[1]), np.arange(expr.shape[0]))
 
-    # Step 4: Create AnnData object
     adata = sc.AnnData(allres)
     adata.var.index = embryo.counts.genes()
     adata.obs["x"] = x_coords.flatten()
     adata.obs["y"] = y_coords.flatten()
     adata.obsm["spatial"] = np.array(adata.obs.loc[:, ["x", "y"]])
 
-    # Step 5: Compute spatial neighbors and Moran's I
     sq.gr.spatial_neighbors(adata, n_neighs=n_neighbors)
     sq.gr.spatial_autocorr(adata, mode=method, genes=adata.var_names)
 
-    # Extract Moran's I values
     svg_df = pd.DataFrame(adata.uns["moranI"])
     svg_df.columns = [method + "_" + str(g) for g in svg_df.columns]
     try:
@@ -110,49 +119,51 @@ def spatial_variability(
 
 
 def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_key: str = "gene", copy: bool = False) -> SpatialData | None:
-    """
-    Creates a new table within the SpatialData object that contains a 'gene' column with the unique gene names extracted from the specified points layer.
+    """Create the ``"xrna_metadata"`` table holding the unique genes found in a transcripts layer.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata : spatialdata.SpatialData
         The SpatialData object to modify.
-    layer: str
-        The name of the layer in `sdata.points` from which to extract gene names. Default is 'transcripts'.
-    gene_key: str
-        The key in the `layer` dataframe that contains the gene names.Default is 'gene'.
-    copy
-        If `True`, returns a copy of the `spatialdata.SpatialData` object with the new table added.
+    layer : str, optional
+        Layer in ``sdata.points`` from which to extract gene names. Defaults to
+        ``"transcripts"``.
+    gene_key : str, optional
+        Column in ``sdata.points[layer]`` that contains the gene names. Defaults to
+        ``"gene"``.
+    copy : bool, optional
+        If ``True``, return a copy of the modified SpatialData object. Defaults to
+        ``False``.
 
     Returns
     -------
-    SpatialData | None
-        If `copy` is `True`, returns a copy of the modified `spatialdata.SpatialData` object. Otherwise, returns `None`.
+    spatialdata.SpatialData or None
+        A copy of the modified SpatialData object if ``copy=True``; otherwise
+        ``sdata`` is modified in place (a new ``"xrna_metadata"`` table is added)
+        and ``None`` is returned.
+
+    Raises
+    ------
+    ValueError
+        If ``layer`` is not in ``sdata.points``, or if ``gene_key`` is not a column
+        of ``sdata.points[layer]``.
     """
-    # Check if the specified points layer exists
     if layer not in sdata.points:
         raise ValueError(f"Points layer '{layer}' not found in sdata.points.")
 
-    # Extract unique gene names from the specified points layer
     points_data = sdata.points[layer]
     if gene_key not in points_data.columns:
         raise ValueError(f"The specified points layer '{layer}' does not contain a '{gene_key}' column.")
 
     unique_genes = points_data[gene_key].compute().unique().astype(str)
-
-    # Create a DataFrame for unique genes
     gene_metadata = pd.DataFrame(index=unique_genes)
 
-    # Convert to AnnData and then to SpatialData table model
     exrna_adata = sc.AnnData(var=gene_metadata)
-    metadata_table = sd.models.TableModel.parse(exrna_adata)
-
-    # Add the new table to the SpatialData object
+    metadata_table = TableModel.parse(exrna_adata)
     sdata.tables["xrna_metadata"] = metadata_table
 
     print(f"Added 'xrna_metadata' table with {len(unique_genes)} unique genes to the SpatialData object.")
 
-    # Return copy or modify in place
     return sdata if copy else None
 
 
@@ -162,91 +173,121 @@ def quantify_overexpression(
     control_codewords: list,
     gene_key: str = "gene",
     layer: str = "transcripts",
-    percentile_threshold: float = 100,
-    copy=False,
+    copy: bool = False,
 ) -> SpatialData:
-    """Compare counts per gene with counts per non-gene feature. Additionally, perform a Poisson test to check if gene extracellular expression is significantly higher than controls."""
-    # Compute the data
-    data = sdata.points[layer][np.unique(["extracellular", codeword_key, gene_key]).tolist()].compute()
+    """Quantify gene overexpression relative to a Poisson noise model derived from control codewords.
 
-    # Ensure control_codewords is a list
+    For each gene, computes the observed count, log fold-change over the noise
+    baseline (mean control count), a one-sided Poisson survival-function p-value,
+    and Benjamini–Hochberg FDR correction. Results are stored in
+    ``sdata["xrna_metadata"].var``.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        SpatialData object containing a points layer with transcripts and an
+        ``"xrna_metadata"`` table (created if absent).
+    codeword_key : str
+        Column in the transcript points layer that holds the codeword category
+        used to identify control probes.
+    control_codewords : list of str
+        Codeword category values that identify control (noise) probes.
+    gene_key : str, optional
+        Column in the transcript points layer containing gene identifiers.
+        Defaults to ``"gene"``.
+    layer : str, optional
+        Key in ``sdata.points`` holding the transcript data. Defaults to ``"transcripts"``.
+    copy : bool, optional
+        If ``True``, return the updated SpatialData object; otherwise modify in
+        place and return ``None``. Defaults to ``False``.
+
+    Returns
+    -------
+    spatialdata.SpatialData or None
+        Updated SpatialData with columns ``"count"``, ``"logfoldchange_over_noise"``,
+        ``"p_val_noise"``, ``"is_control"``, and ``"fdr_noise"`` added to
+        ``sdata["xrna_metadata"].var`` if ``copy=True``; otherwise ``None``.
+    """
+    data = sdata.points[layer][np.unique([codeword_key, gene_key]).tolist()].compute()
+
     if isinstance(control_codewords, str):
         control_codewords = [control_codewords]
 
-    # Get counts per control feature
-    is_control = list(data[codeword_key].isin(control_codewords))
-    control_data = data[data[codeword_key].isin(control_codewords)]
-    # gene_data = data[~data[codeword_key].isin(control_codewords)]
+    # Map each gene to whether it is a control probe
+    is_control_mask = data[codeword_key].isin(control_codewords)
+    n2c = dict(zip(data[gene_key], is_control_mask, strict=False))
+    gene_counts = data[gene_key].value_counts()
 
-    control_counts = control_data[gene_key].value_counts()
-    gene_counts = data[gene_key].value_counts()  # we include all because we will test for all
-    n2c = dict(zip(data[gene_key], is_control, strict=False))
-    bool_control = []
-    for g in gene_counts.keys():
-        try:
-            bool_control.append(n2c[g])
-        except KeyError:
-            bool_control.append(True)
+    # Noise baseline (lambda) from control probe counts
+    control_obs = [gene_counts[g] for g in gene_counts.index if n2c.get(g, True)]
+    lambda_noise = np.mean(control_obs) if control_obs else 1e-6
 
-    # Compute percentile-based threshold
-    threshold = np.percentile(control_counts.values, percentile_threshold)
+    results = []
+    for g, count in gene_counts.items():
+        # p = P(Noise >= observed_count)
+        p_val = poisson.sf(count - 1, lambda_noise)
 
-    # Calculate log fold ratio
-    scores_per_gene = pd.DataFrame({"count": gene_counts, "logfoldratio_over_noise": np.log(gene_counts / threshold), "control_probe": bool_control})
+        # Log fold change over noise, with a pseudocount of 1 to avoid log(0)
+        lfc = np.log((count + 1) / (lambda_noise + 1))
 
-    # Perform Poisson test
-    p_values = {}
-    control_mean = np.mean(control_counts.values)  # Expected background noise
-    for gene in gene_counts.index:
-        observed_count = gene_counts[gene]
-        p_value = 1 - poisson.cdf(observed_count - 1, control_mean)  # One-tailed test
-        p_values[gene] = p_value
+        results.append(
+            {
+                "gene": g,
+                "count": count,
+                "logfoldchange_over_noise": lfc,
+                "p_val_noise": p_val,
+                "is_control": n2c.get(g, True),
+            }
+        )
 
-    scores_per_gene["p_value_Poisson"] = scores_per_gene.index.map(p_values)
+    scores_df = pd.DataFrame(results).set_index("gene")
 
-    # Store results in xrna_metadata
-    try:
-        sdata["xrna_metadata"]
-    except KeyError:
-        create_urna_metadata(sdata, layer=layer,gene_key=gene_key)
+    _, fdr_adj, _, _ = multipletests(scores_df["p_val_noise"], method="fdr_bh")
+    scores_df["fdr_noise"] = fdr_adj
 
-    # select columns that will be overwritten
+    if "xrna_metadata" not in sdata:
+        var_df = pd.DataFrame(index=gene_counts.index)
+        sdata["xrna_metadata"] = TableModel.parse(ad.AnnData(None, var=var_df))
+
     existing_cols = sdata["xrna_metadata"].var.columns
-    for col in scores_per_gene.columns:
+    for col in scores_df.columns:
         if col in existing_cols:
             sdata["xrna_metadata"].var.drop(columns=[col], inplace=True)
 
-    sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(scores_per_gene)
+    sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(scores_df)
 
     return sdata if copy else None
 
 
-def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: bool = False,layer:str='transcripts'):
-    """
-    Computes the proportion of transcripts classified as extracellular or intracellular for each gene and calculates additional metrics, including log fold change of extracellular to intracellular proportions. The results are integrated into the `sdata` object under the 'xrna_metadata' layer.
+def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: bool = False, layer: str = "transcripts") -> SpatialData | None:
+    """Compute the proportion of extracellular vs. intracellular transcripts per gene.
+
+    For each gene, calculates the proportion of transcripts classified as extracellular
+    and intracellular, the fold ratio between the two, and its log fold change. Results
+    are stored as new columns in ``sdata["xrna_metadata"].var``.
 
     Parameters
     ----------
     sdata
-        An spatialData object containing spatial transcriptomics data. The `points` attribute should include a 'transcripts' DataFrame with columns for gene IDs (specified by `gene_key`) and a boolean 'extracellular' column indicating whether each transcript is classified as extracellular.
+        SpatialData object. ``sdata.points[layer]`` must contain a gene identifier column
+        (``gene_key``) and a boolean ``extracellular`` column.
     gene_key
-        The name of the column in the 'transcripts' DataFrame containing gene identifiers. Defaults to 'gene'.
+        Column in ``sdata.points[layer]`` containing gene identifiers.
     copy
-        Whether to return a modified copy of the input `sdata` object. If `False`, the input object is modified in place. Defaults to `False`.
+        If `True`, return a modified copy of `sdata`. Otherwise modify in place.
+    layer
+        Key of the points element in `sdata` containing the transcripts.
 
     Returns
     -------
-    If `copy=True`, returns a modified copy of the input `sdata` object with updated metadata. Otherwise, modifies `sdata` in place and returns `None`.
+    If `copy=True`, a modified copy of `sdata`. Otherwise `None`, modifying `sdata` in place.
 
     Notes
     -----
-    - The function assumes that the `sdata` object has a 'points' layer containing a 'transcripts' DataFrame.
-    - If the 'xrna_metadata' attribute does not exist in `sdata`, it will be created using the `create_urna_metadata` function.
+    If ``sdata["xrna_metadata"]`` does not exist, it is created via :func:`create_urna_metadata`.
     """
-    # Extract and compute the required data
     data = sdata.points[layer][[gene_key, "extracellular"]].compute()
 
-    # Create a crosstab to count occurrences of intracellular and extracellular transcripts
     feature_inout = pd.crosstab(data[gene_key], data["extracellular"])
     norm_counts = feature_inout.div(feature_inout.sum(axis=0), axis=1)
     norm_counts["extracellular_foldratio"] = norm_counts[False] / norm_counts[True]
@@ -255,18 +296,15 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: b
     extracellular_proportion.columns = extracellular_proportion.columns.map({True: "extracellular_proportion", False: "intracellular_proportion"})
     extracellular_proportion["logfoldratio_extracellular"] = np.log(norm_counts["extracellular_foldratio"])
 
-    # Ensure the 'xrna_metadata' attribute exists
     try:
         sdata["xrna_metadata"]
     except KeyError:
-         create_urna_metadata(sdata, layer=layer,gene_key=gene_key)
+        create_urna_metadata(sdata, layer=layer, gene_key=gene_key)
 
-    # select columns that will be overwritten
     existing_cols = sdata["xrna_metadata"].var.columns
     for col in extracellular_proportion.columns:
         if col in existing_cols:
             sdata["xrna_metadata"].var.drop(columns=[col], inplace=True)
-    # Join the results to the metadata
     sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(extracellular_proportion)
 
     return sdata if copy else None
@@ -274,7 +312,7 @@ def extracellular_enrichment(sdata: SpatialData, gene_key: str = "gene", copy: b
 
 def spatial_colocalization(
     sdata: SpatialData,
-    coord_keys: list = None,
+    coord_keys: list[str] | None = None,
     gene_key: str = "gene",
     resolution: int = 1000,
     square_size: int = 20,
@@ -282,78 +320,76 @@ def spatial_colocalization(
     threshold_colocalized: int = 1,
     copy: bool = False,
 ):
-    """
-    Computes spatial variability of extracellular RNA using Moran's I.
+    """Compute the proportion of spatially colocalized extracellular transcripts per gene.
+
+    Uses kernel density estimation (LazyKDE) to bin transcripts into a spatial grid,
+    then calculates for each gene the fraction of bins whose count exceeds
+    ``threshold_colocalized``. Results are stored in
+    ``sdata["xrna_metadata"].var["proportion_of_colocalized"]``.
 
     Parameters
     ----------
-    sdata
-        The spatial transcriptomics dataset in SpatialData format.
-    coord_keys
-        The keys for spatial coordinates in the dataset (default: ['x', 'y']).
-    gene_key
-        The key for gene identifiers in the dataset (default: 'gene').
-    n_neighbors
-        Number of neighbors to use for computing spatial neighbors (default: 10).
-    resolution
-        The resolution for kernel density estimation (default: 1000).
-    square_size
-        The square_size for kernel density estimation (default: 20).
-    n_threads
-        The number of threads for LazyKDE processing (default: 1).
-    method
-        The mode for spatial autocorrelation computation (default: "moran").
-    threshold_colocalized
-        Minimum expression of two genes to consider them as colocalized if expressed together
+    sdata : spatialdata.SpatialData
+        SpatialData object with a ``"transcripts"`` points layer containing
+        ``"extracellular"`` and ``gene_key`` columns, and an ``"xrna_metadata"``
+        table (created automatically if absent).
+    coord_keys : list of str, optional
+        Spatial coordinate column names. Defaults to ``["x", "y"]``.
+    gene_key : str, optional
+        Column in the transcript layer with gene identifiers. Defaults to ``"gene"``.
+    resolution : int, optional
+        Grid resolution passed to ``LazyKDE``. Defaults to ``1000``.
+    square_size : int, optional
+        Bin size (in coordinate units) for the KDE grid. Defaults to ``20``.
+    n_threads : int, optional
+        Number of threads for LazyKDE processing. Defaults to ``1``.
+    threshold_colocalized : int, optional
+        Minimum per-bin count for a bin to be considered colocalized.
+        Defaults to ``1``.
+    copy : bool, optional
+        If ``True``, return the updated SpatialData object; otherwise modify in
+        place and return ``None``. Defaults to ``False``.
 
     Returns
     -------
-    sdata: spatialdata.SpatialData
-        A spatialdata object containing Moran's I values for each gene, in sdata.xrna_metadata.var, indexed by gene names.
-
+    spatialdata.SpatialData or None
+        Updated SpatialData with ``"proportion_of_colocalized"`` added to
+        ``sdata["xrna_metadata"].var`` if ``copy=True``; otherwise ``None``.
     """
-    # reassing coords
+    try:
+        from sainsc import LazyKDE
+    except ImportError as err:
+        raise ImportError("The 'sainsc' package is required for spatial_colocalization. Please install it with: pip install troutpy[spatial-stats]") from err
+
     if coord_keys is None:
         coord_keys = ["x", "y"]
 
-    # Step 1: Extract and preprocess data
     data = sdata.points["transcripts"][coord_keys + ["extracellular", gene_key]].compute()
     data = data[data["extracellular"]]
     data[gene_key] = data[gene_key].astype(str)
+    data.columns = ["x", "y", "extracellular", "gene"]
 
-    # Rename columns for clarity
-    newnames = ["x", "y", "extracellular", "gene"]
-    data.columns = newnames
-
-    # Convert to Polars DataFrame for LazyKDE processing
     trans = pl.from_pandas(data)
-
-    # Step 2: Compute kernel density estimates
     embryo = LazyKDE.from_dataframe(trans, resolution=resolution, binsize=square_size, n_threads=n_threads)
 
-    # Step 3: Extract counts for all genes
     expr = embryo.counts.get(embryo.counts.genes()[0]).todense()
     allres = np.zeros([expr.size, len(embryo.counts.genes())])
 
     for n, gene in enumerate(tqdm(embryo.counts.genes(), desc="Extracting gene counts")):
         allres[:, n] = embryo.counts.get(gene).todense().flatten()
 
-    # Create spatial grid coordinates
     x_coords, y_coords = np.meshgrid(np.arange(expr.shape[1]), np.arange(expr.shape[0]))
 
-    # Step 4: Create AnnData object
     adata = sc.AnnData(allres)
     adata.var.index = embryo.counts.genes()
     adata.obs["x"] = x_coords.flatten()
     adata.obs["y"] = y_coords.flatten()
     adata.obsm["spatial"] = np.array(adata.obs.loc[:, ["x", "y"]])
 
-    # Calculate positive and colocalized counts for each gene
-    positive_counts = np.sum(adata.X > 0, axis=0)  # Count non-zero (positive) values per gene
-    colocalized_counts = np.sum(adata.X > threshold_colocalized, axis=0)  # Colocalized counts per gene
-    # Calculate the proportion of colocalized transcripts
-    proportions = np.divide(colocalized_counts, positive_counts, where=(positive_counts > 0))  # Avoid div by zero
-    # Create the result DataFrame
+    # Proportion of gene-positive bins that exceed the colocalization threshold
+    positive_counts = np.sum(adata.X > 0, axis=0)
+    colocalized_counts = np.sum(adata.X > threshold_colocalized, axis=0)
+    proportions = np.divide(colocalized_counts, positive_counts, where=(positive_counts > 0))
     coloc = pd.DataFrame(data=proportions, index=adata.var.index, columns=["proportion_of_colocalized"])
     for column in coloc.columns:
         if column in sdata["xrna_metadata"].var.columns:
@@ -365,28 +401,36 @@ def spatial_colocalization(
 
 
 def in_out_correlation(
-    sdata, extracellular_layer: str = "segmentation_free_table", cellular_layer: str = "table", n_neighbors: int = 5, copy: bool | None = None
-):
-    """Computes the correlation between intracellular and extracellular gene expressionusing k-nearest extracellular bins.
+    sdata: SpatialData,
+    extracellular_layer: str = "segmentation_free_table",
+    cellular_layer: str = "table",
+    n_neighbors: int = 5,
+    copy: bool | None = None,
+) -> SpatialData | None:
+    """Compute the correlation between intracellular and extracellular gene expression.
+
+    For each cell, extracellular expression is aggregated as the mean over its
+    `n_neighbors` nearest extracellular bins, then correlated (Spearman) against
+    the cell's intracellular expression for each shared gene. Results are stored
+    in ``sdata["xrna_metadata"].var["in_out_spearmanR"]`` and
+    ``sdata["xrna_metadata"].var["in_out_pvalue"]``.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
-        A SpatialData object containing both extracellular and cellular AnnData objects.
-
-    extracellular_layer : str
-        Key for the extracellular AnnData object in sdata.
-
-    cellular_layer : str
-        Key for the cellular AnnData object in sdata.
-
-    n_neighbors : int
-        Number of nearest extracellular bins to consider for aggregation.
+    sdata
+        SpatialData object containing both the extracellular and cellular AnnData tables.
+    extracellular_layer
+        Key of the extracellular AnnData table in `sdata`.
+    cellular_layer
+        Key of the cellular AnnData table in `sdata`.
+    n_neighbors
+        Number of nearest extracellular bins to aggregate per cell.
+    copy
+        If `True`, return a modified copy of `sdata`. Otherwise modify in place.
 
     Returns
     -------
-    correlation_results : pandas.DataFrame
-        A DataFrame containing correlation values for each gene, with gene names as the indexand columns ['SpearmanR', 'PValue'].
+    If `copy=True`, a modified copy of `sdata`. Otherwise `None`, modifying `sdata` in place.
     """
     try:
         adata_extracellular = sdata[extracellular_layer]
@@ -396,45 +440,32 @@ def in_out_correlation(
         )
     adata_cellular = sdata[cellular_layer]
 
-    # Extract spatial coordinates
     coords_cellular = adata_cellular.obsm["spatial"]
     coords_extracellular = adata_extracellular.obsm["spatial"]
 
-    # Match genes present in both datasets and reindex
     shared_genes = adata_cellular.var_names.intersection(adata_extracellular.var_names)
     adata_cellular = adata_cellular[:, shared_genes]
     adata_extracellular = adata_extracellular[:, shared_genes]
 
-    # Build KDTree for fast nearest-neighbor lookup
     extracellular_tree = cKDTree(coords_extracellular)
-
-    # Find k-nearest extracellular bins for each cell
     _, nearest_indices = extracellular_tree.query(coords_cellular, k=n_neighbors)
 
-    # Extract gene expression matrices
-    expr_cellular = adata_cellular.X  # (cells × genes)
-    expr_extracellular = adata_extracellular.X  # (bins × genes)
+    expr_cellular = adata_cellular.X
+    expr_extracellular = adata_extracellular.X
 
-    # Ensure we're working with dense matrices (if sparse)
     if not isinstance(expr_cellular, np.ndarray):
         expr_cellular = expr_cellular.toarray()
     if not isinstance(expr_extracellular, np.ndarray):
         expr_extracellular = expr_extracellular.toarray()
 
-    # Aggregate extracellular expression for each cell (mean of k-nearest bins)
-    aggregated_extracellular = np.array(
-        [expr_extracellular[nearest_indices[i]].mean(axis=0) for i in range(expr_cellular.shape[0])]
-    )  # Shape: (cells × genes)
+    aggregated_extracellular = np.array([expr_extracellular[nearest_indices[i]].mean(axis=0) for i in range(expr_cellular.shape[0])])
 
-    # Compute correlation for each gene
     correlations = []
-
     for i, gene in enumerate(shared_genes):
-        # Get expression values for this gene
         cell_expr = expr_cellular[:, i]
         ext_expr = aggregated_extracellular[:, i]
 
-        # Compute Spearman correlation (skip if all-zero)
+        # Skip the Spearman test for genes with no expression on either side
         if np.any(cell_expr) and np.any(ext_expr):
             corr, pval = spearmanr(cell_expr, ext_expr)
         else:
@@ -442,155 +473,201 @@ def in_out_correlation(
 
         correlations.append([gene, corr, pval])
 
-    # Convert results into a DataFrame
     correlation_results = pd.DataFrame(correlations, columns=["Gene", "SpearmanR", "PValue"])
     correlation_results.set_index("Gene", inplace=True)
 
     gene2spearman = dict(zip(correlation_results.index, correlation_results["SpearmanR"], strict=False))
-    gene2pval = dict(zip(correlation_results.index, correlation_results["PValue"], strict=False))  # type: ignore
+    gene2pval = dict(zip(correlation_results.index, correlation_results["PValue"], strict=False))
     try:
         sdata["xrna_metadata"]
     except KeyError:
-        create_urna_metadata(sdata,gene_key=gene_key)
+        create_urna_metadata(sdata)
     sdata["xrna_metadata"].var["in_out_spearmanR"] = sdata["xrna_metadata"].var.index.map(gene2spearman)
     sdata["xrna_metadata"].var["in_out_pvalue"] = sdata["xrna_metadata"].var.index.map(gene2pval)
 
     return sdata if copy else None
 
 
-def assess_diffusion(sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", copy: bool = False):
-    """
-    Computes goodness-of-fit metrics for the diffusion pattern of unassigned RNA by testing against a Rayleigh distribution. Also estimates the diffusion coefficient (D) based on the mean squared displacement (MSD).
+def assess_diffusion(
+    sdata: SpatialData,
+    gene_key: str = "gene",
+    distance_key: str = "distance_to_source",
+    filters: dict | None = None,
+    min_transcripts: int = 15,
+    copy: bool = False,
+):
+    """Fit a 2D Rayleigh diffusion model to transcript distances from their source cell.
+
+    For each gene, fits a Rayleigh distribution to the distances of its transcripts
+    from their assigned source cell (``sdata["source_score"].obs[distance_key]``) and
+    evaluates the fit against the empirical distribution. Results are stored as new
+    columns in ``sdata["xrna_metadata"].var``.
 
     Parameters
     ----------
-        sdata: spatialdata.SpatialData
-            The spatial transcriptomics dataset.
-        gene_key: str
-            The key for gene/transcript names in source_score.obs.
-        distance_key: str
-            The key for RNA displacement distances.
-        copy: bool
-            Whether to return a modified copy of sdata.
+    sdata
+        SpatialData object with ``"source_score"`` and ``"transcripts"`` tables.
+    gene_key
+        Column in ``sdata["source_score"].obs`` containing gene identifiers.
+    distance_key
+        Column in ``sdata["source_score"].obs`` containing the distance of each
+        transcript from its source cell.
+    filters
+        Optional filters applied to ``sdata["transcripts"]`` before matching against
+        `source_score`. Each entry maps a column name to either a value to match, or a
+        `(value, False)` tuple to exclude transcripts equal to that value, e.g.
+        ``{"extracellular": True, "enrichment_class": ("High Density", False)}``.
+    min_transcripts
+        Minimum number of transcripts required for a gene to be fitted.
+    copy
+        If `True`, return a modified copy of `sdata`. Otherwise modify in place.
 
     Returns
     -------
-        If copy=True, returns a modified SpatialData object with results in sdata['xrna_metadata']. Otherwise, modifies sdata in place.
+    If `copy=True`, a modified copy of `sdata`. Otherwise `None`, modifying `sdata` in place.
+
+    Notes
+    -----
+    Adds the columns ``ks_stat``, ``ks_pval``, ``lr_stat``, ``mean_displacement``,
+    ``n_transcripts``, ``sigma_est`` and ``-log_ks_pval`` to
+    ``sdata["xrna_metadata"].var`` for genes that pass `min_transcripts`.
     """
+    if "source_score" not in sdata or "transcripts" not in sdata:
+        raise KeyError("Required tables 'source_score' or 'transcripts' missing from sdata.")
+
+    filter_cols = list(filters.keys()) if filters else []
+    print("--- Diffusion Analysis Debug ---")
+    print(f"Initial transcripts: {len(sdata['transcripts'])}")
+
+    t_df_subset = sdata["transcripts"][filter_cols].compute()
+
+    valid_mask = np.ones(len(t_df_subset), dtype=bool)
+    if filters:
+        for col, criterion in filters.items():
+            if isinstance(criterion, tuple) and len(criterion) == 2 and criterion[1] is False:
+                valid_mask &= t_df_subset[col] != criterion[0]
+            else:
+                valid_mask &= t_df_subset[col] == criterion
+
+    # Cast to string so transcript IDs match source_score's index dtype
+    valid_ids = t_df_subset.index[valid_mask].astype(str)
+    print(f"Transcripts passing filters: {len(valid_ids)}")
+
+    source_obs = sdata["source_score"].obs
+    if hasattr(source_obs, "compute"):
+        source_obs = source_obs.compute()
+    source_obs.index = source_obs.index.astype(str)
+
+    shared_ids = source_obs.index.intersection(valid_ids)
+    print(f"Transcripts shared with source_score: {len(shared_ids)}")
+
+    if len(shared_ids) == 0:
+        print("RESULT: No transcripts matching criteria. Check filter stringency or column names.")
+        return sdata if copy else None
+
+    filtered_obs = source_obs.loc[shared_ids]
     results = []
 
-    if "source_score" not in sdata:
-        KeyError("Source_score info not found. Please calculate source cells.")
-
-    for gene, group in sdata["source_score"].obs.groupby(gene_key):
+    for gene, group in filtered_obs.groupby(gene_key):
         distances = group[distance_key].dropna().values
-        if len(distances) < 10 or np.sum(distances) == 0:
-            continue  # Skip genes with very few extracellular transcripts
 
-        # Fit a Rayleigh distribution
-        param = stats.rayleigh.fit(distances)
-        # fitted_cdf = stats.rayleigh.cdf(np.sort(distances), *param)
+        if len(distances) < min_transcripts:
+            continue
 
-        # Goodness-of-Fit Tests
-        ks_stat, ks_pval = stats.kstest(distances, "rayleigh", args=param)
-        ad_stat, _, _ = stats.anderson(distances, dist="expon")
+        try:
+            # Rayleigh is the physical model for 2D diffusion from a point source
+            param = stats.rayleigh.fit(distances)
+            ks_stat, ks_pval = stats.kstest(distances, "rayleigh", args=param)
 
-        # Likelihood Ratio Test
-        log_likelihood_rayleigh = np.sum(stats.rayleigh.logpdf(distances, *param))
-        log_likelihood_empirical = np.sum(stats.gaussian_kde(distances).logpdf(distances))
-        lr_stat = -2 * (log_likelihood_rayleigh - log_likelihood_empirical)
+            # Likelihood ratio of the Rayleigh fit vs. a kernel density estimate
+            log_likelihood_ray = np.sum(stats.rayleigh.logpdf(distances, *param))
+            log_likelihood_emp = np.sum(stats.gaussian_kde(distances).logpdf(distances))
+            lr_stat = -2 * (log_likelihood_ray - log_likelihood_emp)
 
-        # Estimate Diffusion Coefficient (D)
-        mean_distances = np.mean(distances)
+            results.append(
+                {
+                    "gene": gene,
+                    "ks_stat": ks_stat,
+                    "ks_pval": ks_pval,
+                    "lr_stat": lr_stat,
+                    "mean_displacement": np.mean(distances),
+                    "n_transcripts": len(distances),
+                    "sigma_est": param[1],
+                }
+            )
+        except Exception:  # noqa: BLE001
+            # Skip genes that fail fitting (e.g. zero variance)
+            continue
 
-        results.append(
-            {
-                "gene": gene,
-                "ks_stat": ks_stat,
-                "ks_pval": ks_pval,
-                "ad_stat": ad_stat,
-                "lr_stat": lr_stat,
-                "mean_displacement": mean_distances,  # Add estimated diffusion coefficient
-            }
-        )
+    if not results:
+        print(f"RESULT: No genes passed the min_transcripts threshold of {min_transcripts}.")
+        return sdata if copy else None
 
-    diffusion_results = pd.DataFrame(results).set_index("gene")
-    diffusion_results["-log_ks_pval"] = list(-np.log(diffusion_results["ks_pval"].clip(lower=1e-300)))
+    diff_df = pd.DataFrame(results).set_index("gene")
+    diff_df["-log_ks_pval"] = -np.log10(diff_df["ks_pval"].clip(lower=1e-300))
 
-    # Ensure `xrna_metadata` exists in sdata
-    if "xrna_metadata" not in sdata:
-        create_urna_metadata(sdata, layer="transcripts")
+    if "xrna_metadata" in sdata:
+        if hasattr(sdata["xrna_metadata"].var, "compute"):
+            sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.compute()
 
-    for column in diffusion_results.columns:
-        if column in sdata["xrna_metadata"].var.columns:
-            sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.drop([column], axis=1)
+        existing_cols = [c for c in diff_df.columns if c in sdata["xrna_metadata"].var.columns]
+        if existing_cols:
+            sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.drop(columns=existing_cols)
 
-    # Merge results into `xrna_metadata.var`
-    sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(diffusion_results)
+        sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(diff_df)
+        print(f"SUCCESS: Statistics added for {len(diff_df)} genes.")
 
     return sdata if copy else None
 
 
 def cluster_distribution_from_source(
-    sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", n_clusters: int = 3, n_bins: int = 20, copy=False
+    sdata: SpatialData, gene_key: str = "gene", distance_key: str = "distance", n_clusters: int = 3, n_bins: int = 20, copy: bool = False
 ):
-    """Clusters genes based on the distribution of distances of extracellular transcripts from their source cell.
+    """Cluster genes by the distribution of their transcripts' distances to source cells.
 
-    For each gene in sdata['source_score'].obs, the function computes a normalized histogram (using n_bins) over the distance range. These histogram vectors are then standardized and clustered using KMeans.
+    For each gene in ``sdata["source_score"].obs``, computes a normalized histogram
+    (with `n_bins` bins) of `distance_key` values, standardizes these histogram
+    vectors, and clusters them with KMeans. Results are stored in
+    ``sdata["xrna_metadata"].var["kmeans_distribution"]``.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
-        Spatial data object containing a 'source_score' layer with an obs DataFrame.
-    gene_key : str
-        Column name that contains the gene names.
-    distance_key : str
-        Column name that contains the distance from the source cell.
-    n_clusters : int
-        Number of clusters to form.
-    n_bins : int
-        Number of bins for the histogram representation.
+    sdata
+        SpatialData object containing a `"source_score"` table with an `obs` DataFrame.
+    gene_key
+        Column in `sdata["source_score"].obs` containing gene identifiers.
+    distance_key
+        Column in `sdata["source_score"].obs` containing the distance from the source cell.
+    n_clusters
+        Number of KMeans clusters to form.
+    n_bins
+        Number of histogram bins used to represent each gene's distance distribution.
+    copy
+        If `True`, return a modified copy of `sdata`. Otherwise modify in place.
 
     Returns
     -------
-    gene_cluster_df : pandas.DataFrame
-        A DataFrame with columns 'gene' and 'cluster' indicating the cluster assignment.
-    hist_df : pandas.DataFrame
-        A DataFrame where each row is a gene and the columns are the normalized histogram counts.
-    bin_edges : numpy.ndarray
-        The bin edges used for the histograms.
+    If `copy=True`, a modified copy of `sdata`. Otherwise `None`, modifying `sdata` in place.
     """
-    # Get the observation DataFrame from the 'source_score' layer.
     obs_df = sdata["source_score"].obs
 
-    # Set common bin edges across all genes based on the global range of distances.
+    # Common bin edges across genes, assuming distances start at 0
     global_max = obs_df[distance_key].max()
-    # Assume distances start at 0.
     bin_edges = np.linspace(0, global_max, n_bins + 1)
 
     gene_hist_features = {}
-
-    # Compute a normalized histogram for each gene.
     for gene, group in obs_df.groupby(gene_key):
         distances = group[distance_key].dropna().values
         if len(distances) == 0:
             continue
         counts, _ = np.histogram(distances, bins=bin_edges)
-        # Normalize the histogram so that the sum equals 1.
         norm_counts = counts / counts.sum() if counts.sum() > 0 else counts
         gene_hist_features[gene] = norm_counts
 
-    # Create a DataFrame where rows are genes and columns represent the binned histogram.
     hist_df = pd.DataFrame.from_dict(gene_hist_features, orient="index")
-
-    # Standardize the histogram features.
-    from sklearn.preprocessing import StandardScaler
 
     scaler = StandardScaler()
     hist_scaled = scaler.fit_transform(hist_df.values)
-
-    # Cluster using KMeans.
-    from sklearn.cluster import KMeans
 
     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
     clusters = kmeans.fit_predict(hist_scaled)
@@ -599,55 +676,75 @@ def cluster_distribution_from_source(
     if "xrna_metadata" not in sdata:
         create_urna_metadata(sdata, gene_key=gene_key)
 
-    # Merge results into `xrna_metadata.var`
     sdata["xrna_metadata"].var["kmeans_distribution"] = list(sdata["xrna_metadata"].var.index.map(gene_cluster_dict))
 
     return sdata if copy else None
 
 
-def compute_js_divergence(P, Q, eps=1e-10):
-    """Compute the Jensen-Shannon divergence between two probability distributions."""
-    P, Q = P + eps, Q + eps  # Avoid division by zero
+def compute_js_divergence(P: np.ndarray, Q: np.ndarray, eps: float = 1e-10) -> float:
+    """Compute the Jensen-Shannon divergence between two probability distributions.
+
+    Parameters
+    ----------
+    P
+        First probability distribution.
+    Q
+        Second probability distribution, same shape as `P`.
+    eps
+        Small constant added to `P` and `Q` to avoid division by zero.
+
+    Returns
+    -------
+    The Jensen-Shannon divergence between `P` and `Q`.
+    """
+    P, Q = P + eps, Q + eps
     M = 0.5 * (P + Q)
     return 0.5 * (np.sum(P * np.log(P / M)) + np.sum(Q * np.log(Q / M)))
 
 
 def compare_intra_extra_distribution(
-    sdata,
+    sdata: SpatialData,
     layer: str = "transcripts",
     gene_key: str = "gene",
     copy: bool = False,
-    coord_keys: list = None,
+    coord_keys: list[str] | None = None,
     n_bins: int = 30,
-):
-    """
-    Compare the spatial distribution of intracellular and extracellular transcripts for each gene.
+) -> SpatialData | None:
+    """Compare the spatial distribution of intracellular and extracellular transcripts per gene.
+
+    For each gene, computes the centroid shift between its intracellular and
+    extracellular transcripts, and the correlation and Jensen-Shannon divergence
+    between their spatial density histograms. Results are stored in
+    ``sdata["xrna_metadata"].var``.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata
         SpatialData object containing transcript locations and metadata.
-    layer: str
-        Layer within sdata.points where transcripts are stored (default: "transcripts").
-    gene_key: str
-        Column name where the gene name is stored (default: "gene").
-    copy: bool
-        Whether to return a modified copy of sdata (default: False).
-    coord_keys: list
-        Column names containing x and y transcript positions (default: ["x", "y"]).
-    n_bins: int
-        Number of bins for the 2D histograms (default: 30).
+    layer
+        Key of the points element in `sdata` containing the transcripts.
+    gene_key
+        Column in `sdata[layer]` containing gene identifiers.
+    copy
+        If `True`, return a modified copy of `sdata`. Otherwise modify in place.
+    coord_keys
+        Column names for the x and y transcript coordinates. Defaults to `["x", "y"]`.
+    n_bins
+        Number of bins per axis for the 2D spatial density histograms.
 
     Returns
     -------
-    - If copy=True, returns a DataFrame with computed metrics.
-    - If copy=False, updates sdata["xrna_metadata"].var with the computed metrics.
+    If `copy=True`, a modified copy of `sdata`. Otherwise `None`, modifying `sdata` in place.
+
+    Notes
+    -----
+    Genes with fewer than 5 intracellular or 5 extracellular transcripts are skipped.
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]
-    transcripts_df = sdata[layer]  # Extract transcript data
+    transcripts_df = sdata[layer]
     if isinstance(transcripts_df, dd.DataFrame):
-        transcripts_df = transcripts_df.compute()  # Convert to Pandas if Dask
+        transcripts_df = transcripts_df.compute()
 
     results = []
 
@@ -655,34 +752,27 @@ def compare_intra_extra_distribution(
         intracellular = gene_transcripts[~gene_transcripts["extracellular"]]
         extracellular = gene_transcripts[gene_transcripts["extracellular"]]
 
-        # Skip genes with too few points for reliable estimation
         if intracellular.shape[0] < 5 or extracellular.shape[0] < 5:
             continue
 
-        # Compute centroids for each group
         intracellular_centroid = intracellular[coord_keys].mean().values
         extracellular_centroid = extracellular[coord_keys].mean().values
         centroid_shift_distance = euclidean(intracellular_centroid, extracellular_centroid)
 
-        # Define common histogram range
         all_coords = gene_transcripts[coord_keys].values
         x_min, y_min = np.min(all_coords, axis=0)
         x_max, y_max = np.max(all_coords, axis=0)
         range_x, range_y = (x_min, x_max), (y_min, y_max)
 
-        # Compute 2D histograms for intracellular and extracellular groups
         hist_intra, _, _ = np.histogram2d(intracellular[coord_keys[0]], intracellular[coord_keys[1]], bins=n_bins, range=[range_x, range_y])
         hist_extra, _, _ = np.histogram2d(extracellular[coord_keys[0]], extracellular[coord_keys[1]], bins=n_bins, range=[range_x, range_y])
 
-        # Normalize histograms to probability distributions
         P_intra = hist_intra / np.sum(hist_intra)
         P_extra = hist_extra / np.sum(hist_extra)
 
-        # Flatten distributions
         intra_flat = P_intra.flatten()
         extra_flat = P_extra.flatten()
 
-        # Compute correlation and divergence metrics
         spatial_density_correlation = np.corrcoef(intra_flat, extra_flat)[0, 1]
         spatial_js_divergence = compute_js_divergence(intra_flat, extra_flat)
 
@@ -697,17 +787,14 @@ def compare_intra_extra_distribution(
 
     results_df = pd.DataFrame(results).set_index(gene_key)
 
-    # Store results in sdata["xrna_metadata"] if not copying
     try:
         sdata["xrna_metadata"]
     except KeyError:
         create_urna_metadata(sdata, layer="transcripts")
 
-    # Remove existing columns before adding new ones
     for column in results_df.columns:
         if column in sdata["xrna_metadata"].var.columns:
             sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.drop(columns=[column])
 
-    # Add the new computed metrics
     sdata["xrna_metadata"].var = sdata["xrna_metadata"].var.join(results_df)
     return sdata if copy else None

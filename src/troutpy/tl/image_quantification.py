@@ -12,37 +12,48 @@ def image_intensities_per_transcript(
     extracellular: bool = False,
     copy: bool = True,
     gene_key: str = "gene",
-) -> sd.SpatialData:
-    """
-    Extracts image intensities at transcript locations and adds them as a new layer in the SpatialData object.
+) -> sd.SpatialData | None:
+    """Extract image intensities at transcript locations and store them as a new table.
 
-    Args:
-        sdata
-            The input SpatialData object.
-        image_key
-            The key for the image layer in sdata.images.
-        scale
-            The scale of the image to use.
-        transcript_key
-            The key for the transcript points in sdata.points.
-        extracellular
-            Whether to include only extracellular transcripts (default: False). If True, only transcripts where `extracellular` is True are used. If false, all transcripts are used.
-        copy
-            Whether to create a copy of the SpatialData object (default: True).
+    For each transcript, the pixel value of every channel (and z-slice, if present) of
+    ``sdata.images[image_key][scale]`` nearest to its rescaled coordinates is extracted
+    into an :class:`~anndata.AnnData` stored at ``sdata["image_intensity_per_transcript"]``.
+
+    Parameters
+    ----------
+    sdata : spatialdata.SpatialData
+        The input SpatialData object.
+    image_key : str
+        Key of the image layer in ``sdata.images``.
+    scale : str
+        Scale of the image to use (e.g. ``"scale0"``).
+    transcript_key : str
+        Key of the transcript points layer in ``sdata.points``.
+    extracellular : bool, optional
+        If ``True``, only transcripts where ``extracellular`` is ``True`` are used.
+        Otherwise all transcripts are used. Defaults to ``False``.
+    copy : bool, optional
+        If ``True``, return the modified SpatialData object. Otherwise modify ``sdata``
+        in place and return ``None``. Defaults to ``True``.
+    gene_key : str, optional
+        Column holding the gene assigned to each transcript. Defaults to ``"gene"``.
 
     Returns
     -------
-        A SpatialData object with the added 'transcripts_image_intensities' layer.  If copy=True, a new SpatialData object is returned. Otherwise, the original sdata object is modified and returned.
+    spatialdata.SpatialData or None
+        SpatialData with the added ``"image_intensity_per_transcript"`` table if
+        ``copy=True``; otherwise ``None``.
 
     Raises
     ------
-        KeyError: If the specified image or transcript key is not found in the SpatialData object.
+    KeyError
+        If ``image_key`` or ``transcript_key`` is not found in ``sdata``.
     """
     try:
-        image = sdata.images[image_key][scale]  # Image as xarray.DataArray
-        transcripts = sdata.points[transcript_key].compute()  # Transcript coordinates
+        image = sdata.images[image_key][scale]
+        transcripts = sdata.points[transcript_key].compute()
     except KeyError as e:
-        raise KeyError(f"Key not found in sdata: {e}")  # noqa: B904
+        raise KeyError(f"Key not found in sdata: {e}") from e
 
     imarray = image.image.compute()
 
@@ -62,35 +73,28 @@ def image_intensities_per_transcript(
     transcripts["y_scaled"] = (transcripts["y"] - miny) * multi_factor_y
 
     if extracellular:
-        transcripts = transcripts[transcripts["extracellular"]]  # Select extracellular transcripts
-    else:
-        transcripts = transcripts
+        transcripts = transcripts[transcripts["extracellular"]]
 
-    # Get (x, y) coordinates of transcripts
+    # nearest-pixel lookup at the rescaled transcript coordinates
     xy_positions = np.column_stack((transcripts["x_scaled"], transcripts["y_scaled"]))
     xy_positions_raw = np.column_stack((transcripts["x"], transcripts["y"]))
 
-    # Interpolate or fetch nearest pixel values
     intensities = image.sel(
         x=xr.DataArray(xy_positions[:, 0], dims="points"), y=xr.DataArray(xy_positions[:, 1], dims="points"), method="nearest"
-    )  # Use "linear" for interpolation
-
-    intensity_tab = np.zeros([len(intensities.x.values), 2])
-    intensity_tab[:, 0] = intensities.x.values
-    intensity_tab[:, 1] = intensities.y.values
+    )
 
     ad_data = intensities.image.values.transpose()
-    if ad_data.ndim == 2:  # Check if it is a 2D image
+    if ad_data.ndim == 2:
         ad = sc.AnnData(ad_data)
         ad.var.index = intensities.c.values
-    else:  # If not, assume it is a 3D image and flatten the last dimension
+    else:
+        # flatten the z-slice dimension into combined channel/z-slice names
         ad = sc.AnnData(ad_data.reshape(ad_data.shape[0], -1))
-        ad.var.index = [f"{c}_{z}" for c in intensities.c.values for z in range(ad_data.shape[2])]  # Create combined channel and z-slice names.
+        ad.var.index = [f"{c}_{z}" for c in intensities.c.values for z in range(ad_data.shape[2])]
 
-    ad.obs[gene_key] = list(transcripts[gene_key])  # Add feature names
-    ad.obsm["spatial"] = xy_positions_raw  # Add raw spatial coordinates
+    ad.obs[gene_key] = list(transcripts[gene_key])
+    ad.obsm["spatial"] = xy_positions_raw
 
-    # Add the AnnData object as a new spatial data object
     sdata["image_intensity_per_transcript"] = ad
 
     return sdata if copy else None

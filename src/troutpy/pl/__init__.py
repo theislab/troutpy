@@ -1,6 +1,6 @@
 from .basic import crosstab, histogram, pie
 from .colors import get_colormap, get_palette
-from .communication import  cell_type_contacts, gene_communication, target_score_by_celltype
+from .communication import cell_type_contacts, celltype_contact_matrix, gene_communication, target_score_by_celltype
 from .factor_analysis import factors_in_cells, rank_factor_genes_loadings, rank_factor_genes_loadings_matrixplot
 from .metric_analysis import gene_metric_heatmap, logfoldratio_over_noise, metric_scatter, top_bottom_probes
 from .plotting import (
@@ -17,5 +17,12 @@ from .plotting import (
     sorted_heatmap,
     spatial_interactions,
 )
-from .scatter import diffusion_results, spatial_inout_expression, spatial_transcripts
+from .scatter import (
+    diffusion_results,
+    point_metric_comparison,
+    spatial_inout_expression,
+    spatial_transcripts,
+    spatial_transcripts_source,
+    urna_vs_source_score,
+)
 from .source import distributions_by_cluster, gene_distribution_from_source, global_distribution_from_source, source_score_by_celltype

@@ -7,6 +7,7 @@ buck-out/
 .venv/
 __pycache__/
 .*cache/
+.ipynb_checkpoints/
 
 # Distribution / packaging
 /dist/
@@ -18,3 +19,6 @@ __pycache__/
 # docs
 /docs/generated/
 /docs/_build/
+
+# Local Claude Code notes
+/CLAUDE.md

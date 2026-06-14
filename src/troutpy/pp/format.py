@@ -21,6 +21,11 @@ def format_adata(input_path: str, outpath_dummy: str, xlimits: list, ylimits: li
     ylimits
         Spatial limits for the y-coordinate filtering [min_y, max_y].
 
+    Returns
+    -------
+    Tuple of the spatially filtered :class:`~anndata.AnnData` object and the
+    spatially filtered transcripts :class:`~pandas.DataFrame`.
+
     Raises
     ------
     FileNotFoundError
@@ -102,8 +107,6 @@ def format_adata(input_path: str, outpath_dummy: str, xlimits: list, ylimits: li
     print("Generating spatial plot...")
     sc.pl.spatial(adata_filtered, color="transcript_counts", spot_size=50)
     print("Processing complete.")
-    # selected roi
-    # selected roi
     plt.figure()
     plt.scatter(adata_filtered.obs["x_centroid"], adata_filtered.obs["y_centroid"], s=4, c="red")
     plt.scatter(transcripts_filtered["x_location"], transcripts_filtered["y_location"], s=0.0001)

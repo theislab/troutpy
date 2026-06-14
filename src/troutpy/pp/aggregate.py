@@ -1,13 +1,15 @@
+from copy import deepcopy
+
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import scanpy as sc  # Assumed available based on usage in original code
+import scanpy as sc
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import KDTree
 from shapely import linearrings, polygons
 from shapely.geometry import box
-from sklearn.neighbors import NearestNeighbors  # KDTree
+from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import OneHotEncoder
 from spatialdata import SpatialData
 from spatialdata.models import ShapesModel
@@ -15,7 +17,20 @@ from tqdm import tqdm
 
 
 def _make_squares(centroid_coordinates: np.ndarray, half_widths: list[float]) -> ShapesModel:
-    """Create square polygons based on centroid coordinates and half-widths."""
+    """Create square polygons centered at the given coordinates with the specified half-widths.
+
+    Parameters
+    ----------
+    centroid_coordinates : numpy.ndarray
+        Array of shape ``(N, 2)`` with ``[x, y]`` centroid coordinates for each square.
+    half_widths : list of float
+        Half side-length for each square, parallel to ``centroid_coordinates``.
+
+    Returns
+    -------
+    ShapesModel
+        SpatialData ShapesModel containing the ``N`` square polygons.
+    """
     linear_rings = []
     for centroid, half_width in zip(centroid_coordinates, half_widths, strict=False):
         min_coords = centroid - half_width
@@ -43,16 +58,19 @@ def create_grid_squares(sdata: SpatialData, layer: str = "transcripts", square_s
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata : SpatialData
         The spatial data object containing transcript coordinates.
-    layer: str
+    layer : str
         The key to access transcript coordinates in sdata.
-    square_size: int
+    square_size : float
         The size of each square grid cell.
 
     Returns
     -------
-    tuple: A ShapesModel containing the grid squares and an array of centroid coordinates.
+    ShapesModel
+        Grid of square polygons covering the transcript bounding box.
+    numpy.ndarray
+        Array of shape ``(N, 2)`` with the ``[x, y]`` centroid coordinates of each square.
     """
     transcripts = sdata.points[layer]
     x_min, y_min = transcripts[["x", "y"]].compute().min().values
@@ -78,8 +96,8 @@ def aggregate_urna(
     extracellular_only: bool = True,
     copy: bool = False,
     key_added: str | None = None,
-    cell_type_key: str = "leiden",  # for fragment embedding
-    embedding_enabled: bool = True,  # toggle gene embeddings
+    cell_type_key: str = "leiden",
+    embedding_enabled: bool = True,
     fragment_k: int = 5,
     fragment_dist_thresh: float = 7.0,
     fragment_sim_thresh: float = 0.5,
@@ -96,33 +114,29 @@ def aggregate_urna(
     gene_key
         Column name where the gene assigned to each transcript is stored.
     method
-        Aggregation strategy. Options: "bin", "radius", "knn", "local_maxima"
+        Aggregation strategy. Options: "bin", "radius", "knn", "fragments".
     square_size
-        Size of each square grid bin (used for "bin" and "local_maxima" methods).
+        Size of each square grid bin (used for the "bin" method).
     radius
-        Radius for aggregating neighboring transcripts (used for "radius" and "local_maxima").
+        Radius for aggregating neighboring transcripts (used for the "radius" method).
     knn_k
         Number of nearest neighbors (used for the "knn" method).
-    overlap_bin
-        (Not used in the "bin" method, but available for future updates.)
-    local_maxima_threshold
-        Minimum count threshold for a grid cell to be accepted as a local maximum.
     extracellular_only
         If True (default), only uses extracellular transcripts.
     copy
         If True, returns a new SpatialData object; otherwise, sdata is modified in place.
     key_added
         Key under which aggregated results are stored. Defaults to 'segmentation_free_table' if not provided.
-    cell_type_key: str
-        Cell type key in sdata['table'] to use for fragment embedding, if semected
-    embedding_enabled: bool
-        Wether to compute gene embeddings for the fragments method
-    fragment_k: int
-        Number of neighbors for spatial knn to be used in fragments method
-    fragment_dist_thresh: int
-        Maximum distance to be used to connect RNA fragments in the space
-    fragment_sim_thresh: float
-        Fragment similarity threshold used to connect fragments by gene expression similarity.
+    cell_type_key
+        Cell type key in sdata['table'] to use for gene embeddings (used for the "fragments" method).
+    embedding_enabled
+        Whether to compute gene embeddings for the "fragments" method.
+    fragment_k
+        Number of spatial nearest neighbors considered when linking transcripts into fragments (used for the "fragments" method).
+    fragment_dist_thresh
+        Maximum distance between transcripts to be connected into the same fragment (used for the "fragments" method).
+    fragment_sim_thresh
+        Minimum gene-embedding cosine similarity for two transcripts to be connected into the same fragment (used for the "fragments" method).
 
     Returns
     -------
@@ -136,7 +150,7 @@ def aggregate_urna(
         extracell = sdata[layer].compute() if hasattr(sdata[layer], "compute") else sdata[layer]
 
     if method == "bin":
-        # --- BIN METHOD (original version) ---
+        # --- BIN METHOD ---
         # Generate grid squares from the full transcript coordinates.
         df = sdata[layer].compute()
         x_min, x_max = df["x"].min(), df["x"].max()
@@ -262,7 +276,7 @@ def aggregate_urna(
     else:
         raise ValueError(f"Unsupported method: {method}")
 
-    return sdata.copy() if copy else None
+    return deepcopy(sdata) if copy else None
 
 
 def aggregate_fragments(df, gene_embeddings=None, k=5, dist_thresh=10.0, sim_thresh=0.5):
@@ -291,7 +305,6 @@ def aggregate_fragments(df, gene_embeddings=None, k=5, dist_thresh=10.0, sim_thr
 
     # Gene embeddings: use provided or one-hot encode
     if gene_embeddings is not None:
-        # embed_dim = len(next(iter(gene_embeddings.values())))
         embeddings = np.vstack([gene_embeddings[g] for g in df["gene"]])
     else:
         encoder = OneHotEncoder(sparse_output=False)
@@ -337,8 +350,8 @@ def compute_gene_embeddings_from_anndata(adata, cell_type_col="cell_type"):
 
     Returns
     -------
-    gene_embedding: numpy.array
-       dict mapping gene names to embedding vectors (1D np.array)
+    dict
+       Mapping from gene name to a 1D :class:`numpy.ndarray` embedding vector.
     """
     assert cell_type_col in adata.obs, f"{cell_type_col} not in adata.obs"
 
@@ -362,16 +375,19 @@ def compute_gene_embeddings_from_anndata(adata, cell_type_col="cell_type"):
 
 
 def compute_fragment_centroids(df, fragment_col="fragment_id"):
-    """
-    Compute centroids (mean x, y) of each transcript fragment.
+    """Compute the mean (x, y) centroid for each transcript fragment.
 
     Parameters
     ----------
-    - df: DataFrame with 'x', 'y', and fragment ID column (e.g., 'fragment_id')
+    df : pandas.DataFrame
+        DataFrame containing at least ``"x"``, ``"y"``, and the fragment ID column.
+    fragment_col : str, optional
+        Column name holding fragment identifiers. Defaults to ``"fragment_id"``.
 
     Returns
     -------
-    - DataFrame with one row per fragment, columns: ['fragment_id', 'x_centroid', 'y_centroid']
+    centroids : pandas.DataFrame
+        DataFrame with one row per fragment and columns
+        ``[fragment_col, "x_centroid", "y_centroid"]``.
     """
-    centroids = df.groupby(fragment_col)[["x", "y"]].mean().rename(columns={"x": "x_centroid", "y": "y_centroid"}).reset_index()
-    return centroids
+    return df.groupby(fragment_col)[["x", "y"]].mean().rename(columns={"x": "x_centroid", "y": "y_centroid"}).reset_index()

@@ -13,34 +13,47 @@ from spatialdata import SpatialData
 
 
 def sorted_heatmap(
-    celltype_by_feature,
+    celltype_by_feature: pd.DataFrame,
     output_path: str = "",
     filename: str = "Heatmap_target_cells_by_gene",
-    format="pdf",
-    cmap="viridis",
-    vmax=None,
-    save=False,
-    figsize=(10, 10),
-):
-    """
-    Plots the heatmap of target cells by gene.
+    format: str = "pdf",
+    cmap: str = "viridis",
+    vmax: float | None = None,
+    save: bool = False,
+    figsize: tuple[float, float] = (10, 10),
+) -> None:
+    """Plot a heatmap of features by cell type, sorted by each feature's dominant cell type.
 
     Parameters
     ----------
-    celltype_by_feature: pandas.DataFrame
-        DataFrame showing the fraction of each feature by cell type.
-    outpath_dummy: str
-        Path to save the output plots.
+    celltype_by_feature
+        DataFrame showing the value of each feature by cell type.
+    output_path
+        Directory in which to save the figure. A ``figures`` subdirectory is created within it.
+    filename
+        Name used for the plot title and, if `save` is `True`, the saved file.
+    format
+        File format used when saving the figure.
+    cmap
+        Colormap for the heatmap.
+    vmax
+        Maximum value for the colormap.
+    save
+        Whether to save the figure to `output_path`.
+    figsize
+        Size of the figure.
+
+    Returns
+    -------
+    None
     """
     figures_path = os.path.join(output_path, "figures")
     os.makedirs(figures_path, exist_ok=True)
 
-    # Sort by maximum feature in cell types
     max_indices = np.argmax(celltype_by_feature.values, axis=1)
     celltype_by_feature = celltype_by_feature.iloc[np.argsort(max_indices)]
     celltype_by_feature.index = celltype_by_feature.index[np.argsort(max_indices)]
 
-    # Heatmap plot
     plt.figure(figsize=figsize)
     sns.heatmap(celltype_by_feature, cmap=cmap, vmax=vmax)
     plt.ylabel(f"{celltype_by_feature.index.name}")
@@ -51,148 +64,125 @@ def sorted_heatmap(
 
 
 def coupled_scatter(
-    sdata,
-    layer="extracellular_transcripts",
+    sdata: SpatialData,
+    layer: str = "extracellular_transcripts",
     output_path: str = "",
-    transcript_group="distance_to_source_cell",
-    save=True,
-    format="pdf",
-    xcoord="x",
-    ycoord="y",
-    xcellcoord="x_centroid",
-    ycellcoord="y_centroid",
-    colormap="Blues",
-    size=2,
-    color_cells="red",
-    figsize=(10, 7),
-    vmax=None,
-):
-    """
-    Plots a scatter plot of transcript locations and cell centroids, coloring the transcripts by a specific feature (e.g., distance to the closest cell) and optionally saving the plot to a file.
+    transcript_group: str = "distance_to_source_cell",
+    save: bool = True,
+    format: str = "pdf",
+    xcoord: str = "x",
+    ycoord: str = "y",
+    xcellcoord: str = "x_centroid",
+    ycellcoord: str = "y_centroid",
+    colormap: str = "Blues",
+    size: float = 2,
+    color_cells: str = "red",
+    figsize: tuple[float, float] = (10, 7),
+    vmax: float | None = None,
+) -> None:
+    """Plot transcript locations and cell centroids, coloring transcripts by a chosen feature.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata
         A spatial data object that contains transcript and cell information.
-    layer: str
-        The key for the layer in `sdata.points` that contains transcript data (default: 'extracellular_transcripts').
-    output_path: str
-        The directory path where the plot will be saved. If not provided, the plot will not be saved (default: '').
-    transcript_group: str
-        The key in the transcript data (e.g., distance to the source cell) to be used for coloring the scatter plot (default: 'distance_to_source_cell').
-    save: bool
-        Whether to save the plot to a file. If `True`, the plot is saved to `output_path` (default: True).
-    format: str
-        The format for saving the plot (e.g., 'pdf', 'png'). This is only used if `save=True` (default: 'pdf').
-    xcoord: str
-        The column name in the transcript data representing the x-coordinate (default: 'x').
-    ycoord: str
-        The column name in the transcript data representing the y-coordinate (default: 'y').
-    xcellcoord: str
-        The column name in the cell data representing the x-coordinate of cell centroids (default: 'x_centroid').
-    ycellcoord: str
-        The column name in the cell data representing the y-coordinate of cell centroids (default: 'y_centroid').
-    colormap: str
-        The colormap to use for coloring the transcripts based on the `transcript_group` values (default: 'Blues').
-    size: float
-        The size of the scatter points for cells and transcripts. Transcripts are scaled down by 0.1 (default: 2).
-    color_cells: str
-        The color to use for the cell centroids (default: 'red').
-    figsize: tuple
-        The size of the figure in inches (width, height). This controls the dimensions of the plot (default: (10, 7)).
-    vmax: float
-        The upper limit for the colormap. If provided, this limits the color scale to values below `vmax` (default: None).
+    layer
+        The key for the layer in `sdata.points` that contains transcript data.
+    output_path
+        The directory path where the plot will be saved. If not provided, the plot will not be saved.
+    transcript_group
+        The column in the transcript data (e.g., distance to the source cell) used for coloring the scatter plot.
+    save
+        Whether to save the plot to a file. If `True`, the plot is saved to `output_path`.
+    format
+        The format for saving the plot (e.g., 'pdf', 'png'). Only used if `save=True`.
+    xcoord
+        The column name in the transcript data representing the x-coordinate.
+    ycoord
+        The column name in the transcript data representing the y-coordinate.
+    xcellcoord
+        The column name in the cell data representing the x-coordinate of cell centroids.
+    ycellcoord
+        The column name in the cell data representing the y-coordinate of cell centroids.
+    colormap
+        The colormap to use for coloring the transcripts based on the `transcript_group` values.
+    size
+        The size of the scatter points for cells and transcripts. Transcripts are scaled down by 0.1.
+    color_cells
+        The color to use for the cell centroids.
+    figsize
+        The size of the figure in inches (width, height).
+    vmax
+        The upper limit for the colormap.
 
     Returns
     -------
     None
-
-    Notes
-    -----
-    - The transcript data and cell centroid data are extracted from `sdata`.
-    - The `vmax` parameter allows control over the maximum value of the color scale for better visualization control.
-    - The plot is saved in the specified format and at the specified output path if `save=True`.
     """
-    # Copy the AnnData object for cell data
     adata = sdata["table"].copy()
-
-    # Use raw layer for transcript data
     adata.X = sdata["table"].layers["raw"]
-
-    # Extract x, y centroid coordinates from the cell data
     adata.obs["x_centroid"] = [sp[0] for sp in adata.obsm["spatial"]]
     adata.obs["y_centroid"] = [sp[1] for sp in adata.obsm["spatial"]]
 
-    # Extract transcript data from the specified layer
     transcripts = sdata.points[layer].compute()
 
-    # Create output directory if it doesn't exist
     figures_path = os.path.join(output_path, "figures")
     os.makedirs(figures_path, exist_ok=True)
 
-    # Create the scatter plot
     plt.figure(figsize=figsize)
-
-    # Plot transcript locations, colored by the selected feature (transcript_group)
     plt.scatter(transcripts[xcoord], transcripts[ycoord], c=transcripts[transcript_group], s=size * 0.1, cmap=colormap, vmax=vmax)
-
-    # Plot cell centroids
     plt.scatter(adata.obs[xcellcoord], adata.obs[ycellcoord], s=size, color=color_cells)
-
-    # Set plot title
     plt.title(f"{transcript_group}")
 
-    # Save the plot if specified
     if save:
         plt.savefig(os.path.join(figures_path, f"Scatter_{transcript_group}_{colormap}.{format}"))
 
 
 def heatmap(
-    data,
+    data: pd.DataFrame,
     output_path: str = "",
     save: bool = False,
-    figsize=None,
+    figsize: tuple[float, float] | None = None,
     tag: str = "",
-    title: str = None,
+    title: str | None = None,
     cmap: str = "RdBu_r",
     annot: bool = False,
     cbar: bool = True,
-    vmax=None,
-    vmin=0,
+    vmax: float | None = None,
+    vmin: float = 0,
     row_cluster: bool = True,
     col_cluster: bool = True,
-):
-    """
-    Generate a clustered heatmap from the given data and optionally save it to a file.
+) -> None:
+    """Generate a clustered heatmap from the given data and optionally save it to a file.
 
     Parameters
     ----------
-    data: pandas.DataFrame
+    data
         The data to visualize as a heatmap. Rows and columns will be clustered if specified.
-    output_path: str
-        Directory where the heatmap should be saved if `save` is True. Defaults to an empty string.
-    save: bool
-        Whether to save the generated heatmap to a file. Defaults to False.
-    figsize: tuple
-        Size of the figure as (width, height). If None, the size is calculated based on the data dimensions. Defaults to None.
-    tag: str
-        A tag to append to the saved file name. Defaults to an empty string.
-    title: str
-        Title of the heatmap. Defaults to None.
-    cmap: str
-        Colormap to use for the heatmap. Defaults to "RdBu_r".
-    annot: bool
-        Whether to annotate the heatmap cells with their values. Defaults to False.
-    cbar: bool
-        Whether to display a color bar in the heatmap. Defaults to True.
-    vmax: float
-        Maximum value for the colormap. Defaults to None.
-    vmin: float
-        Minimum value for the colormap. Defaults to 0.
-    row_cluster: bool
-        Whether to perform hierarchical clustering on rows. Defaults to True.
-    col_cluster: bool
-        Whether to perform hierarchical clustering on columns. Defaults to True.
+    output_path
+        Directory where the heatmap should be saved if `save` is True.
+    save
+        Whether to save the generated heatmap to a file.
+    figsize
+        Size of the figure as (width, height). If `None`, the size is calculated based on the data dimensions.
+    tag
+        A tag to append to the saved file name.
+    title
+        Title of the heatmap.
+    cmap
+        Colormap to use for the heatmap.
+    annot
+        Whether to annotate the heatmap cells with their values.
+    cbar
+        Whether to display a color bar in the heatmap.
+    vmax
+        Maximum value for the colormap.
+    vmin
+        Minimum value for the colormap.
+    row_cluster
+        Whether to perform hierarchical clustering on rows.
+    col_cluster
+        Whether to perform hierarchical clustering on columns.
 
     Returns
     -------
@@ -200,8 +190,7 @@ def heatmap(
 
     Notes
     -----
-    - If `save` is True, the heatmap will be saved as a PDF file in the `output_path/figures` directory.
-    - Clustering is performed using seaborn's `clustermap` function.
+    Clustering is performed using :func:`seaborn.clustermap`.
     """
     if figsize is None:
         figsize = (data.shape[1] / 3, (data.shape[0] / 7) + 2)
@@ -215,82 +204,72 @@ def heatmap(
 
 
 def plot_crosstab(
-    data,
+    data: pd.DataFrame,
     xvar: str = "",
     yvar: str = "",
-    normalize=True,
-    axis=1,
-    kind="barh",
-    save=True,
+    normalize: bool = True,
+    axis: int = 1,
+    kind: str = "barh",
+    save: bool = True,
     figures_path: str = "",
-    stacked=True,
-    figsize=(6, 10),
-    cmap="viridis",
-    saving_format="pdf",
-    sortby=None,
-):
-    """
-    Plot a cross-tabulation between two variables in a dataset and visualize it as either a bar plot, horizontal bar plot, or heatmap.
+    stacked: bool = True,
+    figsize: tuple[float, float] = (6, 10),
+    cmap: str = "viridis",
+    saving_format: str = "pdf",
+    sortby: str | None = None,
+) -> None:
+    """Plot a cross-tabulation between two variables as a bar plot, horizontal bar plot, heatmap, or clustermap.
 
     Parameters
     ----------
-    data: pandas.DataFrame
+    data
         Input dataset containing the variables for the cross-tabulation.
-    xvar: str
+    xvar
         The variable to use on the x-axis for the cross-tabulation.
-    yvar: str
+    yvar
         The variable to use on the y-axis for the cross-tabulation.
-    normalize: bool
-        Whether to normalize the cross-tabulated data (percentages). If True, the data will be normalized.
-    axis: int
+    normalize
+        Whether to normalize the cross-tabulated data (percentages).
+    axis
         The axis to normalize across. Use `1` for row normalization and `0` for column normalization.
-    kind: str
-        The kind of plot to generate. Options include:
-            - 'barh': Horizontal bar plot
-            - 'bar': Vertical bar plot
-            - 'heatmap': Heatmap visualization
-            - 'clustermap': Clustermap visualization
-    save (bool)
-        If True, the plot will be saved to a file.
-    figures_path (str)
+    kind
+        The kind of plot to generate: ``"barh"``, ``"bar"``, ``"heatmap"``, or ``"clustermap"``.
+    save
+        If `True`, the plot will be saved to a file.
+    figures_path
         The directory path where the figure should be saved. If not specified, the plot will be saved in the current directory.
-    stacked (bool)
-        If True, the bar plots will be stacked. Only applicable for 'barh' and 'bar' plot kinds.
-    figsize (tuple)
+    stacked
+        If `True`, the bar plots will be stacked. Only applicable for ``"barh"`` and ``"bar"`` plot kinds.
+    figsize
         The size of the figure for the plot (width, height).
-    cmap (str)
+    cmap
         The colormap to use for the plot, especially for heatmap and clustermap visualizations.
-    saving_format (str)
+    saving_format
         The format to save the plot in. Options include 'png', 'pdf', etc.
-    sortby (str)
+    sortby
         The column or row to sort the cross-tabulated data by before plotting.
 
     Returns
     -------
     None
     """
-    # Compute the crosstab data
     crosstab_data = pd.crosstab(data[xvar], data[yvar])
 
-    # Normalize the data if required
     if normalize:
         crosstab_data = crosstab_data.div(crosstab_data.sum(axis=axis), axis=0)
         normtag = "normalize"
     else:
         normtag = "raw"
 
-    # Sort the data if needed
     if sortby is not None:
         crosstab_data = crosstab_data.sort_values(by=sortby)
 
-    # Generate the plot filename
     plot_filename = f"{kind}_{xvar}_{yvar}_{normtag}_{cmap}.{saving_format}"
 
-    # Plot based on the selected kind
     if kind == "barh":
         plt.figure()
         crosstab_data.plot(kind="barh", stacked=stacked, figsize=figsize, width=0.99, colormap=cmap)
-        plt.xlabel('Total number of transcripts')
+        plt.xlabel("Total number of transcripts")
         plt.title(f"{xvar}_vs_{yvar}")
         if save:
             plt.savefig(os.path.join(figures_path, plot_filename))
@@ -321,78 +300,84 @@ def plot_crosstab(
         plt.show()
 
 
-def genes_over_noise(sdata, scores_by_genes, layer="extracellular_transcripts", output_path: str = "", save=True, format: str = "pdf"):
-    """
-    Function that plots log fold change per gene over noise using a boxplot.
+def genes_over_noise(
+    sdata: SpatialData,
+    scores_by_genes: pd.DataFrame,
+    layer: str = "extracellular_transcripts",
+    output_path: str = "",
+    save: bool = True,
+    format: str = "pdf",
+) -> None:
+    """Plot the log fold change per gene over noise as a boxplot grouped by codeword category.
 
     Parameters
     ----------
-    data_quantified
-        DataFrame containing the extracellular transcript data, including feature names and codeword categories.
+    sdata
+        Spatial data object containing the extracellular transcript layer.
     scores_by_genes
-        DataFrame containing gene scores with feature names and log fold ratios.
+        DataFrame containing gene scores with a ``feature_name`` and a ``log_fold_ratio`` column.
+    layer
+        Key of the points layer in `sdata` with feature names and codeword categories.
     output_path
-        Path to save the figure.
+        Directory in which to save the figure. A ``figures`` subdirectory is created within it.
+    save
+        Whether to save the figure to `output_path`.
+    format
+        File format used when saving the figure.
+
+    Returns
+    -------
+    None
     """
     data_quantified = sdata.points[layer].compute()
-    # Create the output directory for figures if it doesn't exist
-    PATH_FIGURES = os.path.join(output_path, "figures")
-    os.makedirs(PATH_FIGURES, exist_ok=True)
+    figures_path = os.path.join(output_path, "figures")
+    os.makedirs(figures_path, exist_ok=True)
 
-    # Map feature names to codeword categories
     feature2codeword = dict(zip(data_quantified["feature_name"], data_quantified["codeword_category"], strict=False))
     scores_by_genes["codeword_category"] = scores_by_genes["feature_name"].map(feature2codeword)
 
-    # Plot the boxplot
     sns.boxplot(
         data=scores_by_genes,
         y="codeword_category",
         x="log_fold_ratio",
         hue="codeword_category",
     )
-    # Plot the reference line at x = 0
     plt.plot([0, 0], [*plt.gca().get_ylim()], "r--")
     if save:
-        # Save the figure
-        plt.savefig(os.path.join(PATH_FIGURES, f"boxplot_log_fold_change_per_gene{format}"), bbox_inches="tight", pad_inches=0)
-    # Show the plot
+        plt.savefig(os.path.join(figures_path, f"boxplot_log_fold_change_per_gene.{format}"), bbox_inches="tight", pad_inches=0)
     plt.show()
 
 
-def moranI_histogram(svg_df, save=True, figures_path: str = "", bins: int = 200, format: str = "pdf"):
-    """
-    Plots the distribution of Moran's I scores from a DataFrame.
+def moranI_histogram(svg_df: pd.DataFrame, save: bool = True, figures_path: str = "", bins: int = 200, format: str = "pdf") -> None:
+    """Plot the distribution of Moran's I scores from a DataFrame.
 
     Parameters
     ----------
-    svg_df: pandas.DataFrame
+    svg_df
         DataFrame containing a column 'I' with Moran's I scores.
-    save: bool
+    save
         Whether to save the plot as a file.
-    figures_path: str
+    figures_path
         Path to save the figure. Only used if `save=True`.
-    bins: int
+    bins
         Number of bins to use in the histogram.
-    format: str
+    format
         Format in which to save the figure (e.g., 'pdf', 'png').
 
     Returns
     -------
     None
     """
-    # Check if figures_path exists if saving the figure
     if save and figures_path:
         if not os.path.exists(figures_path):
             raise ValueError(f"The provided path '{figures_path}' does not exist.")
 
-    # Plot the distribution
     plt.figure(figsize=(8, 6))
     plt.hist(svg_df.sort_values(by="I", ascending=False)["I"], bins=bins)
     plt.xlabel("Moran's I")
     plt.ylabel("Frequency")
     plt.title("Distribution of Moran's I Scores")
 
-    # Save the plot if requested
     if save:
         file_name = os.path.join(figures_path, f"barplot_moranI_by_gene.{format}")
         plt.savefig(file_name, format=format)
@@ -402,68 +387,75 @@ def moranI_histogram(svg_df, save=True, figures_path: str = "", bins: int = 200,
 
 
 def proportion_above_threshold(
-    df,
-    threshold_col="proportion_above_threshold",
-    feature_col="feature_name",
-    top_percentile=0.05,
-    bottom_percentile=0.05,
-    specific_transcripts=None,
-    figsize=(4, 10),
-    orientation="h",
-    bar_color="black",
-    title="Proportion of distant exRNa (>30um) from source",
-    xlabel="Proportion above threshold",
-    ylabel="Feature",
-    save=False,
+    df: pd.DataFrame,
+    threshold_col: str = "proportion_above_threshold",
+    feature_col: str = "feature_name",
+    top_percentile: float = 0.05,
+    bottom_percentile: float = 0.05,
+    specific_transcripts: list[str] | None = None,
+    figsize: tuple[float, float] = (4, 10),
+    orientation: str = "h",
+    bar_color: str = "black",
+    title: str = "Proportion of distant exRNa (>30um) from source",
+    xlabel: str = "Proportion above threshold",
+    ylabel: str = "Feature",
+    save: bool = False,
     output_path: str = "",
-    format="pdf",
-):
-    """
-    Plots the top and bottom percentiles of features with the highest and lowest proportions above a threshold, or visualizes a specific list of transcripts.
+    format: str = "pdf",
+) -> None:
+    """Plot the top and bottom percentiles of features by proportion above a threshold, or a specific list of transcripts.
 
     Parameters
     ----------
     df
         DataFrame containing feature proportions.
     threshold_col
-        Column name for proportions above the threshold (default: 'proportion_above_threshold').
+        Column name for proportions above the threshold.
     feature_col
-        Column name for feature names (default: 'feature_name').
+        Column name for feature names.
     top_percentile
-        Proportion (0-1) of features with the highest proportions to display (default: 0.05 for top 5%).
+        Proportion (0-1) of features with the highest proportions to display.
     bottom_percentile
-        Proportion (0-1) of features with the lowest proportions to display (default: 0.05 for bottom 5%).
+        Proportion (0-1) of features with the lowest proportions to display.
     specific_transcripts
-        List of specific transcript names to plot (optional).
+        List of specific transcript names to plot. If provided, `top_percentile` and
+        `bottom_percentile` are ignored.
     figsize
-        Tuple specifying the size of the plot (default: (4, 10)).
+        Size of the figure.
     orientation
-        Orientation of the bars ('h' for horizontal, 'v' for vertical, default: 'h').
+        Orientation of the bars: ``"h"`` for horizontal, ``"v"`` for vertical.
     bar_color
-        Color of the bars (default: 'black').
+        Color of the bars.
     title
-        Title of the plot (default: 'Proportion of distant exRNa (>30um) from source').
+        Title of the plot.
     xlabel
-        Label for the x-axis (default: 'Proportion above threshold').
+        Label for the x-axis.
     ylabel
-        Label for the y-axis (default: 'Feature').
+        Label for the y-axis.
+    save
+        Whether to save the figure to `output_path`.
+    output_path
+        Directory in which to save the figure. A ``figures`` subdirectory is created within it.
+    format
+        File format used when saving the figure.
+
+    Returns
+    -------
+    None
     """
     df = df[~df[threshold_col].isna()]
-    print(df.shape)
-    # Filter for top and bottom percentiles if no specific transcripts are provided
     if specific_transcripts is None:
         top_cutoff = df[threshold_col].quantile(1 - top_percentile)
         bottom_cutoff = df[threshold_col].quantile(bottom_percentile)
         plot_data = pd.concat(
             [
-                df[df[threshold_col] >= top_cutoff],  # Top percentile
-                df[df[threshold_col] <= bottom_cutoff],  # Bottom percentile
+                df[df[threshold_col] >= top_cutoff],
+                df[df[threshold_col] <= bottom_cutoff],
             ]
         )
     else:
         plot_data = df[df[feature_col].isin(specific_transcripts)]
 
-    # Plot
     plt.figure(figsize=figsize)
     if orientation == "h":
         plt.barh(plot_data["feature_name"], plot_data[threshold_col], color=bar_color)
@@ -481,39 +473,39 @@ def proportion_above_threshold(
     plt.show()
 
 
-# not in docs
 def nmf_factors_exrna_cells_W(
-    sdata, nmf_adata_key: str = "nmf_data", save: bool = True, saving_path: str = "", spot_size: int = 30, cmap: str = "viridis"
-):
-    """
-    Extracts the NMF (Non-negative Matrix Factorization) factors from the specified AnnData object within the spatial data (`sdata`) and creates spatial plots for each factor. The plots can be displayed or saved to disk.
+    sdata: SpatialData, nmf_adata_key: str = "nmf_data", save: bool = True, saving_path: str = "", spot_size: int = 30, cmap: str = "viridis"
+) -> None:
+    """Plot the spatial distribution of each NMF factor for cells.
+
+    Extracts the NMF (Non-negative Matrix Factorization) cell loadings (``W`` matrix) from
+    the AnnData object stored at `nmf_adata_key` within `sdata` and creates a spatial plot
+    for each factor.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata
         A spatial transcriptomics dataset that contains the NMF factors in the specified key.
-    nmf_adata_key: str
-        The key in `sdata` that contains the AnnData object with NMF results. Defaults to 'nmf_data'.
-    save: bool
-        Whether to save the spatial factor plots to disk. Defaults to True.
-    saving_path: str
-        Path where the plots should be saved if `save` is True. The plots are saved in a `figures` subdirectory.
-    spot_size: int
-        Size of the spots in the spatial plot. Defaults to 30.
-    cmap: str
-        Colormap to use for the spatial plots. Defaults to 'viridis'.
+    nmf_adata_key
+        The key in `sdata` that contains the AnnData object with NMF results.
+    save
+        Whether to save the spatial factor plots to disk. The plots are saved in a ``figures``
+        subdirectory of `saving_path`.
+    saving_path
+        Path where the plots should be saved if `save` is `True`.
+    spot_size
+        Size of the spots in the spatial plot. Only used if `save` is `False`.
+    cmap
+        Colormap to use for the spatial plots.
 
     Returns
     -------
     None
     """
-    # Plot the factors for each cell in a spatial plot
     adata = sdata[nmf_adata_key]
     W = adata.obsm["W_nmf"]
     for factor in range(20):
-        # Add the factor values to adata.obs for plotting
         adata.obs[f"NMF_factor_{factor + 1}"] = W[:, factor]
-        # Plot spatial map of cells colored by this factor
         if save:
             sc.pl.spatial(adata, color=f"NMF_factor_{factor + 1}", cmap=cmap, title=f"NMF Factor {factor + 1}", spot_size=30, show=False)
             plt.savefig(saving_path + "/figures/" + f"spatialnmf{factor}.png")
@@ -522,38 +514,41 @@ def nmf_factors_exrna_cells_W(
             sc.pl.spatial(adata, color=f"NMF_factor_{factor + 1}", cmap=cmap, title=f"NMF Factor {factor + 1}", spot_size=spot_size)
 
 
-# not in docs
 def nmf_gene_contributions(
-    sdata,
+    sdata: SpatialData,
     nmf_adata_key: str = "nmf_data",
     save: bool = True,
     vmin: float = 0.0,
     vmax: float = 0.02,
     saving_path: str = "",
     cmap: str = "viridis",
-    figsize: tuple = (5, 5),
-):
-    """
-    Extracts the NMF (Non-negative Matrix Factorization) gene loadings matrix from the specified AnnData object within the spatial data (`sdata`), filters genes based on their maximum loading value, and plots a heatmap of the filtered loadings.
+    figsize: tuple[float, float] = (5, 5),
+) -> None:
+    """Plot a heatmap of NMF gene loadings, filtered to genes with a high maximum loading.
+
+    Extracts the NMF gene loadings matrix (``H`` matrix) from the AnnData object stored at
+    `nmf_adata_key` within `sdata`, keeps only genes whose maximum loading exceeds 0.05, and
+    plots a heatmap of the filtered loadings sorted by their dominant factor.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata
         A spatial transcriptomics dataset that contains the NMF factors in the specified key.
-    nmf_adata_key: str
-        The key in `sdata` that contains the AnnData object with NMF results. Defaults to 'nmf_data'.
-    save: bool
-        Whether to save the heatmap plot to disk. Defaults to True.
-    vmin: float
-        Minimum value for the colormap scale. Defaults to 0.0.
-    vmax: float
-        Maximum value for the colormap scale. Defaults to 0.02.
-    saving_path: str
-        Path where the plot should be saved if `save` is True. The plot is saved in a `figures` subdirectory.
-    cmap: str
-        Colormap to use for the heatmap. Defaults to 'viridis'.
-    figsize: tuple
-        Size of the heatmap figure. Defaults to (5, 5).
+    nmf_adata_key
+        The key in `sdata` that contains the AnnData object with NMF results.
+    save
+        Whether to save the heatmap plot to disk. The plot is saved in a ``figures``
+        subdirectory of `saving_path`.
+    vmin
+        Minimum value for the colormap scale.
+    vmax
+        Maximum value for the colormap scale.
+    saving_path
+        Path where the plot should be saved if `save` is `True`.
+    cmap
+        Colormap to use for the heatmap.
+    figsize
+        Size of the heatmap figure.
 
     Returns
     -------
@@ -565,24 +560,24 @@ def nmf_gene_contributions(
     figures_path = os.path.join(saving_path, "figures")
     os.makedirs(figures_path, exist_ok=True)
 
-    # Sort by maximum feature in cell types
     max_indices = np.argmax(loadings_filtered.values, axis=1)
     loadings_filtered = loadings_filtered.iloc[np.argsort(max_indices)]
     loadings_filtered.index = loadings_filtered.index[np.argsort(max_indices)]
 
-    # Heatmap plot
     plt.figure(figsize=figsize)
     sns.heatmap(loadings_filtered, cmap=cmap, vmax=1)
     if save:
         plt.savefig(os.path.join(figures_path, "loadings_NMF.pdf"))
     plt.show()
-    plt.close()  # Close the figure to avoid memory issues
+    plt.close()
 
 
-# not in docs
 def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, adata_annotated_cellular):
-    """
-    Transfers the gene loadings (H matrix) derived from extracellular RNA analysis to a cellular dataset. It calculates the new W matrix for cellular data by multiplying the gene expression values of the cellular dataset with the filtered H matrix.
+    """Transfer NMF gene loadings from an extracellular RNA dataset to a cellular dataset.
+
+    Computes the cellular ``W`` matrix by multiplying the cellular gene expression values
+    with the filtered ``H`` matrix (gene loadings) from the extracellular NMF results,
+    restricted to genes shared between both datasets.
 
     Parameters
     ----------
@@ -593,104 +588,102 @@ def apply_exrnaH_to_cellular_to_create_cellularW(adata_extracellular_with_nmf, a
 
     Returns
     -------
-    AnnData. The input `adata_annotated_cellular` object with the following updates. Adds the calculated NMF factors (W matrix) as a DataFrame to `adata.obsm['factors']`.Adds each NMF factor as individual columns in `adata.obs` with names `NMF_factor_1`, `NMF_factor_2`, etc.
+    anndata.AnnData
+        The input `adata_annotated_cellular` object with the calculated NMF factors (``W``
+        matrix) added as a DataFrame to ``adata.obsm["factors"]``, and each factor also added
+        as an individual column ``NMF_factor_1``, ``NMF_factor_2``, ... in ``adata.obs``.
     """
-    # Extract the H matrix (NMF gene loadings) from the extracellular data
     H = adata_extracellular_with_nmf.uns["H_nmf"]
 
-    # Check the genes in both datasets
     genes_spots2region = adata_extracellular_with_nmf.var_names
     genes_annotated = adata_annotated_cellular.var_names
 
-    # Get the intersection of genes between the two datasets
     common_genes = genes_annotated.intersection(genes_spots2region)
 
-    # Filter both datasets to retain only common genes
     adata_annotated_cellular = adata_annotated_cellular[:, common_genes]
-    H_filtered = H[:, np.isin(genes_spots2region, common_genes)]  # Filter H matrix to include only common genes
+    H_filtered = H[:, np.isin(genes_spots2region, common_genes)]
 
-    # Compute the new W matrix for the cellular dataset
     W_annotated = adata_annotated_cellular.X @ H_filtered.T
 
-    # Store the W matrix in the obsm attribute as a DataFrame
     adata_annotated_cellular.obsm["factors"] = pd.DataFrame(W_annotated, index=adata_annotated_cellular.obs.index)
 
-    # Add individual NMF factors to adata.obs
     for factor in range(W_annotated.shape[1]):
         adata_annotated_cellular.obs[f"NMF_factor_{factor + 1}"] = W_annotated[:, factor]
 
     return adata_annotated_cellular
 
 
-# not in docs
 def paired_nmf_factors(
-    sdata,
-    layer="nmf_data",
-    n_factors=5,  # Number of NMF factors to plot
-    figsize=(12, 6),  # Size of the figure
-    spot_size_exrna=5,  # Spot size for extracellular transcripts
-    spot_size_cells=10,  # Spot size for cell map
-    cmap_exrna="YlGnBu",  # Colormap for extracellular transcripts
-    cmap_cells="Reds",  # Colormap for cells
-    vmax_exrna="p99",  # Maximum value for color scale (extracellular)
-    vmax_cells=None,  # Maximum value for color scale (cells)
-    save=False,
+    sdata: SpatialData,
+    layer: str = "nmf_data",
+    n_factors: int = 5,
+    figsize: tuple[float, float] = (12, 6),
+    spot_size_exrna: float = 5,
+    spot_size_cells: float = 10,
+    cmap_exrna: str = "YlGnBu",
+    cmap_cells: str = "Reds",
+    vmax_exrna: str | float | None = "p99",
+    vmax_cells: str | float | None = None,
+    save: bool = False,
     output_path: str = "",
-    format="pdf",
-):
-    """
-    Plots the spatial distribution of NMF factors for extracellular transcripts and cells.
+    format: str = "pdf",
+) -> None:
+    """Plot the spatial distribution of NMF factors for extracellular transcripts and cells.
+
+    For each factor, the extracellular spot loadings and the cellular loadings are overlaid
+    on the same spatial axes.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        spatial data object containing both extracellular and cell data.
-    layer: str
-        Layer in sdata to extract the NMF data from (default: 'nmf_data').
-    n_factors: int
-        Number of NMF factors to plot (default: 5).
-    figsize: tuple
-        Size of the figure for each subplot (default: (12, 6)).
-    spot_size_exrna: float
-        Size of the spots for extracellular transcript scatter plot (default: 5).
-    spot_size_cells: float
-        Size of the spots for cell scatter plot (default: 10).
-    cmap_exrna: str
-        Colormap for the extracellular transcript NMF factors (default: 'YlGnBu').
-    cmap_cells: str
-        Colormap for the cell NMF factors (default: 'Reds').
-    vmax_exrna: str
-        Maximum value for extracellular transcript color scale (default: 'p99').
-    vmax_cells: str
-        Maximum value for cell color scale (default: None).
+    sdata
+        Spatial data object containing both extracellular and cell data.
+    layer
+        Layer in `sdata` to extract the extracellular NMF data from.
+    n_factors
+        Number of NMF factors to plot.
+    figsize
+        Size of the figure for each subplot.
+    spot_size_exrna
+        Size of the spots for the extracellular transcript scatter plot.
+    spot_size_cells
+        Size of the spots for the cell scatter plot.
+    cmap_exrna
+        Colormap for the extracellular transcript NMF factors.
+    cmap_cells
+        Colormap for the cell NMF factors.
+    vmax_exrna
+        Maximum value for the extracellular transcript color scale.
+    vmax_cells
+        Maximum value for the cell color scale.
+    save
+        Whether to save each factor's figure to `output_path`.
+    output_path
+        Directory in which to save the figures. A ``figures`` subdirectory is created within it.
+    format
+        File format used when saving the figures.
+
+    Returns
+    -------
+    None
     """
-    # Extract NMF data from sdata
     adata = sdata[layer]
     adata_annotated = sdata["table"]
 
-    # Get the factors from the obsm attribute (NMF results)
     factors = pd.DataFrame(adata.obsm["cell_loadings"], index=adata.obs.index)
     factors.columns = [f"Factor_{fact + 1}" for fact in factors.columns]
-
-    # Add each NMF factor to adata.obs
     for f in factors.columns:
         adata.obs[f] = factors[f]
 
-    # Add to each annotated one
     factors = pd.DataFrame(adata_annotated.obsm["factors_cell_loadings"], index=adata_annotated.obs.index)
     factors.columns = [f"Factor_{fact + 1}" for fact in factors.columns]
-    # Add each NMF factor to adata.obs
     for f in factors.columns:
         adata_annotated.obs[f] = factors[f]
 
-    # Loop over the specified number of NMF factors and plot
     for factor in range(n_factors):
         factor_name = f"Factor_{factor + 1}"
 
-        # Create a figure with a single subplot for each factor
-        fig, axs = plt.subplots(1, 1, figsize=figsize)
+        _, axs = plt.subplots(1, 1, figsize=figsize)
 
-        # Plot the spatial distribution for extracellular transcripts
         sc.pl.spatial(
             adata,
             color=factor_name,
@@ -702,7 +695,6 @@ def paired_nmf_factors(
             vmax=vmax_exrna,
         )
 
-        # Overlay the cell spatial distribution
         sc.pl.spatial(
             adata_annotated,
             color=factor_name,
@@ -719,23 +711,20 @@ def paired_nmf_factors(
             file_name = os.path.join(figures_path, f"Spatial_NMF Factor {factor + 1}.{format}")
             plt.savefig(file_name)
 
-        # Adjust layout and show the combined plot
         plt.tight_layout()
         plt.show()
 
 
-# not in docs
-def plot_nmf_factors_spatial(adata, n_factors, save=True):
-    """
-    Visualizes the spatial distribution of cells, colored by their corresponding NMF factor values, stored in `adata.obs`. It iterates over all specified NMF factors and generates spatial plots for each factor.
+def plot_nmf_factors_spatial(adata, n_factors: int, save: bool = True) -> None:
+    """Plot the spatial distribution of cells colored by each NMF factor.
 
     Parameters
     ----------
     adata: anndata.AnnData
-        An AnnData object containing the dataset with NMF factors already added as columns in `adata.obs`.Each factor should be named `NMF_factor_1`, `NMF_factor_2`, ..., `NMF_factor_n`.
-    n_factors: int
+        An AnnData object containing the dataset with NMF factors already added as columns in `adata.obs`. Each factor should be named `NMF_factor_1`, `NMF_factor_2`, ..., `NMF_factor_n`.
+    n_factors
         The number of NMF factors to plot.
-    save: bool
+    save
         If `True`, saves the plots to files with filenames `exo_to_cell_spatial_<factor>.png`.
 
     Returns
@@ -780,65 +769,69 @@ def spatial_interactions(
     dpi: int | None = 100,
     save: str | Path | None = None,
     **kwargs,
-):
-    """
-    Generates a scatter plot showing the positions of target cells, source cells, and extracellular RNA transcripts within a spatial omics dataset. The target and source cells are highlighted in different colors, while the RNA transcripts are shown as points at their respective positions. Optionally, a background image (e.g., tissue section) can be displayed.
+) -> None:
+    """Plot the positions of target cells, source cells, and extracellular RNA transcripts for a gene.
+
+    Target and source cells are highlighted in different colors, while the RNA transcripts
+    are shown as points at their respective positions. Optionally, a background image (e.g.
+    a tissue section) can be displayed.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        An AnnData object containing the spatial omics data, including transcript expression and cell positions.
-    layer: str
-        The layer in the AnnData object that contains the extracellular RNA transcript data.
-    gene: str
-        The gene of interest to be visualized in terms of its spatial interaction with source and target cells.
-    gene_key: str
-        The column name in the AnnData object used to identify the gene.
-    cell_id_key: str
-        The column name in the AnnData object used to identify individual cells.
-    color_target: str
+    sdata
+        Spatial data object containing the transcript and cell position data.
+    layer
+        The layer in `sdata.points` that contains the extracellular RNA transcript data, with
+        ``closest_target_cell`` and ``closest_source_cell`` columns.
+    gene
+        The gene of interest to be visualized in terms of its spatial interaction with source
+        and target cells.
+    gene_key
+        The column name used to identify the gene in `layer`.
+    cell_id_key
+        The column name in ``sdata["table"].obs`` used to identify individual cells.
+    color_target
         The color to be used for target cells in the plot.
-    color_source: str
+    color_source
         The color to be used for source cells in the plot.
-    color_transcript: str
+    color_transcript
         The color to be used for the RNA transcripts in the plot.
-    spatial_key: str
-        The key in the AnnData object that stores the spatial coordinates of the cells.
-    img: str
-        A background image to overlay on the plot, such as a tissue section. Can be set to `None` to omit.
-    img_alpha: float
+    spatial_key
+        The key in ``sdata["table"].obsm`` that stores the spatial coordinates of the cells.
+    img
+        A background image to overlay on the plot, such as a tissue section.
+    img_alpha
         The transparency level of the background image. Ignored if `img` is `None`.
-    image_cmap: str
+    image_cmap
         The colormap to be used for the background image, if applicable.
-    size: float
+    size
         The size of the scatter plot points for the cells and transcripts.
-    alpha: float
+    alpha
         The transparency level for the scatter plot points.
-    title: str
+    title
         The title of the plot. If `None`, the gene name is used.
-    legend_loc: str
+    legend_loc
         The location of the legend in the plot.
-    figsize: tuple
+    figsize
         The dimensions of the plot in inches.
-    dpi: int
+    dpi
         The resolution (dots per inch) for the plot.
-    save: bool
+    save
         The path to save the plot image. If `None`, the plot is displayed but not saved.
     kwargs
-        Any additional arguments passed to the `scatter` or `imshow` functions for customizing plot appearance.
+        Additional arguments passed to :func:`matplotlib.pyplot.scatter` and
+        :func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
     None
     """
-    # Extract relevant data
     transcripts = sdata.points[layer]
     trans_filt = transcripts[transcripts[gene_key] == gene]
     target_cells = trans_filt["closest_target_cell"].compute()
     source_cells = trans_filt["closest_source_cell"].compute()
     cell_positions = pd.DataFrame(sdata["table"].obsm[spatial_key], index=sdata.table.obs[cell_id_key], columns=["x", "y"])
 
-    # Plotting
     plt.figure(figsize=figsize, dpi=dpi)
     if img is not None:
         plt.imshow(img, alpha=img_alpha, cmap=image_cmap, **kwargs)
@@ -847,13 +840,11 @@ def spatial_interactions(
     plt.scatter(cell_positions.loc[source_cells, "x"], cell_positions.loc[source_cells, "y"], c=color_source, s=size, label="Source Cells", **kwargs)
     plt.scatter(trans_filt["x"], trans_filt["y"], c=color_transcript, s=size * 0.4, label="Transcripts", **kwargs)
 
-    # Titles and Legends
     plt.title(title or gene)
     plt.legend(loc=legend_loc)
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
 
-    # Save the plot if path provided
     if save:
         plt.savefig(save)
     plt.show()
@@ -880,71 +871,71 @@ def interactions_with_arrows(
     dpi: int | None = 100,
     save: str | Path | None = None,
     **kwargs,
-):
-    """
-    The function plots arrows from source to target cells based on transcript proximity, color-coding source and target cells, and transcript locations. An optional image layer can be overlaid behind the plot.
+) -> None:
+    """Plot arrows from source to target cells based on transcript proximity for a gene.
+
+    Source and target cells, and the transcript locations, are color-coded. An optional
+    background image (e.g. a tissue section) can be overlaid behind the plot.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        The AnnData object containing the spatial omics data.
-    layer: str
-        The key in `sdata` for the extracellular transcript layer to analyze. Default is 'extracellular_transcripts_enriched'.
-    gene: str
-        The gene of interest. Default is 'Arc'.
-    gene_key: str
-        The key for gene names in the data. Default is 'feature_name'.
-    cell_id_key: str
-        The key for cell IDs. Default is 'cell_id'.
-    color_target: str
-        Color for the target cells. Default is 'blue'.
-    color_source: str
-        Color for the source cells. Default is 'red'.
-    color_transcript: str
-        Color for the transcript locations. Default is 'green'.
-    spatial_key: str
-        The key for spatial coordinates in `sdata`. Default is 'spatial'.
+    sdata
+        Spatial data object containing the transcript and cell position data.
+    layer
+        The layer in `sdata.points` that contains the extracellular RNA transcript data, with
+        ``closest_target_cell`` and ``closest_source_cell`` columns.
+    gene
+        The gene of interest.
+    gene_key
+        The column name used to identify the gene in `layer`.
+    cell_id_key
+        The column name in ``sdata["table"].obs`` used to identify individual cells.
+    color_target
+        Color for the target cells.
+    color_source
+        Color for the source cells.
+    color_transcript
+        Color for the transcript locations.
+    spatial_key
+        The key in ``sdata["table"].obsm`` that stores the spatial coordinates of the cells.
     img
         Optional background image (e.g., tissue section) to display behind the plot.
-    img_alpha: float
-        Transparency level for the background image. Default is None (no image).
-    image_cmap: str
-        Colormap for the image. Default is None.
-    size: float
-        Size of the plotted points (cells and transcripts). Default is 8.
-    alpha: float
-        Transparency level for plotted points. Default is 0.6.
-    title: str
-        Title of the plot. Default is the gene name.
-    legend_loc: str
-        Location of the legend on the plot. Default is 'best'.
-    figsize: tuple
-        Size of the plot. Default is (10, 10).
-    dpi: int
-        Resolution of the plot. Default is 100.
-    save: str
+    img_alpha
+        Transparency level for the background image. Ignored if `img` is `None`.
+    image_cmap
+        Colormap for the background image.
+    size
+        Size of the plotted points (cells and transcripts).
+    alpha
+        Transparency level for the plotted points.
+    title
+        Title of the plot. If `None`, the gene name is used.
+    legend_loc
+        Location of the legend on the plot.
+    figsize
+        Size of the plot.
+    dpi
+        Resolution of the plot.
+    save
         If provided, the path where the plot will be saved.
     kwargs
-        Additional arguments passed to the `scatter` and `imshow` functions for customization.
+        Additional arguments passed to :func:`matplotlib.pyplot.scatter` and
+        :func:`matplotlib.pyplot.imshow`.
 
     Returns
     -------
     None
-        The function displays or saves a plot of interactions between cells and transcripts.
     """
-    # Extract relevant data
     transcripts = sdata.points[layer]
     trans_filt = transcripts[transcripts[gene_key] == gene]
     target_cells = trans_filt["closest_target_cell"].compute()
     source_cells = trans_filt["closest_source_cell"].compute()
     cell_positions = pd.DataFrame(sdata["table"].obsm[spatial_key], index=sdata.table.obs[cell_id_key], columns=["x", "y"])
 
-    # Plotting
     plt.figure(figsize=figsize, dpi=dpi)
     if img is not None:
         plt.imshow(img, alpha=img_alpha, cmap=image_cmap, **kwargs)
 
-    # Plot arrows between each paired source and target cell
     for source, target in zip(source_cells, target_cells, strict=False):
         if source in cell_positions.index and target in cell_positions.index:
             if source != target:
@@ -952,46 +943,58 @@ def interactions_with_arrows(
                 x_end, y_end = cell_positions.loc[target, "x"], cell_positions.loc[target, "y"]
                 plt.arrow(x_start, y_start, x_end - x_start, y_end - y_start, color="black", alpha=0.8, head_width=8, head_length=8)
 
-    # Plot source and target cells
     plt.scatter(cell_positions["x"], cell_positions["y"], c="grey", s=0.6, alpha=alpha, **kwargs)
     plt.scatter(cell_positions.loc[target_cells, "x"], cell_positions.loc[target_cells, "y"], c=color_target, s=size, label="Target Cells", **kwargs)
     plt.scatter(cell_positions.loc[source_cells, "x"], cell_positions.loc[source_cells, "y"], c=color_source, s=size, label="Source Cells", **kwargs)
     plt.scatter(trans_filt["x"], trans_filt["y"], c=color_transcript, s=size * 0.4, label="Transcripts", **kwargs)
 
-    # Titles and Legends
     plt.title(title or gene)
     plt.legend(loc=legend_loc)
     plt.xlabel("X Position")
     plt.ylabel("Y Position")
 
-    # Save the plot if path provided
     if save:
         plt.savefig(save)
     plt.show()
 
 
 def intra_extra_density(
-    sdata, genes, layer="transcripts", gene_key="feature_name", coord_keys=None, intra_kde_kwargs=None, extra_kde_kwargs=None, figsize=None
-):
-    """
-    Plots kernel density estimates (KDE) for the spatial distribution of intracellular and extracellular transcripts for a list of genes. Each gene is displayed in a separate row with intracellular and extracellular KDEs in side-by-side subplots.
+    sdata: SpatialData,
+    genes: list[str],
+    layer: str = "transcripts",
+    gene_key: str = "feature_name",
+    coord_keys: list[str] | None = None,
+    intra_kde_kwargs: dict | None = None,
+    extra_kde_kwargs: dict | None = None,
+    figsize: tuple[float, float] | None = None,
+) -> None:
+    """Plot KDEs of the spatial distribution of intracellular and extracellular transcripts for a list of genes.
+
+    Each gene is displayed in a separate row with intracellular and extracellular KDEs in
+    side-by-side subplots.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        SpatialData object containing transcript locations and metadata.
-    genes: list
-        list of str, gene names to plot.
-    layer: str
-        layer within sdata.points where transcripts are stored (default: "transcripts").
-    gene_key: str
-        column name where the gene name is stored (default: "feature_name").
-    coord_keys: list
-        column names for spatial coordinates (default: ["x", "y"]).
-    intra_kde_kwargs: dict
-        optional arguments for seaborn's kdeplot for intracellular data.
-    extra_kde_kwargs: dict
-        optional arguments for seaborn's kdeplot for extracellular data.
+    sdata
+        Spatial data object containing transcript locations and metadata.
+    genes
+        Gene names to plot.
+    layer
+        Layer within `sdata` where transcripts are stored.
+    gene_key
+        Column name where the gene name is stored.
+    coord_keys
+        Column names for spatial coordinates. If `None`, defaults to ``["x", "y"]``.
+    intra_kde_kwargs
+        Optional arguments for :func:`seaborn.kdeplot` for intracellular data.
+    extra_kde_kwargs
+        Optional arguments for :func:`seaborn.kdeplot` for extracellular data.
+    figsize
+        Size of the figure. If `None`, computed automatically based on the number of genes.
+
+    Returns
+    -------
+    None
     """
     if coord_keys is None:
         coord_keys = ["x", "y"]
@@ -1000,28 +1003,24 @@ def intra_extra_density(
     if extra_kde_kwargs is None:
         extra_kde_kwargs = {"fill": True, "cmap": "Reds", "thresh": 0.05}
 
-    # Convert Dask DataFrame to Pandas if necessary
     transcripts_df = sdata[layer]
     if isinstance(transcripts_df, dd.DataFrame):
         transcripts_df = transcripts_df.compute()
 
     if figsize is None:
         figsize = (12, 5 * len(genes))
-    # Create subplots
-    fig, axes = plt.subplots(len(genes), 2, figsize=figsize)
+    _, axes = plt.subplots(len(genes), 2, figsize=figsize)
     if len(genes) == 1:
-        axes = [axes]  # Ensure axes is iterable when there's only one gene
+        axes = [axes]
 
     for i, gene in enumerate(genes):
         gene_df = transcripts_df[transcripts_df[gene_key] == gene]
         intracellular = gene_df[~gene_df["extracellular"]]
         extracellular = gene_df[gene_df["extracellular"]]
 
-        # Intracellular KDE
         sns.kdeplot(data=intracellular, x=coord_keys[0], y=coord_keys[1], ax=axes[i][0], **intra_kde_kwargs)
         axes[i][0].set_title(f"{gene} - Intracellular")
 
-        # Extracellular KDE
         sns.kdeplot(data=extracellular, x=coord_keys[0], y=coord_keys[1], ax=axes[i][1], **extra_kde_kwargs)
         axes[i][1].set_title(f"{gene} - Extracellular")
 

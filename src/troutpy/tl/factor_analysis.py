@@ -3,55 +3,50 @@ import warnings
 import anndata as ad
 import numpy as np
 import pandas as pd
-import spatialdata
 from sklearn.decomposition import NMF, LatentDirichletAllocation
 from spatialdata import SpatialData
 
 
 def latent_factor(
-    sdata: spatialdata.SpatialData,
+    sdata: SpatialData,
     method: str = "NMF",
     layer: str = "segmentation_free_table",
     n_components: int = 20,
     copy: bool | None = None,
     random_state=None,
-    drvi_model_path: str = None,
+    drvi_model_path: str | None = None,
     **kwargs,
 ):
-    """
-    Applies latent factor identification (NMF, LDA, or DRVI) to reduce dimensionality of gene expression data.
+    """Apply latent factor identification (NMF, LDA, or DRVI) to reduce the dimensionality of gene expression data.
 
     Parameters
     ----------
     sdata : spatialdata.SpatialData
         SpatialData object with the specified layer containing AnnData.
-    method : str
-        One of "NMF", "LDA", or "DRVI".
-    layer : str
-        The AnnData layer in SpatialData to operate on.
-    n_components : int
-        Number of latent dimensions (ignored if DRVI model is loaded).
-    copy : bool
-        If True, return modified SpatialData. If False, operate in-place.
-    random_state : int or None
-        Random seed.
-    drvi_model_path : str
-        Path to a pretrained DRVI model.
-    kwargs : dict
-        Additional parameters for DRVI:
-        - encoder_dims : list[int]
-        - decoder_dims : list[int]
-        - n_epochs : int
-        - kl_warmup : int
-        - is_count_data : bool
-        - early_stopping : bool
-        - accelerator : str
-        - devices : int
+    method : str, optional
+        One of ``"NMF"``, ``"LDA"``, or ``"DRVI"``. Defaults to ``"NMF"``.
+    layer : str, optional
+        The AnnData layer in ``sdata`` to operate on. Defaults to ``"segmentation_free_table"``.
+    n_components : int, optional
+        Number of latent dimensions (ignored if a pretrained DRVI model is loaded). Defaults to ``20``.
+    copy : bool, optional
+        If truthy, return the modified SpatialData object; otherwise modify ``sdata`` in place
+        and return ``None``.
+    random_state : int, optional
+        Random seed for ``"NMF"`` and ``"LDA"``.
+    drvi_model_path : str, optional
+        Path to a pretrained DRVI model to load instead of training a new one.
+    **kwargs
+        Additional parameters. For ``"NMF"``/``"LDA"`` these are forwarded to
+        ``model.fit_transform``/``model.fit``. For ``"DRVI"`` the following are popped before
+        constructing/training the model: ``encoder_dims`` (list of int), ``decoder_dims``
+        (list of int), ``n_epochs`` (int), ``kl_warmup`` (int), ``is_count_data`` (bool),
+        ``early_stopping`` (bool), ``accelerator`` (str), ``devices`` (int).
 
     Returns
     -------
-    sdata : SpatialData or None
-        Modified SpatialData object or None if copy=False.
+    spatialdata.SpatialData or None
+        Modified SpatialData object if ``copy`` is truthy; otherwise ``None``.
     """
     adata = sdata[layer]
     counts = adata.X.copy()
@@ -59,13 +54,13 @@ def latent_factor(
     if method == "NMF":
         model = NMF(n_components=n_components, init="random", random_state=random_state)
         cell_loadings = model.fit_transform(counts, **kwargs)
-        gene_loadings = model.components_
+        gene_loadings = model.components_.T
 
     elif method == "LDA":
         lda = LatentDirichletAllocation(n_components=n_components, random_state=random_state)
         lda.fit(counts, **kwargs)
         cell_loadings = lda.transform(counts)
-        gene_loadings = lda.components_
+        gene_loadings = lda.components_.T
 
     elif method == "DRVI":
         try:
@@ -76,7 +71,7 @@ def latent_factor(
                 traverse_latent,
             )
         except ImportError as err:
-            raise ImportError("The 'drvi' package is required for method='DRVI'.Please install it with: pip install drvi") from err
+            raise ImportError("The 'drvi' package is required for method='DRVI'. Please install it with: pip install troutpy[factor-analysis]") from err
 
         # DRVI-specific parameters
         encoder_dims = kwargs.pop("encoder_dims", [128, 128])
@@ -139,8 +134,35 @@ def latent_factor(
     sdata[layer] = adata
     return sdata if copy else None
 
+
 def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np.ndarray) -> np.ndarray:
-    """Combines positive and negative gene loading arrays from DRVI analysis"""
+    """Combine positive and negative gene loading arrays from DRVI into a single signed matrix.
+
+    Elements present only in ``gene_loadings_pos`` are kept as positive values;
+    elements present only in ``gene_loadings_neg`` are stored as negative values.
+    Positions non-zero in both arrays trigger a warning and the negative loading
+    takes precedence.
+
+    Parameters
+    ----------
+    gene_loadings_pos : numpy.ndarray
+        2-D array of non-negative gene loading magnitudes for dimensions where genes
+        are positively associated (output of DRVI ``traverse_latent``).
+    gene_loadings_neg : numpy.ndarray
+        2-D array of non-negative gene loading magnitudes for dimensions where genes
+        are negatively associated; must have the same shape as ``gene_loadings_pos``.
+
+    Returns
+    -------
+    combined : numpy.ndarray
+        Signed loading array of the same shape, where positive-only entries are
+        positive and negative-only entries are negated.
+
+    Raises
+    ------
+    ValueError
+        If ``gene_loadings_pos`` and ``gene_loadings_neg`` have different shapes.
+    """
     if gene_loadings_pos.shape != gene_loadings_neg.shape:
         raise ValueError("Input arrays must have the same shape.")
 
@@ -152,8 +174,7 @@ def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np
     # Raise warning if conflicts found
     if np.any(conflict_mask):
         conflict_indices = np.argwhere(conflict_mask)
-        warnings.warn(f"Conflicts found at {len(conflict_indices)} locations. "
-        f"Example: {conflict_indices[:5].tolist()}",stacklevel=2)
+        warnings.warn(f"Conflicts found at {len(conflict_indices)} locations. Example: {conflict_indices[:5].tolist()}", stacklevel=2)
 
     # Initialize combined output
     combined = np.zeros_like(gene_loadings_pos)
@@ -167,58 +188,49 @@ def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np
 def factors_to_cells(
     sdata: SpatialData, extracellular_layer: str = "segmentation_free_table", cellular_layer: str = "table", copy: bool | None = None
 ) -> SpatialData:
-    """
-    Extracts extracellular RNA data and associated NMF factor loadings, intersects the gene annotations between the extracellular data and the cellular data, and applies the NMF factors to annotate the cellular data with exRNA-related factors.
+    """Project extracellular-RNA factor loadings onto the cellular table for shared genes.
+
+    Intersects the gene annotations between the extracellular and cellular tables, and
+    multiplies the cellular expression matrix by the (gene-subset) factor loadings to
+    obtain per-cell factor scores.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        The AnnData object containing both extracellular and cellular data.
-    layer_factors: str
-        The key in `sdata` that contains the extracellular RNA data with NMF factors. Default is 'nmf_data'.
-    copy: bool
-        Wether to save the `sdata` object in a separate object
+    sdata : spatialdata.SpatialData
+        SpatialData object containing both the extracellular and cellular tables.
+    extracellular_layer : str, optional
+        Key in ``sdata`` for the extracellular table with NMF/LDA/DRVI gene loadings in
+        ``.varm["gene_loadings"]``. Defaults to ``"segmentation_free_table"``.
+    cellular_layer : str, optional
+        Key in ``sdata`` for the cellular table to annotate. Defaults to ``"table"``.
+    copy : bool, optional
+        If truthy, return the modified SpatialData object; otherwise modify ``sdata`` in
+        place and return ``None``.
 
     Returns
     -------
-    sdata
-        The updated `sdata` object with annotated cellular data that includes the applied exRNA factors as new columns.
-
-    Notes
-    -----
-    The function assumes that the extracellular RNA data is stored in `sdata[layer_factors]` and that the NMF factor loadings are stored in the `uns` attribute of the extracellular dataset as 'H_nmf'. The factor scores are added to the `obs` attribute of the cellular data.
+    spatialdata.SpatialData or None
+        ``sdata`` with ``sdata[cellular_layer].obsm["factors_cell_loadings"]`` set to the
+        per-cell factor scores (restricted to genes shared with ``extracellular_layer``) if
+        ``copy`` is truthy; otherwise ``None``.
     """
     # Extract extracellular data and cellular annotations
     adata_extracellular_with_factors = sdata[extracellular_layer]
     adata_annotated_cellular = sdata[cellular_layer]
 
     # Retrieve NMF factor loadings (H matrix) from extracellular data
-    H = adata_extracellular_with_factors.varm["gene_loadings"].transpose()  # type: ignore
+    H = adata_extracellular_with_factors.varm["gene_loadings"].transpose()
 
-    # Get gene names from both datasets
     genes_selected = adata_extracellular_with_factors.var_names
     genes_annotated = adata_annotated_cellular.var_names
-
-    # Get the intersection of genes between the extracellular and cellular datasets
     common_genes = genes_annotated.intersection(genes_selected)
 
-    # Filter both datasets to retain only the common genes
     adata_annotated_cellular = adata_annotated_cellular[:, common_genes]
-    H_filtered = H[:, np.isin(genes_selected, common_genes)]  # Filtered NMF factor loadings for common genes
+    H_filtered = H[:, np.isin(genes_selected, common_genes)]
 
-    # Apply NMF factors to the annotated cellular dataset
-    # Calculate the W matrix by multiplying the cellular data (X) with the filtered NMF loadings (H)
     W_annotated = adata_annotated_cellular.X @ H_filtered.T
-
-    # Store the factors in the 'obsm' attribute of the AnnData object
     adata_annotated_cellular.obsm["factors_cell_loadings"] = pd.DataFrame(W_annotated, index=adata_annotated_cellular.obs.index)
 
-    #### Not include factors as obs.
-    # Add each factor as a new column in the 'obs' attribute of the cellular dataset
-    # for factor in range(W_annotated.shape[1]):
-    #    adata_annotated_cellular.obs[f"Factor_{factor + 1}"] = W_annotated[:, factor]
-
-    # Update the 'table' in the sdata object with the annotated cellular data
     sdata[cellular_layer] = adata_annotated_cellular
 
     return sdata if copy else None

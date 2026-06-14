@@ -1,18 +1,21 @@
 import os
+from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import spatialdata as sd
-from adjustText import adjust_text  # Helps prevent overlapping labels
+from adjustText import adjust_text
+from matplotlib.lines import Line2D
 from scipy.stats import mannwhitneyu, shapiro, ttest_ind
+from spatialdata import SpatialData
 
-from troutpy.pl import get_colormap, get_palette
+from troutpy.pl.colors import get_colormap, get_palette
 
 
 def top_bottom_probes(
-    sdata: sd.SpatialData,
+    sdata: SpatialData,
     metric: str,
     top_n: int = 10,
     bottom_n: int = 10,
@@ -22,47 +25,44 @@ def top_bottom_probes(
     custom_plot_filename: str = "",
     palette: str = "Blues",
 ) -> None:
-    """
-    Creates a horizontal bar plot showing the top and bottom genes based on a specified metric. Bars are colored based on whether the gene is a control probe or not.
+    """Plot a horizontal bar chart of the top and bottom genes for a metric.
+
+    Bars are colored based on whether the gene is a control probe or not.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
-        SpatialData object that contains 'xrna_metadata' with 'var' DataFrame.
-
-    metric : str
-        The metric to sort genes by. Must exist as a column in sdata['xrna_metadata'].var.
-
-    top_n : int
+    sdata
+        SpatialData object that contains an ``xrna_metadata`` table with a `var`
+        DataFrame.
+    metric
+        The metric to sort genes by. Must be a column in ``sdata["xrna_metadata"].var``.
+    top_n
         Number of top genes to display.
-
-    bottom_n : int
+    bottom_n
         Number of bottom genes to display.
-
-    title : str
+    title
         Title for the plot.
-
-    save : bool
-        Whether to save the figure.
-
-    figures_path : str
+    figures_path
         Directory path to save the figure.
-
-    custom_plot_filename : str
+    save
+        Whether to save the figure.
+    custom_plot_filename
         Custom filename for saving the plot.
+    palette
+        Color palette name, resolved via :func:`troutpy.pl.colors.get_palette`. Falls
+        back to a Matplotlib colormap, then to grey/black, if neither is found.
 
-    palette : str
-        Color palette name. First tries troutpy palettes, then matplotlib colormaps, else fallback to defaults.
+    Returns
+    -------
+    None
     """
-    import os
-
     var_df = sdata["xrna_metadata"].var.copy()
 
     valid_metrics = list(var_df.columns)
     if metric not in valid_metrics:
         raise ValueError(f"Invalid metric '{metric}'. Available metrics in the data are: {', '.join(valid_metrics)}")
 
-    var_df[metric] = var_df[metric].replace([float("inf"), -float("inf")], pd.NA).dropna()
+    var_df[metric] = var_df[metric].replace([float("inf"), -float("inf")], pd.NA)
 
     top_genes = var_df.nlargest(top_n, metric) if top_n > 0 else pd.DataFrame(columns=[metric])
     bottom_genes = var_df.nsmallest(bottom_n, metric) if bottom_n > 0 else pd.DataFrame(columns=[metric])
@@ -73,7 +73,6 @@ def top_bottom_probes(
 
     plot_df = plot_df.sort_values(by=metric)
 
-    # Determine colors
     control_color = "lightgrey"
     gene_color = "black"
 
@@ -81,17 +80,16 @@ def top_bottom_probes(
         pal = get_palette(palette)
         control_color = pal[0] if len(pal) > 0 else control_color
         gene_color = pal[1] if len(pal) > 1 else gene_color
-    except KeyError:
+    except ValueError:
         try:
             cmap = plt.get_cmap(palette)
             control_color = cmap(0.1)
             gene_color = cmap(0.8)
-        except KeyError:
-            pass  # fallback remains default
+        except ValueError:
+            pass
 
     colors = plot_df["control_probe"].map({True: control_color, False: gene_color}).tolist()
 
-    # Plotting
     plt.figure(figsize=(4, max(5, len(plot_df) * 0.4)))
     plt.barh(
         y=plot_df.index,
@@ -117,7 +115,7 @@ def top_bottom_probes(
 
 
 def metric_scatter(
-    sdata: sd.SpatialData,
+    sdata: SpatialData,
     x: str,
     y: str,
     size: int = 1,
@@ -127,44 +125,73 @@ def metric_scatter(
     label_bottom_n_x: int = 0,
     label_bottom_n_y: int = 0,
     title: str | None = None,
-    linewidth: str = 0.5,
+    linewidth: float = 0.5,
     figures_path: str = "",
     save: bool = False,
-    custom_plot_filename: str = None,
+    custom_plot_filename: str | None = None,
     palette: str = "troutpy",
+    group_col: str = "is_control",
+    control_label: str = "Control probes",
+    gene_label: str = "Gene probes",
+    show_control_probes: bool = True,
 ) -> None:
-    """Creates a scatter plot of two specified metrics from a SpatialData object, highlighting control vs. non-control probes, with options to label top genes in each metric and save the figure.
+    """Plot a scatter plot of two metrics from ``sdata["xrna_metadata"].var``.
+
+    Control and non-control probes are colored differently, and the top/bottom `n`
+    genes along each axis can be labeled. The figure is saved with Illustrator-editable
+    text (Type 42 fonts) and open x/y axes.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
-        A SpatialData object containing 'xrna_metadata' with 'var' DataFrame.
-    x : str
-        Metric for x-axis.
-    y : str
-        Metric for y-axis.
-    non_control_probes : str
-        List of specific non-control probes to include in the plot.
-    label_top_n_x : int
-        Number of top genes based on x to label.
-    label_top_n_y : int
-        Number of top genes based on y to label.
-    label_bottom_n_x : int
-        Number of bottom genes based on x to label.
-    label_bottom_n_y : int
-        Number of bottom genes based on y to label.
-    title : str
-        Custom title for the plot.
-    figures_path : str
-        Directory to save the figure.
-    save : bool
+    sdata
+        SpatialData object that contains an ``xrna_metadata`` table with a `var`
+        DataFrame.
+    x
+        Column in ``sdata["xrna_metadata"].var`` to plot on the x-axis.
+    y
+        Column in ``sdata["xrna_metadata"].var`` to plot on the y-axis.
+    size
+        Marker size.
+    non_control_probes
+        If `show_control_probes` is `True`, also include these probes even if
+        `group_col` marks them as controls.
+    label_top_n_x
+        Number of genes with the highest `x` values to label.
+    label_top_n_y
+        Number of genes with the highest `y` values to label.
+    label_bottom_n_x
+        Number of genes with the lowest `x` values to label.
+    label_bottom_n_y
+        Number of genes with the lowest `y` values to label.
+    title
+        Title for the plot.
+    linewidth
+        Marker edge line width.
+    figures_path
+        Directory path to save the figure.
+    save
         Whether to save the figure.
-    custom_plot_filename : str
-        Custom filename for the saved plot.
-    palette : str
-        Color palette for the plot.
+    custom_plot_filename
+        Custom filename for saving the plot.
+    palette
+        Two-color palette name, resolved via :func:`troutpy.pl.colors.get_palette`.
+        Falls back to a Matplotlib colormap, then to red/blue, if neither is found.
+    group_col
+        Boolean column in ``sdata["xrna_metadata"].var`` distinguishing control probes
+        (`True`) from gene probes (`False`).
+    control_label
+        Legend label for control probes.
+    gene_label
+        Legend label for gene probes.
+    show_control_probes
+        Whether to include control probes in the plot.
+
+    Returns
+    -------
+    None
     """
-    import os
+    mpl.rcParams["pdf.fonttype"] = 42
+    mpl.rcParams["ps.fonttype"] = 42
 
     var_df = sdata["xrna_metadata"].var.copy()
 
@@ -172,10 +199,12 @@ def metric_scatter(
     var_df[y] = var_df[y].replace([np.inf, -np.inf], np.nan)
     var_df.dropna(subset=[x, y], inplace=True)
 
-    if non_control_probes is not None:
-        var_df = var_df[(var_df["control_probe"] is True) | (var_df.index.isin(non_control_probes))]
+    if not show_control_probes:
+        var_df = var_df[~var_df[group_col]]
 
-    # Determine palette
+    if show_control_probes and non_control_probes is not None:
+        var_df = var_df[var_df[group_col] | var_df.index.isin(non_control_probes)]
+
     if palette == "default":
         plot_colors = ["#DC143C", "#1E90FF"]
     else:
@@ -190,101 +219,122 @@ def metric_scatter(
                 plot_colors = ["#DC143C", "#1E90FF"]
 
     color_map = {True: plot_colors[0], False: plot_colors[1]}
-    var_df["plot_color"] = var_df["control_probe"].map(color_map)
+    var_df["plot_color"] = var_df[group_col].map(color_map)
 
-    plt.figure(figsize=(6, 6))
-    plt.scatter(var_df[x], var_df[y], c=var_df["plot_color"], edgecolor="black", s=size, linewidth=linewidth, alpha=0.9)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(
+        var_df[x],
+        var_df[y],
+        c=var_df["plot_color"],
+        edgecolor="black",
+        s=size,
+        linewidth=linewidth,
+        alpha=0.9,
+    )
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    genes_only_df = var_df[~var_df[group_col]]
 
     label_genes = set()
     if label_top_n_x > 0:
-        label_genes.update(var_df.nlargest(label_top_n_x, x).index)
+        label_genes.update(genes_only_df.nlargest(label_top_n_x, x).index)
     if label_top_n_y > 0:
-        label_genes.update(var_df.nlargest(label_top_n_y, y).index)
+        label_genes.update(genes_only_df.nlargest(label_top_n_y, y).index)
     if label_bottom_n_x > 0:
-        label_genes.update(var_df.nsmallest(label_bottom_n_x, x).index)
+        label_genes.update(genes_only_df.nsmallest(label_bottom_n_x, x).index)
     if label_bottom_n_y > 0:
-        label_genes.update(var_df.nsmallest(label_bottom_n_y, y).index)
+        label_genes.update(genes_only_df.nsmallest(label_bottom_n_y, y).index)
 
-    texts = []
-    for gene in label_genes:
-        texts.append(plt.text(var_df.loc[gene, x], var_df.loc[gene, y], gene, fontsize=11, ha="right", fontweight="bold"))
+    texts = [ax.text(var_df.loc[gene, x], var_df.loc[gene, y], gene, fontsize=11, ha="right", fontweight="normal") for gene in label_genes]
 
     x_min, x_max = var_df[x].min(), var_df[x].max()
     y_min, y_max = var_df[y].min(), var_df[y].max()
-
     x_padding = (x_max - x_min) * 0.1
     y_padding = (y_max - y_min) * 0.1
 
-    plt.xlim(x_min - x_padding, x_max + x_padding)
-    plt.ylim(y_min - y_padding, y_max + y_padding)
+    ax.set_xlim(x_min - x_padding, x_max + x_padding)
+    ax.set_ylim(y_min - y_padding, y_max + y_padding)
 
-    adjust_text(
-        texts,
-        arrowprops={"arrowstyle": "-", "color": "black", "lw": 1},
-        only_move={"points": "xy", "text": "xy"},
-        expand_points=(4, 4),
-        expand_text=(5, 5),
-        force_text=(5, 5),
-        force_points=(6, 6),
-        force_explode=(4, 4),
-    )
+    if texts:
+        adjust_text(
+            texts,
+            arrowprops={"arrowstyle": "-", "color": "black", "lw": 1},
+            only_move={"points": "xy", "text": "xy"},
+            expand_points=(4, 4),
+            expand_text=(5, 5),
+            force_text=(5, 5),
+            force_points=(6, 6),
+            force_explode=(4, 4),
+        )
 
-    plt.xlabel(x.replace("_", " ").title(), fontsize=12, fontweight="bold")
-    plt.ylabel(y.replace("_", " ").title(), fontsize=12, fontweight="bold")
+    ax.set_xlabel(x.replace("_", " ").title(), fontsize=12, fontweight="normal")
+    ax.set_ylabel(y.replace("_", " ").title(), fontsize=12, fontweight="normal")
 
     if title:
-        plt.title(title, fontsize=14, fontweight="bold")
+        ax.set_title(title, fontsize=14, fontweight="bold")
 
-    # Add legend
-    from matplotlib.lines import Line2D
+    if show_control_probes:
+        legend_elements = [
+            Line2D([0], [0], marker="o", color="w", label=control_label, markerfacecolor=plot_colors[0], markeredgecolor="black", markersize=8),
+            Line2D([0], [0], marker="o", color="w", label=gene_label, markerfacecolor=plot_colors[1], markeredgecolor="black", markersize=8),
+        ]
+    else:
+        legend_elements = [
+            Line2D([0], [0], marker="o", color="w", label=gene_label, markerfacecolor=plot_colors[1], markeredgecolor="black", markersize=8),
+        ]
+    ax.legend(handles=legend_elements, loc="best", frameon=False)
 
-    legend_elements = [
-        Line2D([0], [0], marker="o", color="w", label="Control Probe", markerfacecolor=plot_colors[0], markeredgecolor="black", markersize=8),
-        Line2D([0], [0], marker="o", color="w", label="Non-Control Probe", markerfacecolor=plot_colors[1], markeredgecolor="black", markersize=8),
-    ]
-    plt.legend(handles=legend_elements, loc="best", frameon=True)
-
-    plt.xticks(fontsize=10)
-    plt.yticks(fontsize=10)
+    ax.tick_params(labelsize=10)
 
     if save:
-        os.makedirs(figures_path, exist_ok=True)
+        fig_dir = Path(figures_path)
+        fig_dir.mkdir(parents=True, exist_ok=True)
         plot_filename = custom_plot_filename or f"{x}_vs_{y}_scatter.pdf"
-        plt.savefig(os.path.join(figures_path, plot_filename), bbox_inches="tight")
+        plt.savefig(fig_dir / plot_filename, bbox_inches="tight")
 
     plt.show()
 
 
 def logfoldratio_over_noise(
-    sdata: sd.SpatialData,
-    control_key="control_probe",
+    sdata: SpatialData,
+    control_key: str = "control_probe",
     test_method: str = "auto",
     figures_path: str = "",
     save: bool = False,
-    custom_plot_filename: str = None,
+    custom_plot_filename: str | None = None,
     palette: str = "troutpy",
 ) -> None:
-    """Creates a violin plot comparing logfoldratio_over_noise values for controlvs non-control probes, and tests for significance using the specified test.
+    """Plot a violin plot comparing ``logfoldratio_over_noise`` for control vs non-control probes.
+
+    A statistical test is used to compare the two groups, and the result is
+    annotated on the plot.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        SpatialData object that contains 'xrna_metadata' with 'var' DataFrame.
-    control_key: str
-        The column in var indicating which probes are controls.
-    test_method: str
-        Statistical test to use. Options:
-                 - "t-test" → Welch's t-test
-                 - "mannwhitney" → Mann-Whitney U-test
-                 - "auto" (default) → Chooses test based on normality test.
-    figures_path: str
-        Directory to save the figure.
-    save: str
-        If True, saves the figure as a PDF in the specified path.
-    custom_plot_filename: str
-        Custom filename for the saved plot.
-    palette: str
-        Matplotlib palette name or list of two colors. Default is ["lightgrey", "black"].
+    sdata
+        SpatialData object that contains an ``xrna_metadata`` table with a `var`
+        DataFrame.
+    control_key
+        Column in ``sdata["xrna_metadata"].var`` indicating which probes are controls.
+    test_method
+        Statistical test to use: ``"t-test"`` (Welch's t-test), ``"mannwhitney"``
+        (Mann-Whitney U test), or ``"auto"`` to choose based on a Shapiro-Wilk
+        normality test of both groups.
+    figures_path
+        Directory path to save the figure.
+    save
+        Whether to save the figure.
+    custom_plot_filename
+        Custom filename for saving the plot.
+    palette
+        Two-color palette name, resolved via :func:`troutpy.pl.colors.get_palette`.
+        Falls back to a Matplotlib colormap, then to grey/black, if neither is found.
+
+    Returns
+    -------
+    None
     """
     var_df = sdata["xrna_metadata"].var.copy()
 
@@ -294,7 +344,7 @@ def logfoldratio_over_noise(
     control_values = var_df[var_df["control_probe_cat"] == "Control Probes"]["logfoldratio_over_noise"]
     non_control_values = var_df[var_df["control_probe_cat"] == "Non-Control Probes"]["logfoldratio_over_noise"]
 
-    var_df["logfoldratio_over_noise"] = var_df["logfoldratio_over_noise"].replace([np.inf, -np.inf], np.nan).dropna()
+    var_df["logfoldratio_over_noise"] = var_df["logfoldratio_over_noise"].replace([np.inf, -np.inf], np.nan)
 
     if test_method == "auto":
         control_normal = shapiro(control_values).pvalue > 0.05
@@ -313,7 +363,6 @@ def logfoldratio_over_noise(
     else:
         raise ValueError("Invalid test_method. Choose from 't-test', 'mannwhitney' or 'auto'.")
 
-    # Determine palette
     if palette == "default":
         plot_colors = ["lightgrey", "black"]
     else:
@@ -360,17 +409,51 @@ def logfoldratio_over_noise(
 
 
 def gene_metric_heatmap(
-    sdata: sd.SpatialData,
+    sdata: SpatialData,
     metrics: list[str] | None = None,
     probes_to_plot: list[str] | None = None,
     title: str | None = None,
     cluster_axis: str = "both",
     save: bool = False,
     figures_path: str = "",
-    custom_plot_filename: str = None,
+    custom_plot_filename: str | None = None,
     cmap: str = "coolwarm",
 ) -> None:
-    """Creates a heatmap or clustered heatmap of gene metrics, with color differentiation for control probes and optional saving."""
+    """Plot a heatmap or clustered heatmap of per-gene metrics.
+
+    Control probes are highlighted in the y-tick labels (when shown) by coloring
+    them grey instead of black.
+
+    Parameters
+    ----------
+    sdata
+        SpatialData object that contains an ``xrna_metadata`` table with a `var`
+        DataFrame.
+    metrics
+        Columns in ``sdata["xrna_metadata"].var`` to include as heatmap columns. If
+        `None`, defaults to a fixed set of quality-control metrics.
+    probes_to_plot
+        If provided, restrict the heatmap to these probes/genes, and show y-tick
+        labels if there are at most 20 of them.
+    title
+        Title for the plot.
+    cluster_axis
+        Determines clustering: ``"none"`` (no clustering), ``"x"`` (cluster columns
+        only), ``"y"`` (cluster rows only), or ``"both"`` (cluster rows and columns).
+    save
+        Whether to save the figure.
+    figures_path
+        Directory path to save the figure.
+    custom_plot_filename
+        Custom filename for saving the plot.
+    cmap
+        Colormap for the heatmap, resolved via :func:`troutpy.pl.colors.get_colormap`
+        if not a built-in Matplotlib colormap.
+
+    Returns
+    -------
+    None
+    """
     var_df = sdata["xrna_metadata"].var.copy()
 
     valid_metrics = {
@@ -405,9 +488,8 @@ def gene_metric_heatmap(
 
     ytick_colors = ["gray" if (gene in var_df.index and var_df.loc[gene, "control_probe"]) else "black" for gene in heatmap_data.index]
 
-    # Determine colormap
     try:
-        cmap = get_colormap(cmap)  # your custom function
+        cmap = get_colormap(cmap)
     except ValueError:
         try:
             cmap = plt.get_cmap(cmap)
@@ -436,8 +518,6 @@ def gene_metric_heatmap(
         ax.set_xlabel("", fontsize=12, fontweight="bold")
         ax.set_ylabel("", fontsize=12, fontweight="bold")
         ax.set_title(title if title else "", fontsize=14, fontweight="bold", pad=15)
-
-        # Rotate x-tick labels
         ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right", fontsize=8)
 
         if save:
@@ -467,22 +547,19 @@ def gene_metric_heatmap(
 
         if not show_ylabels:
             g.ax_heatmap.set_yticklabels([])
+        elif row_cluster and g.dendrogram_row is not None:
+            row_order = g.dendrogram_row.reordered_ind
+            new_index = heatmap_data.index[row_order]
+            for tick_label, gene in zip(g.ax_heatmap.get_yticklabels(), new_index, strict=False):
+                color = "gray" if (gene in var_df.index and var_df.loc[gene, "control_probe"]) else "black"
+                tick_label.set_color(color)
         else:
-            if row_cluster and g.dendrogram_row is not None:
-                row_order = g.dendrogram_row.reordered_ind
-                new_index = heatmap_data.index[row_order]
-                for tick_label, gene in zip(g.ax_heatmap.get_yticklabels(), new_index, strict=False):
-                    color = "gray" if (gene in var_df.index and var_df.loc[gene, "control_probe"]) else "black"
-                    tick_label.set_color(color)
-            else:
-                for tick_label, color in zip(g.ax_heatmap.get_yticklabels(), ytick_colors, strict=False):
-                    tick_label.set_color(color)
+            for tick_label, color in zip(g.ax_heatmap.get_yticklabels(), ytick_colors, strict=False):
+                tick_label.set_color(color)
 
         g.ax_heatmap.set_xlabel("", fontsize=7, fontweight="bold")
         g.ax_heatmap.set_ylabel("", fontsize=7, fontweight="bold")
         g.ax_heatmap.set_title(title if title else "", fontsize=7, fontweight="bold", pad=15 if cluster_axis == "y" else 35)
-
-        # Rotate x-tick labels
         g.ax_heatmap.set_xticklabels(g.ax_heatmap.get_xticklabels(), rotation=45, ha="right", fontsize=7)
 
         if save:
