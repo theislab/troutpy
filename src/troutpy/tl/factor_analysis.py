@@ -71,7 +71,9 @@ def latent_factor(
                 traverse_latent,
             )
         except ImportError as err:
-            raise ImportError("The 'drvi' package is required for method='DRVI'. Please install it with: pip install troutpy[factor-analysis]") from err
+            raise ImportError(
+                "The 'drvi' package is required for method='DRVI'. Please install it with: pip install troutpy[factor-analysis]"
+            ) from err
 
         # DRVI-specific parameters
         encoder_dims = kwargs.pop("encoder_dims", [128, 128])
@@ -182,7 +184,6 @@ def combine_loadings_arrays(gene_loadings_pos: np.ndarray, gene_loadings_neg: np
     combined[neg_nonzero] = -gene_loadings_neg[neg_nonzero]
 
     return combined
-
 
 
 def factors_to_cells(

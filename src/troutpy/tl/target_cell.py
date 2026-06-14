@@ -91,9 +91,8 @@ def calculate_target_cells(
     # Normalize by the total number of each feature (row-wise normalization)
     celltype_by_feature = celltype_by_feature_raw.div(celltype_by_feature_raw.sum(axis=1), axis=0)
 
-    # Create an output DataFrame and store computed proportions
-    outtable = pd.DataFrame(index=sdata["xrna_metadata"].var.index)
-    sdata["xrna_metadata"].varm["target"] = outtable.join(celltype_by_feature).to_numpy()
+    # Align proportions to the xrna_metadata gene order, filling missing genes with NaN
+    sdata["xrna_metadata"].varm["target"] = celltype_by_feature.reindex(sdata["xrna_metadata"].var.index).to_numpy()
 
     # Return a copy of the modified SpatialData object if requested
     return deepcopy(sdata) if copy else None
@@ -195,14 +194,8 @@ def compute_target_score(
     transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
 
     # Output tables
-    target_scores_table = pd.DataFrame(
-        0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float
-    )
-    closest_cell_info = pd.DataFrame(
-        index=extracellular_transcripts.index,
-        columns=["distance", "closest_cell", "closest_cell_type"],
-        dtype=object
-    )
+    target_scores_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
+    closest_cell_info = pd.DataFrame(index=extracellular_transcripts.index, columns=["distance", "closest_cell", "closest_cell_type"], dtype=object)
 
     # KDTree on cell centroids
     kdtree = KDTree(coord_cells)
@@ -252,4 +245,3 @@ def compute_target_score(
     sdata.tables["target_score"] = prob_table
 
     return deepcopy(sdata) if copy else None
-

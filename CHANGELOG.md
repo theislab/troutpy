@@ -21,13 +21,25 @@ and this project adheres to [Semantic Versioning][].
 ### Fixed
 
 - `tl.adaptative_source_score_optimized`: `AttributeError:
-  'numpy.ndarray' object has no attribute 'tocsr'` when `sdata["table"].X`
+'numpy.ndarray' object has no attribute 'tocsr'` when `sdata["table"].X`
   is a dense array — now converts via `csr_matrix(...)` instead of calling
   `.tocsr()`.
 - `pl.global_distribution_from_source`: fixed the default `cluster_key`
   (`"kmeans_from_distribution"` → `"kmeans_distribution"`) to match the
   column actually written by `tl.cluster_distribution_from_source` and used
   by `pl.distributions_by_cluster`.
+- `pp.filter_urna`/`pp.aggregate_urna`: fixed `dask`/`spatialdata` compatibility
+  issues — boolean-indexing the `transcripts` points dataframe no longer drops
+  required `.attrs`, and an unnecessary `.compute()` that broke on newer
+  `dask` is removed.
+- `tl.calculate_target_cells`: fixed gene alignment (`reindex` instead of a
+  `join` that broke under `pandas` 2.3.x with a `CategoricalIndex`).
+- Added `troutpy[spatial-stats]` to the `test` extra so the test suite's
+  optional dependencies (`sainsc`, `squidpy`) are installed in CI.
+- `docs/notebooks/Basic_tutorial.ipynb`: fixed cells with stray leading
+  whitespace (caused `ruff`/pre-commit parse failures), an unused `numpy`
+  import, and two calls using `troutpy.pl....` instead of the notebook's
+  `tp` alias.
 
 ## [0.1.1]
 

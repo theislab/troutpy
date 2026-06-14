@@ -53,34 +53,6 @@ optional-dependencies.chord = [
   # tl.pl chord-diagram plots (pl.cell_type_contacts, pl.gene_communication, pl.celltype_contact_matrix)
   "mpl-chord-diagram",
 ]
-optional-dependencies.factor-analysis = [
-  # tl.latent_factor(method="DRVI")
-  "drvi",
-]
-optional-dependencies.io = [
-  # reading vendor formats ahead of pp.xenium_converter / pp.cosmx_converter
-  "spatialdata-io",
-]
-optional-dependencies.morphology = [
-  # pp.add_morphological_metrics
-  "scikit-image",
-]
-optional-dependencies.segmentation-free = [
-  # tl.segmentation_free_clustering(method="points2regions")
-  "points2regions",
-  # pp.segmentation_free_sainsc
-  "sainsc",
-]
-optional-dependencies.spatial-stats = [
-  # tl.spatial_variability, tl.spatial_colocalization
-  "sainsc",
-  "squidpy>=1.6.2",
-]
-optional-dependencies.viz = [
-  # sdata.pl.render_* alongside troutpy's own pl functions
-  "spatialdata-plot",
-]
-
 optional-dependencies.dev = [
   "ipykernel",
   "ipython",
@@ -104,10 +76,39 @@ optional-dependencies.doc = [
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
 ]
+optional-dependencies.factor-analysis = [
+  # tl.latent_factor(method="DRVI")
+  "drvi",
+]
+optional-dependencies.io = [
+  # reading vendor formats ahead of pp.xenium_converter / pp.cosmx_converter
+  "spatialdata-io",
+]
+optional-dependencies.morphology = [
+  # pp.add_morphological_metrics
+  "scikit-image",
+]
+optional-dependencies.segmentation-free = [
+  # tl.segmentation_free_clustering(method="points2regions")
+  "points2regions",
+  # pp.segmentation_free_sainsc
+  "sainsc",
+]
+optional-dependencies.spatial-stats = [
+  # tl.spatial_variability, tl.spatial_colocalization
+  "sainsc",
+  "squidpy>=1.6.2",
+]
 optional-dependencies.test = [
   "coverage",
   "pytest",
+  "troutpy[spatial-stats]",
 ]
+optional-dependencies.viz = [
+  # sdata.pl.render_* alongside troutpy's own pl functions
+  "spatialdata-plot",
+]
+
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://troutpy.readthedocs.io/"
 urls.Homepage = "https://github.com/sergiomarco25/troutpy"

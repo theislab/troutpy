@@ -297,6 +297,7 @@ def diffusion_results(
 
     plt.show()
 
+
 def spatial_transcripts(
     sdata: SpatialData,
     gene_key: str = "gene",
@@ -558,9 +559,7 @@ def spatial_transcripts(
     gdf.plot(ax=ax, facecolor="none", edgecolor="black", linewidth=boundary_linewidth, alpha=0.4, zorder=boundary_zorder)
 
     if not unmapped_df.empty:
-        ax.scatter(
-            unmapped_df["x"], unmapped_df["y"], c="#A0A0A0", s=scatter_size, edgecolor="none", alpha=alpha, zorder=2, rasterized=rasterize
-        )
+        ax.scatter(unmapped_df["x"], unmapped_df["y"], c="#A0A0A0", s=scatter_size, edgecolor="none", alpha=alpha, zorder=2, rasterized=rasterize)
 
     if not fg_df.empty:
         c_vals = fg_df[color_key] if is_numeric else fg_df[color_key].cat.codes
@@ -816,9 +815,7 @@ def point_metric_comparison(
         handles, labels = g.ax_joint.get_legend_handles_labels()
         if handles:
             unique_labels = dict(zip(labels, handles, strict=False))
-            g.ax_joint.legend(
-                unique_labels.values(), unique_labels.keys(), title=clean_hue, bbox_to_anchor=(1.22, 1), loc="upper left", frameon=True
-            )
+            g.ax_joint.legend(unique_labels.values(), unique_labels.keys(), title=clean_hue, bbox_to_anchor=(1.22, 1), loc="upper left", frameon=True)
     elif g.ax_joint.get_legend() is not None:
         g.ax_joint.get_legend().remove()
 

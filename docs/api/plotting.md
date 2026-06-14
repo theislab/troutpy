@@ -8,7 +8,7 @@
 
 .. autosummary::
     :toctree: generated/basic_plots
-    
+
     crosstab
     histogram
     pie
@@ -24,7 +24,7 @@
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/quantification
-    
+
     gene_metric_heatmap
     logfoldratio_over_noise
     metric_scatter
@@ -34,18 +34,15 @@
     moranI_histogram
     diffusion_results
     spatial_inout_expression
-    
+
 ```
-
-
-
 
 ## Source, target and communication
 
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/communication
-    
+
     cell_type_contacts
     celltype_contact_matrix
     gene_communication
@@ -58,7 +55,7 @@
     urna_vs_source_score
     interactions_with_arrows
     spatial_interactions
-    
+
 ```
 
 ## Factor analysis
@@ -66,7 +63,7 @@
 ```{eval-rst}
 .. autosummary::
     :toctree: generated/factor_analysis
-    
+
     factors_in_cells
     rank_factor_genes_loadings
     rank_factor_genes_loadings_matrixplot
@@ -74,9 +71,8 @@
     nmf_gene_contributions
     paired_nmf_factors
     apply_exrnaH_to_cellular_to_create_cellularW
- 
-```
 
+```
 
 ## Colormaps & palettes
 
@@ -87,6 +83,3 @@
     get_colormap
     get_palette
 ```
-
-
-

@@ -210,6 +210,7 @@ def gene_specific_interactions(sdata, copy: bool = False, gene_key: str = "gene"
 
     return deepcopy(sdata) if copy else None
 
+
 def cell_contacts_with_urna_sources(
     sdata,
     spatial_key: str = "spatial",
@@ -421,11 +422,7 @@ def celltype_contact_matrix(
     transcripts["overlaps_cell_bool"] = transcripts["overlaps_cell"].astype(str).str.lower() == "true"
 
     is_body = transcripts["overlaps_cell_bool"] & transcripts["cell_id_str"].isin(cell_type_map)
-    is_halo = (
-        ~transcripts["overlaps_cell_bool"]
-        & (transcripts["assignment_score"] >= min_score)
-        & transcripts["parent_id_str"].isin(cell_type_map)
-    )
+    is_halo = ~transcripts["overlaps_cell_bool"] & (transcripts["assignment_score"] >= min_score) & transcripts["parent_id_str"].isin(cell_type_map)
 
     transcripts["owner"] = np.where(is_body, transcripts["cell_id_str"], np.where(is_halo, transcripts["parent_id_str"], np.nan))
 
@@ -455,9 +452,7 @@ def celltype_contact_matrix(
         x1 = x0 + tile_size
         y1 = y0 + tile_size
 
-        mask = (
-            (coords[:, 0] >= x0 - radius) & (coords[:, 0] < x1 + radius) & (coords[:, 1] >= y0 - radius) & (coords[:, 1] < y1 + radius)
-        )
+        mask = (coords[:, 0] >= x0 - radius) & (coords[:, 0] < x1 + radius) & (coords[:, 1] >= y0 - radius) & (coords[:, 1] < y1 + radius)
         tile_coords = coords[mask]
         tile_owners = owners[mask]
 

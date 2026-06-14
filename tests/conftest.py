@@ -57,24 +57,24 @@ def _build_base_sdata():
 
     # intracellular transcripts, drawn per-cell from its cell-type signature
     n_intra_per_cell = 15
-    for ci, (cx, cy, ct) in enumerate(zip(cell_xs, cell_ys, cell_types)):
+    for ci, (cx, cy, ct) in enumerate(zip(cell_xs, cell_ys, cell_types, strict=False)):
         g = rng.choice(GENES, size=n_intra_per_cell, p=sig[ct])
         xs = cx + rng.normal(0, 1.5, size=n_intra_per_cell)
         ys = cy + rng.normal(0, 1.5, size=n_intra_per_cell)
         for j in range(n_intra_per_cell):
             records.append(
-                dict(
-                    transcript_id=tid,
-                    x=xs[j],
-                    y=ys[j],
-                    gene=g[j],
-                    feature_name=g[j],
-                    cell_id=cell_ids[ci],
-                    overlaps_cell=True,
-                    overlaps_nucleus=bool(rng.random() < 0.5),
-                    codeword_category="predesigned_gene",
-                    control_probe=False,
-                )
+                {
+                    "transcript_id": tid,
+                    "x": xs[j],
+                    "y": ys[j],
+                    "gene": g[j],
+                    "feature_name": g[j],
+                    "cell_id": cell_ids[ci],
+                    "overlaps_cell": True,
+                    "overlaps_nucleus": bool(rng.random() < 0.5),
+                    "codeword_category": "predesigned_gene",
+                    "control_probe": False,
+                }
             )
             tid += 1
 
@@ -87,18 +87,18 @@ def _build_base_sdata():
     ys = rng.uniform(ymin, ymax, size=n_extra)
     for j in range(n_extra):
         records.append(
-            dict(
-                transcript_id=tid,
-                x=xs[j],
-                y=ys[j],
-                gene=g[j],
-                feature_name=g[j],
-                cell_id="UNASSIGNED",
-                overlaps_cell=False,
-                overlaps_nucleus=False,
-                codeword_category="predesigned_gene",
-                control_probe=False,
-            )
+            {
+                "transcript_id": tid,
+                "x": xs[j],
+                "y": ys[j],
+                "gene": g[j],
+                "feature_name": g[j],
+                "cell_id": "UNASSIGNED",
+                "overlaps_cell": False,
+                "overlaps_nucleus": False,
+                "codeword_category": "predesigned_gene",
+                "control_probe": False,
+            }
         )
         tid += 1
 
@@ -109,18 +109,18 @@ def _build_base_sdata():
     ys = rng.uniform(ymin, ymax, size=n_ctrl)
     for j in range(n_ctrl):
         records.append(
-            dict(
-                transcript_id=tid,
-                x=xs[j],
-                y=ys[j],
-                gene=g[j],
-                feature_name=g[j],
-                cell_id="UNASSIGNED",
-                overlaps_cell=False,
-                overlaps_nucleus=False,
-                codeword_category="negative_control_probe",
-                control_probe=True,
-            )
+            {
+                "transcript_id": tid,
+                "x": xs[j],
+                "y": ys[j],
+                "gene": g[j],
+                "feature_name": g[j],
+                "cell_id": "UNASSIGNED",
+                "overlaps_cell": False,
+                "overlaps_nucleus": False,
+                "codeword_category": "negative_control_probe",
+                "control_probe": True,
+            }
         )
         tid += 1
 
@@ -131,18 +131,18 @@ def _build_base_sdata():
     ys = cy + rng.uniform(0, 0.5, size=n_cluster)
     for j in range(n_cluster):
         records.append(
-            dict(
-                transcript_id=tid,
-                x=xs[j],
-                y=ys[j],
-                gene="Gene05",
-                feature_name="Gene05",
-                cell_id="UNASSIGNED",
-                overlaps_cell=False,
-                overlaps_nucleus=False,
-                codeword_category="predesigned_gene",
-                control_probe=False,
-            )
+            {
+                "transcript_id": tid,
+                "x": xs[j],
+                "y": ys[j],
+                "gene": "Gene05",
+                "feature_name": "Gene05",
+                "cell_id": "UNASSIGNED",
+                "overlaps_cell": False,
+                "overlaps_nucleus": False,
+                "codeword_category": "predesigned_gene",
+                "control_probe": False,
+            }
         )
         tid += 1
 

@@ -79,9 +79,7 @@ def image_intensities_per_transcript(
     xy_positions = np.column_stack((transcripts["x_scaled"], transcripts["y_scaled"]))
     xy_positions_raw = np.column_stack((transcripts["x"], transcripts["y"]))
 
-    intensities = image.sel(
-        x=xr.DataArray(xy_positions[:, 0], dims="points"), y=xr.DataArray(xy_positions[:, 1], dims="points"), method="nearest"
-    )
+    intensities = image.sel(x=xr.DataArray(xy_positions[:, 0], dims="points"), y=xr.DataArray(xy_positions[:, 1], dims="points"), method="nearest")
 
     ad_data = intensities.image.values.transpose()
     if ad_data.ndim == 2:
