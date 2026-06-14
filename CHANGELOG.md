@@ -40,6 +40,11 @@ and this project adheres to [Semantic Versioning][].
   whitespace (caused `ruff`/pre-commit parse failures), an unused `numpy`
   import, and two calls using `troutpy.pl....` instead of the notebook's
   `tp` alias.
+- Excluded `anndata==0.13.0rc1` (`anndata!=0.13.0rc1`): this release
+  candidate makes `AnnData(X=...)` populate `adata.layers` with a `None`
+  key, which crashes `spatialdata`'s `TableModel.parse` validation
+  (`AttributeError: 'NoneType' object has no attribute 'lower'`) and broke
+  the `PRE-RELEASE DEPENDENCIES` CI job.
 
 ## [0.1.1]
 
