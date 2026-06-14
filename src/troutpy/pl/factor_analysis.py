@@ -1,14 +1,12 @@
-# Function 1- plot latent composition [DEG like plot]
 from typing import Any
 
-import anndata
 import matplotlib.pyplot as plt
 import numpy as np
 import scanpy as sc
 import seaborn as sns
 from anndata import AnnData
 from matplotlib import gridspec, rcParams
-from spatialdata import SpatialData  # Assuming SpatialData is from scverse
+from spatialdata import SpatialData
 
 from troutpy.pl.colors import get_colormap
 
@@ -25,28 +23,34 @@ def rank_factor_genes_loadings(
     ax: plt.Axes | None = None,
     **kwargs,
 ) -> list[plt.Axes] | None:
-    """
-    Plot top scoring genesex for each factor from NMF/LDA.
+    """Plot top scoring genes for each factor from NMF/LDA.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
+    sdata
         The SpatialData object containing the factorized data.
-    layer : str
+    layer
         The layer name in `sdata` where the factorized results are stored.
-    n_genes : int
-        Number of top genes to display per factor, by default 20.
-    fontsize : int
-        Font size for gene names, by default 8.
-    ncols : int
-        Number of panels per row, by default 4.
-    sharey : bool
-        Whether to share y-axis scale across subplots, by default True.
-    show : bool
-        Whether to show the plot, by default True.
-    save : str
-        Path to save the figure, by default None.
+    n_genes
+        Number of top genes to display per factor.
+    fontsize
+        Font size for gene names.
+    ncols
+        Number of panels per row.
+    sharey
+        Whether to share the y-axis scale across subplots.
+    show
+        Whether to show the plot.
+    save
+        Path to save the figure. If `None`, the figure is not saved.
+    ax
+        Existing axes to plot into. If `None`, a new figure and grid of axes are created.
+    kwargs
+        Additional keyword arguments (currently unused).
 
+    Returns
+    -------
+    If `show=True`, `None`. Otherwise, the list of :class:`matplotlib.axes.Axes` used for plotting.
     """
     adata = sdata[layer]
     gene_loadings = adata.varm["gene_loadings"].T  # Factors x Genes
@@ -108,50 +112,54 @@ def rank_factor_genes_loadings_matrixplot(
     vmax: float | None = None,
     show: bool = True,
     save: str | None = None,
-    figsize: tuple = None,
+    figsize: tuple | None = None,
 ):
-    """
-    Plot ranking of genes using a matrixplot based on factor loadings.
+    """Plot ranking of genes using a matrixplot based on factor loadings.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
+    sdata
         The spatial data object containing gene expression information.
-    layer : str
+    layer
         The layer in `sdata` that contains the AnnData object.
-    n_genes : int
-        Number of top genes to plot per factor, by default 20.
-    cmap : str
-        Colormap for visualization, by default "bwr".
-    vmin, vmax : float
-        Color scaling limits.
-    show : bool
-        Whether to display the plot, by default True.
-    save : str
-        Path to save the figure, by default None.
+    n_genes
+        Number of top genes to plot per factor.
+    cmap
+        Colormap for visualization. If not a built-in Matplotlib colormap, it is
+        resolved via :func:`troutpy.pl.colors.get_colormap`.
+    vmin
+        Lower color scaling limit.
+    vmax
+        Upper color scaling limit.
+    show
+        Whether to display the plot.
+    save
+        Path to save the figure. If `None`, the figure is not saved.
+    figsize
+        Figure size. If `None`, it is derived from the number of factors and genes.
+
+    Returns
+    -------
+    If `show=True`, `None`. Otherwise, the current :class:`matplotlib.axes.Axes`.
     """
     adata: AnnData = sdata[layer]
     gene_loadings = adata.varm["gene_loadings"]  # Shape: genes x factors
     factor_names = [f"Factor {i + 1}" for i in range(gene_loadings.shape[1])]
 
-    # Identify top genes per factor
     top_genes = {}
     for i, factor in enumerate(factor_names):
         top_indices = np.argsort(-np.abs(gene_loadings[:, i]))[:n_genes]
         top_genes[factor] = adata.var_names[top_indices].tolist()
 
-    # Convert to heatmap-friendly format
-    gene_list = [gene for gl in top_genes.values() for gene in gl]  # Unique genes across all factors
+    gene_list = [gene for gl in top_genes.values() for gene in gl]
     factor_matrix = np.array([gene_loadings[adata.var_names.get_indexer(gene_list), i] for i in range(gene_loadings.shape[1])]).T
-    print(top_genes)
-    # Ensure colormap is valid
+
     if cmap not in plt.colormaps():
         try:
             cmap = get_colormap(cmap)
-        except KeyError:
+        except ValueError:
             pass
 
-    # Plot heatmap
     if figsize is None:
         plt.figure(figsize=(len(factor_names) * 0.3, len(gene_list) * 0.1))
     else:
@@ -171,30 +179,35 @@ def rank_factor_genes_loadings_matrixplot(
 
 
 def factors_in_cells(
-    sdata: anndata.AnnData,
+    sdata: SpatialData,
     layer: str = "table",
     method: str = "matrixplot",
     celltype_key: str = "cell_type",
     cmap: str = "troutpy",
     **kwargs: dict[str, Any],
 ):
-    """
-    Plot factors from a specified layer in a Scanpy AnnData object.
+    """Plot per-cell factor loadings from a specified table, grouped by cell type.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata
         The SpatialData object containing the data.
-    layer: str
-        The layer from which to extract the factors (default: 'table').
-    method: str
-        The plotting method ('matrixplot', 'dotplot', 'violin').
-    celltype_key: str
-        The key in `.obs` to group by (default: 'cell_type').
-    title: str
-        Title for the plot (default: '').
+    layer
+        The table in `sdata` from which to extract the factor loadings
+        (``.obsm["factors_cell_loadings"]``).
+    method
+        The plotting method: ``"matrixplot"``, ``"dotplot"``, ``"violin"``, or ``"heatmap"``.
+    celltype_key
+        The key in `.obs` to group by.
+    cmap
+        Colormap for visualization. If not a built-in Matplotlib colormap, it is
+        resolved via :func:`troutpy.pl.colors.get_colormap`.
     kwargs
-        Additional keyword arguments passed to the plotting function.
+        Additional keyword arguments passed to the underlying `scanpy.pl` plotting function.
+
+    Returns
+    -------
+    None
     """
     loadata = sc.AnnData(sdata[layer].obsm["factors_cell_loadings"])
     loadata.var.index = [f"Factor {i + 1}" for i in range(loadata.shape[1])]
@@ -203,7 +216,7 @@ def factors_in_cells(
     if cmap not in plt.colormaps():
         try:
             cmap = get_colormap(cmap)
-        except KeyError:
+        except ValueError:
             pass
     if method == "matrixplot":
         sc.pl.matrixplot(loadata, loadata.var.index, groupby=celltype_key, cmap=cmap, **kwargs)

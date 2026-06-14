@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -19,34 +21,34 @@ def calculate_target_cells(
     gene_id_key: str = "gene",
     copy: bool = False,
 ) -> SpatialData | None:
-    """
-    Identifies the nearest cell to each transcript based on spatial coordinates and annotates the transcript data with the ID, cell type, and distance to the closest cell.
+    """Find the nearest cell to each transcript and annotate it with that cell's ID, type, and distance.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
+    sdata : spatialdata.SpatialData
         SpatialData object containing spatial and transcript data.
-    layer: str
-        The layer in `sdata.points` containing transcript data. Default is 'transcripts'.
-    xcoord: str
-        Column name for the x-coordinate of transcripts. Default is 'x'.
-    ycoord: str
-        Column name for the y-coordinate of transcripts. Default is 'y'.
-    xcellcoord: str
-        Column name for the x-coordinate of cell centroids. Default is 'x_centroid'.
-    ycellcoord: str
-        Column name for the y-coordinate of cell centroids. Default is 'y_centroid'.
-    celltype_key: str
-        Column name in `adata.obs` that contains cell type annotations. Default is 'cell type'.
-    gene_id_key: str
-        Column name in `sdata.points[layer]` that contains gene identity. Default is 'gene'.
-    copy: bool
-        If True, returns a copy of the modified SpatialData object. Default is False.
+    layer : str, optional
+        The layer in ``sdata.points`` containing transcript data. Defaults to ``"transcripts"``.
+    xcoord : str, optional
+        Column name for the x-coordinate of transcripts. Defaults to ``"x"``.
+    ycoord : str, optional
+        Column name for the y-coordinate of transcripts. Defaults to ``"y"``.
+    xcellcoord : str, optional
+        Column name for the x-coordinate of cell centroids. Defaults to ``"x_centroid"``.
+    ycellcoord : str, optional
+        Column name for the y-coordinate of cell centroids. Defaults to ``"y_centroid"``.
+    celltype_key : str, optional
+        Column name in ``adata.obs`` that contains cell type annotations. Defaults to ``"cell type"``.
+    gene_id_key : str, optional
+        Column name in ``sdata.points[layer]`` that contains gene identity. Defaults to ``"gene"``.
+    copy : bool, optional
+        If ``True``, returns a copy of the modified SpatialData object. Defaults to ``False``.
 
     Returns
     -------
-    Optional (SpatialData)
-        Modified SpatialData object with updated transcript annotations if `copy=True`.Otherwise, updates are made in place, and None is returned.
+    spatialdata.SpatialData or None
+        Modified SpatialData object with updated transcript annotations if ``copy=True``;
+        otherwise updates are made in place and ``None`` is returned.
     """
     # Copy AnnData object from the SpatialData table
     adata = sdata["table"].copy()
@@ -94,78 +96,89 @@ def calculate_target_cells(
     sdata["xrna_metadata"].varm["target"] = outtable.join(celltype_by_feature).to_numpy()
 
     # Return a copy of the modified SpatialData object if requested
-    return sdata.copy() if copy else None
+    return deepcopy(sdata) if copy else None
 
 
 # deprecated
 def define_target_by_celltype(sdata: SpatialData, layer="transcripts", closest_celltype_key="closest_target_cell_type", feature_key="gene"):
-    """
-    It calculates a cross-tabulation between features (e.g., extracellular transcripts) and cell types,and then normalizes the result to provide the proportion of each feature associated with each cell type.
+    """Compute the per-gene proportion of extracellular transcripts assigned to each cell type.
+
+    Cross-tabulates ``feature_key`` against ``closest_celltype_key`` and normalizes each row
+    (gene) to sum to 1.
 
     Parameters
     ----------
-    sdata: spatialdata.SpatialData
-        A spatial data object that contains transcript and cell type information. The relevant data is accessed from the `sdata.points[layer]`
-    layer: str
-        The key for the layer in `sdata.points` that contains the transcript data (default: 'extracellular_transcripts').
-    celltype_key: str
-        The column name representing cell types in the transcript data (default: 'cell type').
-    feature_key: str
-        The column name representing the feature (e.g., transcript or gene) in the transcript data (default: 'gene').
+    sdata : spatialdata.SpatialData
+        A spatial data object that contains transcript and cell type information, accessed
+        from ``sdata.points[layer]``.
+    layer : str, optional
+        Key of the layer in ``sdata.points`` that contains the transcript data. Defaults to
+        ``"transcripts"``.
+    closest_celltype_key : str, optional
+        Column name holding the cell type of each transcript's closest target cell. Defaults
+        to ``"closest_target_cell_type"``.
+    feature_key : str, optional
+        Column name representing the feature (e.g., gene) in the transcript data. Defaults
+        to ``"gene"``.
 
     Returns
     -------
-    celltype_by_feature: pandas.DataFrame
-        A pandas DataFrame where the rows represent features (e.g., transcripts), and the columns represent cell types. Each entry in the DataFrame is the proportion of that feature associated with the respective cell type.
+    pandas.DataFrame
+        DataFrame where rows are features (e.g., genes) and columns are cell types, with each
+        entry giving the proportion of that feature's extracellular transcripts associated
+        with the respective cell type.
     """
-    # Extract transcript data from the specified layer
     transcripts = sdata.points[layer][[feature_key, closest_celltype_key]].compute()
-    # Compute cross-tabulation between features and cell types (raw counts)
     celltype_by_feature_raw = pd.crosstab(transcripts[feature_key], transcripts[closest_celltype_key])
-    # Normalize by the total number of each feature (row-wise normalization)
     celltype_by_feature = celltype_by_feature_raw.div(celltype_by_feature_raw.sum(axis=1), axis=0)
 
     return celltype_by_feature
+
 
 def compute_target_score(
     sdata,
     layer: str = "transcripts",
     gene_key: str = "gene",
-    coords_key: list = None,  # type: ignore
+    coords_key: list | None = None,
     lambda_decay: float = 0.1,
     copy: bool = False,
     celltype_key: str = "cell type",
     k_neighbors: int = 50,
     batch_size: int = 100_000,
 ):
-    """
-    Computes target scores for extracellular transcripts including distance and closest cell info.
+    """Compute, for every extracellular transcript, a per-cell-type target score plus its closest cell.
+
+    For each transcript, the ``k_neighbors`` nearest cells (by centroid distance) are
+    weighted by ``exp(-lambda_decay * distance)`` and summed per cell type to produce a
+    target-score distribution, alongside the single closest cell and its type.
 
     Parameters
     ----------
-    sdata: SpatialData
+    sdata : SpatialData
         SpatialData object containing transcript points and cell table.
-    layer: str
-        Transcript layer in sdata.points.
-    gene_key: str
-        Column in transcript table for gene names.
-    coords_key: list
-        List of coordinate column names, e.g., ["x", "y"].
-    lambda_decay: float
-        Exponential decay factor for distance.
-    copy: bool
-        Return a copy of sdata if True.
-    celltype_key: str
-        Column in adata.obs with cell type labels.
-    k_neighbors: int
-        Number of nearest cells to consider per transcript.
-    batch_size: int
-        Process transcripts in batches for memory efficiency.
+    layer : str, optional
+        Transcript layer in ``sdata.points``. Defaults to ``"transcripts"``.
+    gene_key : str, optional
+        Column in the transcript table for gene names. Defaults to ``"gene"``.
+    coords_key : list of str, optional
+        Coordinate column names, e.g. ``["x", "y"]``. Defaults to ``["x", "y"]``.
+    lambda_decay : float, optional
+        Exponential decay factor applied to neighbor distances. Defaults to ``0.1``.
+    copy : bool, optional
+        If ``True``, return a copy of ``sdata``. Defaults to ``False``.
+    celltype_key : str, optional
+        Column in ``adata.obs`` with cell type labels. Defaults to ``"cell type"``.
+    k_neighbors : int, optional
+        Number of nearest cells to consider per transcript. Defaults to ``50``.
+    batch_size : int, optional
+        Number of transcripts to process per batch. Defaults to ``100_000``.
 
     Returns
     -------
-    SpatialData
-        Updated sdata with 'target_score' table including per-transcript distance, closest cell, closest_cell_type.
+    SpatialData or None
+        ``sdata`` with a ``"target_score"`` table (per-transcript per-cell-type scores plus
+        ``distance``, ``closest_cell``, and ``closest_cell_type`` columns in ``.obs``) if
+        ``copy=False``; a copy of it if ``copy=True``.
     """
     if coords_key is None:
         coords_key = ["x", "y"]
@@ -238,5 +251,5 @@ def compute_target_score(
 
     sdata.tables["target_score"] = prob_table
 
-    return sdata.copy() if copy else None
+    return deepcopy(sdata) if copy else None
 

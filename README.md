@@ -34,6 +34,12 @@ pip install troutpy
 pip install git+https://github.com/theislab/troutpy.git@main
 ```
 
+Some functionality (spatial statistics, segmentation-free clustering, chord-diagram
+plots, morphological metrics, factor analysis, vendor-format readers) requires
+optional extras. Install everything with `pip install "troutpy[all]"`, or pick
+individual extras (`spatial-stats`, `segmentation-free`, `chord`, `morphology`,
+`factor-analysis`, `io`, `viz`) as needed.
+
 ## Usage
 
 Please have a look at the [Usage documentation](https://troutpy.readthedocs.io/en/latest/) and the [tutorials](https://troutpy.readthedocs.io/en/latest/).

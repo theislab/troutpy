@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "troutpy"
-version = "0.1.0"
+version = "0.1.1"
 description = "Package for the analysis of transcripts outside segmented cells in python"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -25,26 +25,68 @@ classifiers = [
 
 dependencies = [
   "adjusttext>=1.3",
-  "dask==2024.11.2",
-  "docutils>=0.21.2",
-  "ipykernel>=6.29.5",
-  "ipython>=8.32",
-  "mpl-chord-diagram",
-  "points2regions",
-  "sainsc",                # Version not specified; verify if necessary
+  "anndata",
+  "dask>=2024.11.2",
+  "geopandas",
+  "matplotlib",
+  "numba",
+  "numpy",
+  "pandas",
+  "polars",
+  "scanpy",
   "scikit-learn>=1.6.1",
+  "scipy",
   "seaborn",
-  "sopa[cellpose,baysor]",
+  "shapely",
   "spatialdata",
-  "spatialdata-io",
-  "spatialdata-plot",
-  "squidpy>=1.6.2",
   "statsmodels",
-  "tifffile>=2025.3.13",
+  "tqdm",
+  "xarray",
+]
+
+# Extras for individual optional features (lazily imported with a helpful
+# error message if missing). "all" pulls in every feature extra.
+optional-dependencies.all = [
+  "troutpy[chord,factor-analysis,io,morphology,segmentation-free,spatial-stats,viz]",
+]
+optional-dependencies.chord = [
+  # tl.pl chord-diagram plots (pl.cell_type_contacts, pl.gene_communication, pl.celltype_contact_matrix)
+  "mpl-chord-diagram",
+]
+optional-dependencies.factor-analysis = [
+  # tl.latent_factor(method="DRVI")
+  "drvi",
+]
+optional-dependencies.io = [
+  # reading vendor formats ahead of pp.xenium_converter / pp.cosmx_converter
+  "spatialdata-io",
+]
+optional-dependencies.morphology = [
+  # pp.add_morphological_metrics
+  "scikit-image",
+]
+optional-dependencies.segmentation-free = [
+  # tl.segmentation_free_clustering(method="points2regions")
+  "points2regions",
+  # pp.segmentation_free_sainsc
+  "sainsc",
+]
+optional-dependencies.spatial-stats = [
+  # tl.spatial_variability, tl.spatial_colocalization
+  "sainsc",
+  "squidpy>=1.6.2",
+]
+optional-dependencies.viz = [
+  # sdata.pl.render_* alongside troutpy's own pl functions
+  "spatialdata-plot",
 ]
 
 optional-dependencies.dev = [
+  "ipykernel",
+  "ipython",
   "pre-commit",
+  "sopa[cellpose,baysor]",
+  "tifffile>=2025.3.13",
   "twine>=4.0.2",
 ]
 optional-dependencies.doc = [
