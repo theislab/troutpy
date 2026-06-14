@@ -73,6 +73,7 @@ def get_proportion_expressed_per_cell_type(adata: sc.AnnData, cell_type_key: str
         proportions[cell_type] = adata[adata.obs[cell_type_key] == cell_type].X.mean(axis=0).T
     return proportions
 
+
 def extract_expression_matrix(adata):
     """Extract the expression matrix from an AnnData object as a dense pandas DataFrame.
 
@@ -671,11 +672,21 @@ def adaptative_source_score(
 
 @nb.njit(parallel=True, fastmath=True)
 def _core_scoring_engine_chunk(
-    et_coords, et_gene_idxs, et_neighs, k_vals,
-    shell_coords, shell_row_indices, shell_cell_types_idx,
-    shell_neighbor_indices, shell_neighbor_ptr,
-    csr_data, csr_indices, csr_indptr,
-    lmbda, residual, n_types
+    et_coords,
+    et_gene_idxs,
+    et_neighs,
+    k_vals,
+    shell_coords,
+    shell_row_indices,
+    shell_cell_types_idx,
+    shell_neighbor_indices,
+    shell_neighbor_ptr,
+    csr_data,
+    csr_indices,
+    csr_indptr,
+    lmbda,
+    residual,
+    n_types,
 ):
     """Score a chunk of extracellular transcripts against candidate parent cells (numba kernel).
 
@@ -890,11 +901,21 @@ def adaptative_source_score_optimized(
             s_ptr.append(len(s_flat))
 
         p_mat, b_rows, b_scores, b_dists = _core_scoring_engine_chunk(
-            chunk_coords, et_gene_idxs, chunk_neighs, k_vals[start:end],
-            shell_coords, shell_row_indices, shell_type_indices,
-            np.array(s_flat, dtype=np.int32), np.array(s_ptr, dtype=np.int32),
-            csr.data, csr.indices, csr.indptr,
-            lmbda, residual, len(unique_types)
+            chunk_coords,
+            et_gene_idxs,
+            chunk_neighs,
+            k_vals[start:end],
+            shell_coords,
+            shell_row_indices,
+            shell_type_indices,
+            np.array(s_flat, dtype=np.int32),
+            np.array(s_ptr, dtype=np.int32),
+            csr.data,
+            csr.indices,
+            csr.indptr,
+            lmbda,
+            residual,
+            len(unique_types),
         )
 
         all_prob_mat[start:end] = p_mat

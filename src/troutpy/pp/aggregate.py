@@ -145,7 +145,7 @@ def aggregate_urna(
     """
     # Select transcripts based on the extracellular_only flag.
     if extracellular_only:
-        extracell = sdata[layer][sdata[layer]["extracellular"].compute()]  # type: ignore
+        extracell = sdata[layer][sdata[layer]["extracellular"]]  # type: ignore
     else:
         extracell = sdata[layer].compute() if hasattr(sdata[layer], "compute") else sdata[layer]
 

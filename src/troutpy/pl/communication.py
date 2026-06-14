@@ -84,7 +84,9 @@ def cell_type_contacts(
         try:
             from mpl_chord_diagram import chord_diagram
         except ImportError as err:
-            raise ImportError("The 'mpl-chord-diagram' package is required for kind='chord'. Please install it with: pip install troutpy[chord]") from err
+            raise ImportError(
+                "The 'mpl-chord-diagram' package is required for kind='chord'. Please install it with: pip install troutpy[chord]"
+            ) from err
 
         chord_diagram(
             interaction_strength,
@@ -163,7 +165,9 @@ def gene_communication(
         try:
             from mpl_chord_diagram import chord_diagram
         except ImportError as err:
-            raise ImportError("The 'mpl-chord-diagram' package is required for kind='chord'. Please install it with: pip install troutpy[chord]") from err
+            raise ImportError(
+                "The 'mpl-chord-diagram' package is required for kind='chord'. Please install it with: pip install troutpy[chord]"
+            ) from err
 
         chord_diagram(
             gene_interaction_strength[(unique_cats == gene), :, :].squeeze(),
@@ -364,7 +368,9 @@ def celltype_contact_matrix(
         try:
             from mpl_chord_diagram import chord_diagram
         except ImportError as err:
-            raise ImportError("The 'mpl-chord-diagram' package is required for kind='chord'. Please install it with: pip install troutpy[chord]") from err
+            raise ImportError(
+                "The 'mpl-chord-diagram' package is required for kind='chord'. Please install it with: pip install troutpy[chord]"
+            ) from err
 
         matrix_values = mat.values.astype(float)
         fig = plt.figure(figsize=(10, 10))

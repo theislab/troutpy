@@ -121,7 +121,7 @@ def define_urna(
     min_prop_of_extracellular: float = 0.8,
     unassigned_tag: str = "UNASSIGNED",
     copy: bool = False,
-    prob_threshold: float = 0.5, # Replaces percentile_threshold for probabilistic logic
+    prob_threshold: float = 0.5,  # Replaces percentile_threshold for probabilistic logic
 ):
     """Identify extracellular RNA (uRNA) transcripts by classifying each transcript based on the specified segmentation method.
 
@@ -290,10 +290,10 @@ def filter_urna(
 
     if max_p_val_noise is not None:
         # Keep genes that are significantly different from noise (p < threshold)
-        mask &= (var_df["p_val_noise"] < max_p_val_noise)
+        mask &= var_df["p_val_noise"] < max_p_val_noise
 
     if min_morani is not None:
-        mask &= (var_df["moran_I"] > min_morani)
+        mask &= var_df["moran_I"] > min_morani
 
     if genes_in_segmented and table_key in sdata:
         mask &= var_df.index.isin(sdata[table_key].var.index)
@@ -304,9 +304,14 @@ def filter_urna(
     # --- Apply Filtering to sdata objects ---
 
     # Filter transcripts (Point Data)
-    # Using compute().isin() on the specific column
-    transcript_mask = sdata["transcripts"][gene_key].compute().isin(selected_genes)
-    sdata["transcripts"] = sdata["transcripts"][transcript_mask]
+    transcripts = sdata["transcripts"]
+    transcript_mask = transcripts[gene_key].isin(selected_genes)
+    filtered_transcripts = transcripts[transcript_mask]
+    # Boolean-indexing a dask DataFrame can drop its `.attrs` (e.g. after a deepcopy of
+    # sdata under newer dask versions), so PointsModel validation fails on reassignment
+    # unless we restore (or default) the "transform" attr.
+    filtered_transcripts.attrs.update(transcripts.attrs or {"transform": {"global": sd.transformations.Identity()}})
+    sdata["transcripts"] = filtered_transcripts
 
     # Filter Tables (AnnData objects)
     for key in ["segmentation_free_table", "xrna_metadata"]:
@@ -490,7 +495,9 @@ def segmentation_free_sainsc(
     try:
         from sainsc import LazyKDE
     except ImportError as err:
-        raise ImportError("The 'sainsc' package is required for segmentation_free_sainsc. Please install it with: pip install troutpy[segmentation-free]") from err
+        raise ImportError(
+            "The 'sainsc' package is required for segmentation_free_sainsc. Please install it with: pip install troutpy[segmentation-free]"
+        ) from err
 
     # --- 1. Prepare data ---
     transcripts_all = sdata.points["transcripts"].compute().reset_index(drop=True)
@@ -568,11 +575,7 @@ def segmentation_free_sainsc(
     return sdata if copy else None
 
 
-def add_morphological_metrics(
-    sdata: SpatialData,
-    labels_key: str='cell_labels',
-    copy: bool = False
-) -> SpatialData | None:
+def add_morphological_metrics(sdata: SpatialData, labels_key: str = "cell_labels", copy: bool = False) -> SpatialData | None:
     """Extract cell morphology metrics from a labels layer and add them to ``sdata.table.obs``.
 
     Computes region properties (area, perimeter, solidity, axis lengths) via
@@ -604,15 +607,17 @@ def add_morphological_metrics(
     try:
         from skimage.measure import regionprops_table
     except ImportError as err:
-        raise ImportError("The 'scikit-image' package is required for add_morphological_metrics. Please install it with: pip install troutpy[morphology]") from err
+        raise ImportError(
+            "The 'scikit-image' package is required for add_morphological_metrics. Please install it with: pip install troutpy[morphology]"
+        ) from err
 
     # 1. Handle Copy Logic
     obj = cp.deepcopy(sdata) if copy else sdata
 
     # 2. Extract labels array
     label_element = obj.labels[labels_key]
-    if hasattr(label_element, 'scale0'):
-        labels_array = label_element['scale0'].image.values
+    if hasattr(label_element, "scale0"):
+        labels_array = label_element["scale0"].image.values
     else:
         labels_array = label_element.values
 
@@ -622,24 +627,21 @@ def add_morphological_metrics(
         labels_image = labels_image[0]
 
     # 4. Property Extraction
-    properties = [
-        'label', 'area', 'perimeter', 'solidity',
-        'major_axis_length', 'equivalent_diameter'
-    ]
+    properties = ["label", "area", "perimeter", "solidity", "major_axis_length", "equivalent_diameter"]
 
     props = regionprops_table(labels_image, properties=properties)
     df_morph = pd.DataFrame(props)
 
     # 5. Calculate Metrics
-    df_morph['circularity'] = (4 * np.pi * df_morph['area']) / (df_morph['perimeter'] ** 2)
-    df_morph['protrusion_length'] = (df_morph['major_axis_length'] - df_morph['equivalent_diameter']) / 2
-    df_morph['morphological_complexity'] = 1 - df_morph['solidity']
+    df_morph["circularity"] = (4 * np.pi * df_morph["area"]) / (df_morph["perimeter"] ** 2)
+    df_morph["protrusion_length"] = (df_morph["major_axis_length"] - df_morph["equivalent_diameter"]) / 2
+    df_morph["morphological_complexity"] = 1 - df_morph["solidity"]
 
     # 6. Merge with Table
     if obj.table is not None:
         # Standardize the morphology index to string
-        df_morph['label'] = df_morph['label'].astype(str)
-        df_morph = df_morph.set_index('label')
+        df_morph["label"] = df_morph["label"].astype(str)
+        df_morph = df_morph.set_index("label")
 
         # Prepare the existing obs table
         # We ensure the index is string to match our label IDs
@@ -652,12 +654,12 @@ def add_morphological_metrics(
             existing_obs = existing_obs.drop(columns=cols_to_drop)
 
         # Join the new metrics
-        obj.table.obs = existing_obs.join(df_morph, how='left')
+        obj.table.obs = existing_obs.join(df_morph, how="left")
 
         # Final safety check: if 'cell_id' column exists but isn't the index,
         # ensure it matches the strings too
-        if 'cell_id' in obj.table.obs.columns:
-            obj.table.obs['cell_id'] = obj.table.obs['cell_id'].astype(str)
+        if "cell_id" in obj.table.obs.columns:
+            obj.table.obs["cell_id"] = obj.table.obs["cell_id"].astype(str)
     else:
         raise ValueError("SpatialData object must contain a 'table'.")
 
@@ -974,7 +976,9 @@ def get_transcript_categories(sdata, layer="transcripts", struct_table_key="stru
     if "ks_pval" in meta.columns:
         diff_comp_genes = meta.index[meta["ks_pval"] > 0.05]
     else:
-        print("Warning: 'ks_pval' column not found in metadata (likely due to zero remaining extracellular transcripts). Skipping diffusion compatibility filter.")
+        print(
+            "Warning: 'ks_pval' column not found in metadata (likely due to zero remaining extracellular transcripts). Skipping diffusion compatibility filter."
+        )
         diff_comp_genes = pd.Index([])
 
     counts = {}

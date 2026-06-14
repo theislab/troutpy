@@ -66,11 +66,15 @@ def spatial_variability(
     try:
         from sainsc import LazyKDE
     except ImportError as err:
-        raise ImportError("The 'sainsc' package is required for spatial_variability. Please install it with: pip install troutpy[spatial-stats]") from err
+        raise ImportError(
+            "The 'sainsc' package is required for spatial_variability. Please install it with: pip install troutpy[spatial-stats]"
+        ) from err
     try:
         import squidpy as sq
     except ImportError as err:
-        raise ImportError("The 'squidpy' package is required for spatial_variability. Please install it with: pip install troutpy[spatial-stats]") from err
+        raise ImportError(
+            "The 'squidpy' package is required for spatial_variability. Please install it with: pip install troutpy[spatial-stats]"
+        ) from err
 
     if coord_keys is None:
         coord_keys = ["x", "y"]
@@ -359,7 +363,9 @@ def spatial_colocalization(
     try:
         from sainsc import LazyKDE
     except ImportError as err:
-        raise ImportError("The 'sainsc' package is required for spatial_colocalization. Please install it with: pip install troutpy[spatial-stats]") from err
+        raise ImportError(
+            "The 'sainsc' package is required for spatial_colocalization. Please install it with: pip install troutpy[spatial-stats]"
+        ) from err
 
     if coord_keys is None:
         coord_keys = ["x", "y"]
