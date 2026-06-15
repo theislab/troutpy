@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning][].
   `pkg_resources`, which `xarray_schema` (a `spatialdata` dependency) still
   imports at module load, crashing `import troutpy` and, with it, the
   ReadTheDocs build (`sphinx.errors.ExtensionError: ... no module named
-  troutpy.pl`).
+troutpy.pl`).
 
 ## [0.1.1]
 
