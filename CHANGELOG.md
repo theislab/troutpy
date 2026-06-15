@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning][].
   key, which crashes `spatialdata`'s `TableModel.parse` validation
   (`AttributeError: 'NoneType' object has no attribute 'lower'`) and broke
   the `PRE-RELEASE DEPENDENCIES` CI job.
+- Pinned `setuptools<81` in the `doc` extra: `setuptools>=81` removed
+  `pkg_resources`, which `xarray_schema` (a `spatialdata` dependency) still
+  imports at module load, crashing `import troutpy` and, with it, the
+  ReadTheDocs build (`sphinx.errors.ExtensionError: ... no module named
+  troutpy.pl`).
 
 ## [0.1.1]
 
