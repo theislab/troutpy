@@ -794,7 +794,7 @@ def adaptative_source_score_optimized(
     A faster, chunked reimplementation of :func:`adaptative_source_score`. Cells are
     represented by a "shell" of their outermost assigned transcripts, and each
     extracellular transcript is scored against shell points within `max_dist` using
-    :func:`_core_scoring_engine_chunk`, processing `chunk_size` transcripts at a time.
+    `_core_scoring_engine_chunk`, processing `chunk_size` transcripts at a time.
 
     Parameters
     ----------

@@ -148,7 +148,7 @@ def crosstab(
     figsize
         Automatically computed based on the number of categories unless manually specified.
     cmap
-        Custom color palette, resolved via :func:`troutpy.pl.colors.get_colormap`.
+        Custom color palette, resolved via :func:`troutpy.pl.get_colormap`.
     saving_format
         File format to save the plot (e.g. ``"png"``, ``"pdf"``).
     sortby
@@ -241,7 +241,7 @@ def histogram(
     custom_plot_filename
         Custom filename to use when saving the figure.
     palette
-        Color palette name for seaborn, resolved via :func:`troutpy.pl.colors.get_palette`
+        Color palette name for seaborn, resolved via :func:`troutpy.pl.get_palette`
         if not a built-in Matplotlib colormap.
     bins
         Number of histogram bins.

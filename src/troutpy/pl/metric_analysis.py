@@ -49,7 +49,7 @@ def top_bottom_probes(
     custom_plot_filename
         Custom filename for saving the plot.
     palette
-        Color palette name, resolved via :func:`troutpy.pl.colors.get_palette`. Falls
+        Color palette name, resolved via :func:`troutpy.pl.get_palette`. Falls
         back to a Matplotlib colormap, then to grey/black, if neither is found.
 
     Returns
@@ -174,7 +174,7 @@ def metric_scatter(
     custom_plot_filename
         Custom filename for saving the plot.
     palette
-        Two-color palette name, resolved via :func:`troutpy.pl.colors.get_palette`.
+        Two-color palette name, resolved via :func:`troutpy.pl.get_palette`.
         Falls back to a Matplotlib colormap, then to red/blue, if neither is found.
     group_col
         Boolean column in ``sdata["xrna_metadata"].var`` distinguishing control probes
@@ -329,7 +329,7 @@ def logfoldratio_over_noise(
     custom_plot_filename
         Custom filename for saving the plot.
     palette
-        Two-color palette name, resolved via :func:`troutpy.pl.colors.get_palette`.
+        Two-color palette name, resolved via :func:`troutpy.pl.get_palette`.
         Falls back to a Matplotlib colormap, then to grey/black, if neither is found.
 
     Returns
@@ -447,7 +447,7 @@ def gene_metric_heatmap(
     custom_plot_filename
         Custom filename for saving the plot.
     cmap
-        Colormap for the heatmap, resolved via :func:`troutpy.pl.colors.get_colormap`
+        Colormap for the heatmap, resolved via :func:`troutpy.pl.get_colormap`
         if not a built-in Matplotlib colormap.
 
     Returns
