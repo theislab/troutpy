@@ -67,7 +67,9 @@ optional-dependencies.doc = [
   "myst-nb>=1.1",
   "pandas",
   # Until pybtex >0.23.0 releases: https://bitbucket.org/pybtex-devs/pybtex/issues/169/
-  "setuptools",
+  # setuptools<81: setuptools>=81 dropped pkg_resources, which xarray_schema
+  # (a spatialdata dep) still imports at module load, breaking `import troutpy`.
+  "setuptools<81",
   "sphinx>=4",
   "sphinx-autodoc-typehints",
   "sphinx-book-theme>=1",
