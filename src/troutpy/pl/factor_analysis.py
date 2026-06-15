@@ -126,7 +126,7 @@ def rank_factor_genes_loadings_matrixplot(
         Number of top genes to plot per factor.
     cmap
         Colormap for visualization. If not a built-in Matplotlib colormap, it is
-        resolved via :func:`troutpy.pl.colors.get_colormap`.
+        resolved via :func:`troutpy.pl.get_colormap`.
     vmin
         Lower color scaling limit.
     vmax
@@ -201,7 +201,7 @@ def factors_in_cells(
         The key in `.obs` to group by.
     cmap
         Colormap for visualization. If not a built-in Matplotlib colormap, it is
-        resolved via :func:`troutpy.pl.colors.get_colormap`.
+        resolved via :func:`troutpy.pl.get_colormap`.
     kwargs
         Additional keyword arguments passed to the underlying `scanpy.pl` plotting function.
 

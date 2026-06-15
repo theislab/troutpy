@@ -51,9 +51,9 @@ def spatial_inout_expression(
     spot_size_extra
         Size of the marker for extracellular spots.
     extra_cmap
-        Colormap for extracellular expression, resolved via :func:`troutpy.pl.colors.get_colormap`.
+        Colormap for extracellular expression, resolved via :func:`troutpy.pl.get_colormap`.
     cells_cmap
-        Colormap for cellular expression, resolved via :func:`troutpy.pl.colors.get_colormap`.
+        Colormap for cellular expression, resolved via :func:`troutpy.pl.get_colormap`.
     title
         Custom title for the plot. If `None`, defaults to ``f"Expression of {gene}"``.
     save
@@ -203,7 +203,7 @@ def diffusion_results(
     title
         Custom title for the plot.
     palette
-        Two-color palette name, resolved via :func:`troutpy.pl.colors.get_palette`, used for
+        Two-color palette name, resolved via :func:`troutpy.pl.get_palette`, used for
         control vs. non-control probes. ``"default"`` uses a hardcoded crimson/blue pair.
     save
         Whether to save the figure to `figures_path` instead of showing it.
@@ -356,7 +356,7 @@ def spatial_transcripts(
         Key of the source-score table in `sdata`, used as a fallback source for `color_key`.
     colormap
         Colormap for categorical `color_key` values, resolved via
-        :func:`troutpy.pl.colors.get_palette`, or a continuous colormap name or
+        :func:`troutpy.pl.get_palette`, or a continuous colormap name or
         :class:`~matplotlib.colors.ListedColormap` if `color_key` is numeric.
     continuous_colormap
         Fallback continuous colormap used when `colormap` is not a valid matplotlib
@@ -655,7 +655,7 @@ def point_metric_comparison(
         `x_col`/`y_col`/`hue_col`.
     palette_name
         Palette for categorical `hue_col` values, resolved via
-        :func:`troutpy.pl.colors.get_palette`, or colormap name for numeric `hue_col`.
+        :func:`troutpy.pl.get_palette`, or colormap name for numeric `hue_col`.
     continuous_palette
         Fallback continuous colormap used when `palette_name` is not a valid matplotlib
         colormap and `hue_col` is numeric.

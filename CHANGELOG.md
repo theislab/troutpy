@@ -50,6 +50,23 @@ and this project adheres to [Semantic Versioning][].
   imports at module load, crashing `import troutpy` and, with it, the
   ReadTheDocs build (`sphinx.errors.ExtensionError: ... no module named
 troutpy.pl`).
+- Fixed ~170 `nitpicky` Sphinx warnings that made the ReadTheDocs build fail
+  under `fail_on_warning: true`:
+    - Added `seaborn` and `squidpy` to `intersphinx_mapping` so their type
+      cross-references resolve.
+    - Extended `nitpick_ignore` for napoleon's "type, optional"/"... or
+      iterable" parameter descriptions, `typing.Union`, and runtime-derived
+      qualnames that don't match their public, intersphinx-mapped names
+      (`pandas.core.frame.DataFrame`, `SpatialData`,
+      `seaborn.axisgrid.JointGrid`, `seaborn.matrix.ClusterGrid`) or have no
+      hosted inventory (`mpl_chord_diagram.chord_diagram`,
+      `sainsc.LazyKDE*`).
+    - `pl.basic`/`pl.metric_analysis`/`pl.scatter`/`pl.factor_analysis`:
+      fixed `:func:` refs pointing at `troutpy.pl.colors.get_palette`/
+      `get_colormap` to `troutpy.pl.get_palette`/`get_colormap`, matching how
+      they're documented in `docs/api/plotting.md`.
+    - `tl.source_cell`: removed a `:func:` cross-reference to the private,
+      undocumented `_core_scoring_engine_chunk` helper.
 
 ## [0.1.1]
 

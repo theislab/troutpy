@@ -107,6 +107,8 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "spatialdata": ("https://spatialdata.scverse.org/en/stable/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
+    "seaborn": ("https://seaborn.pydata.org/", None),
+    "squidpy": ("https://squidpy.readthedocs.io/en/stable/", None),
 }
 
 # List of patterns, relative to source directory, that match files and
@@ -139,4 +141,22 @@ nitpick_ignore = [
     # If building the documentation fails because of a missing link that is outside your control,
     # you can add an exception to this list.
     ("py:class", "igraph.Graph"),
+    # napoleon parses numpydoc "type, optional" / "... or iterable" parameter
+    # descriptions and turns the trailing words into spurious class refs.
+    ("py:class", "optional"),
+    ("py:class", "iterable"),
+    # sphinx-autodoc-typehints resolves these via the object's runtime
+    # __module__/__qualname__, which doesn't match the public,
+    # intersphinx-mapped name.
+    ("py:data", "typing.Union"),
+    ("py:class", "pandas.core.frame.DataFrame"),
+    ("py:class", "SpatialData"),
+    ("py:class", "seaborn.axisgrid.JointGrid"),
+    ("py:class", "seaborn.matrix.ClusterGrid"),
+    # mpl_chord_diagram (chord extra) and sainsc (spatial-stats extra) are
+    # optional dependencies with no hosted Sphinx inventory.
+    ("py:func", "mpl_chord_diagram.chord_diagram"),
+    ("py:class", "sainsc.LazyKDE"),
+    ("py:meth", "sainsc.LazyKDE.filter_background"),
+    ("py:meth", "sainsc.LazyKDE.from_dataframe"),
 ]
