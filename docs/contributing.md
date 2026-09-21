@@ -72,7 +72,6 @@ Consider enabling this option for [ruff][ruff-editors] and [prettier][prettier-e
 [pre-commit]: https://pre-commit.com/
 [pre-commit.ci]: https://pre-commit.ci/
 [ruff-editors]: https://docs.astral.sh/ruff/integrations/
-
 [prettier-editors]: https://prettier.io/docs/en/editors.html
 
 (writing-tests)=
