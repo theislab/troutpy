@@ -222,8 +222,9 @@ def diffusion_results(
     var_df[y_col] = var_df[y_col].replace([np.inf, -np.inf], np.nan)
     var_df.dropna(subset=[x_col, y_col], inplace=True)
 
+    control_col = "is_control" if "is_control" in var_df.columns else "control_probe"
     if non_control_probes is not None:
-        var_df = var_df[(var_df["control_probe"]) | (var_df.index.isin(non_control_probes))]
+        var_df = var_df[(var_df[control_col]) | (var_df.index.isin(non_control_probes))]
 
     default_colors = ["#DC143C", "#1E90FF"]
     if palette == "default":
@@ -240,7 +241,7 @@ def diffusion_results(
                 plot_colors = default_colors
 
     color_map = {True: plot_colors[0], False: plot_colors[1]}
-    var_df["plot_color"] = var_df["control_probe"].map(color_map)
+    var_df["plot_color"] = var_df[control_col].map(color_map)
 
     plt.figure(figsize=(8, 6))
     plt.scatter(var_df[x_col], var_df[y_col], c=var_df["plot_color"], edgecolor="black", linewidth=0.2, alpha=0.8)
@@ -823,7 +824,7 @@ def point_metric_comparison(
 
 
 def spatial_transcripts_source(
-    sdata: SpatialData,
+    sdata: "SpatialData",
     cell_color_key: str = "leiden",
     extra_color_key: str = "leiden",
     gene_list: str | list[str] | None = None,
@@ -906,7 +907,7 @@ def spatial_transcripts_source(
     The figure and axes containing the plot, or ``(None, None)`` if `gene_list` is
     provided and no transcripts match.
     """
-    res_obs = sdata.tables["source_score"].obs
+    res_obs = sdata.tables["source_score"].obs.copy()
     cells = sdata["table"]
     all_transcripts = sdata.points["transcripts"].compute()
 
@@ -976,7 +977,8 @@ def spatial_transcripts_source(
         df_roi["unified_label"] = df_roi["cell_label"].fillna(df_roi["extra_label"])
 
     def extract_uns_colors(uns_dict, key):
-        for possible_key in [f"{key}_colors", "colors"]:
+        # Sweeps all common variations including standard Scanpy format '{key}colors'
+        for possible_key in [f"{key}colors", f"{key}_colors", "colors"]:
             if possible_key in uns_dict:
                 return list(uns_dict[possible_key])
         return None
@@ -984,9 +986,13 @@ def spatial_transcripts_source(
     if not separate_compartments:
         # Shared categories: a single legend entry per cluster, covering both compartments
         unique_labels = sorted(df_roi["unified_label"].dropna().unique())
+
         uns_colors = None
-        if hasattr(cells, "uns") and cell_color_key in cells.uns:
+        if hasattr(cells, "uns"):
             uns_colors = extract_uns_colors(cells.uns, cell_color_key)
+            if uns_colors is None and cell_color_key in cells.uns:
+                # If key points to a nested dict/attribute rather than direct list
+                uns_colors = extract_uns_colors(cells.uns[cell_color_key], cell_color_key)
 
         if uns_colors and len(uns_colors) >= len(unique_labels):
             cat_order = list(cells.obs[cell_color_key].astype("category").cat.categories)
@@ -1000,27 +1006,40 @@ def spatial_transcripts_source(
         unique_extra = set(df_roi["extra_label"].dropna().unique())
         matching_elements = (unique_cells == unique_extra) and (cell_color_key == extra_color_key)
 
-        if matching_elements:
-            uns_colors = None
-            if hasattr(cells, "uns") and cell_color_key in cells.uns:
-                uns_colors = extract_uns_colors(cells.uns, cell_color_key)
+        # 1. Process Intracellular Cell Colors
+        sorted_cells = sorted(unique_cells)
+        uns_cell_colors = None
+        if hasattr(cells, "uns"):
+            uns_cell_colors = extract_uns_colors(cells.uns, cell_color_key)
+            if uns_cell_colors is None and cell_color_key in cells.uns:
+                uns_cell_colors = extract_uns_colors(cells.uns[cell_color_key], cell_color_key)
 
-            all_labels = sorted(unique_cells.union(unique_extra))
-            if uns_colors and len(uns_colors) >= len(all_labels):
-                cat_order = list(cells.obs[cell_color_key].astype("category").cat.categories)
-                colors = {lbl: uns_colors[cat_order.index(lbl)] for lbl in all_labels if lbl in cat_order}
-            else:
-                cmap = plt.get_cmap(palette)
-                colors = {lbl: cmap(i / max(1, len(all_labels) - 1)) for i, lbl in enumerate(all_labels)}
-            cell_colors = extra_colors = colors
+        if uns_cell_colors and len(uns_cell_colors) >= len(sorted_cells):
+            cat_order = list(cells.obs[cell_color_key].astype("category").cat.categories)
+            cell_colors = {lbl: uns_cell_colors[cat_order.index(lbl)] for lbl in sorted_cells if lbl in cat_order}
         else:
-            sorted_cells = sorted(unique_cells)
             cmap_cells = plt.get_cmap(palette)
             cell_colors = {lbl: cmap_cells(i / max(1, len(sorted_cells) - 1)) for i, lbl in enumerate(sorted_cells)}
 
-            sorted_extra = sorted(unique_extra)
-            cmap_extra = plt.get_cmap("Set3" if palette != "Set3" else "tab20b")
-            extra_colors = {lbl: cmap_extra(i / max(1, len(sorted_extra) - 1)) for i, lbl in enumerate(sorted_extra)}
+        # 2. Process Extracellular Halo Colors
+        sorted_extra = sorted(unique_extra)
+        if matching_elements and uns_cell_colors:
+            extra_colors = cell_colors
+        else:
+            uns_extra_colors = None
+            if hasattr(cells, "uns"):
+                uns_extra_colors = extract_uns_colors(cells.uns, extra_color_key)
+                if uns_extra_colors is None and extra_color_key in cells.uns:
+                    uns_extra_colors = extract_uns_colors(cells.uns[extra_color_key], extra_color_key)
+
+            if uns_extra_colors and len(uns_extra_colors) >= len(sorted_extra):
+                cat_order_extra = (
+                    list(cells.obs[extra_color_key].astype("category").cat.categories) if extra_color_key in cells.obs.columns else sorted_extra
+                )
+                extra_colors = {lbl: uns_extra_colors[cat_order_extra.index(lbl)] for lbl in sorted_extra if lbl in cat_order_extra}
+            else:
+                cmap_extra = plt.get_cmap("Set3" if palette != "Set3" else "tab20b")
+                extra_colors = {lbl: cmap_extra(i / max(1, len(sorted_extra) - 1)) for i, lbl in enumerate(sorted_extra)}
 
     # Cell boundary geometries, transformed into the same coordinate space as the transcripts
     cb = sdata[shapes_key]
@@ -1162,8 +1181,8 @@ def urna_vs_source_score(
     else:
         sdata["source_score"].obs["sum_source_score"] = np.sum(x_matrix, axis=1)
 
-    source_score_by_gene = sdata["source_score"].obs.groupby("gene").mean("sum_source_score")
-    count_by_gene = sdata["source_score"].obs.groupby("gene").count()
+    source_score_by_gene = sdata["source_score"].obs.groupby("gene", observed=False).mean(numeric_only=True)
+    count_by_gene = sdata["source_score"].obs.groupby("gene", observed=False).count()
     source_score_by_gene["total_counts"] = count_by_gene["distance_to_source"]
 
     combined_urna_metadata = pd.concat([source_score_by_gene, sdata["xrna_metadata"].var], axis=1)

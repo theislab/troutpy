@@ -234,8 +234,10 @@ def cell_contacts_with_urna_sources(
     sdata : spatialdata.SpatialData
         SpatialData object containing ``sdata["table"]`` (AnnData with cell type
         annotations and spatial coordinates), ``sdata["target_score"]`` (AnnData with
-        ``closest_cell`` and ``distance`` in ``.obs``), and ``sdata["source_score"]``
-        (AnnData with ``closest_cell`` in ``.obs``).
+        ``closest_cell`` and ``distance`` in ``.obs``, from
+        :func:`troutpy.tl.compute_target_score`), and ``sdata["source_score"]``
+        (AnnData with ``predicted_parent`` in ``.obs``, from
+        :func:`troutpy.tl.adaptative_source_score_optimized`).
     spatial_key : str, optional
         Key in ``sdata["table"].obsm`` containing spatial coordinates. Defaults to
         ``"spatial"``.
@@ -272,8 +274,16 @@ def cell_contacts_with_urna_sources(
     # Merge source and target transcript info
     target_obs = sdata["target_score"].obs[["closest_cell", "distance"]].copy()
     target_obs.rename(columns={"closest_cell": "target_cell"}, inplace=True)
-    source_obs = sdata["source_score"].obs[["closest_cell"]].copy()
-    source_obs.rename(columns={"closest_cell": "source_cell"}, inplace=True)
+    source_score_obs = sdata["source_score"].obs
+    if "closest_cell" in source_score_obs.columns:
+        source_obs = source_score_obs[["closest_cell"]].rename(columns={"closest_cell": "source_cell"})
+    else:
+        # tl.adaptative_source_score(_optimized) store the source cell's `cell_id` in "predicted_parent"
+        cell_id_to_name = dict(zip(adata.obs["cell_id"].astype(str).str.strip(), adata.obs_names, strict=False))
+        source_obs = pd.DataFrame({"source_cell": source_score_obs["predicted_parent"].astype(str).str.strip().map(cell_id_to_name)})
+    source_obs = source_obs.dropna(subset=["source_cell"])
+    target_obs.index = target_obs.index.astype(str)
+    source_obs.index = source_obs.index.astype(str)
 
     trans_df = target_obs.join(source_obs, how="inner")
     trans_df = trans_df[trans_df["distance"] <= distance]

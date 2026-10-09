@@ -1,3 +1,9 @@
+from .decontamination import (
+    apply_soft_decontamination,
+    generalized_source_score,
+    iterative_soft_decontamination,
+    subtract_local_urna_background,
+)
 from .estimate_density import (
     calculate_heuristic_radius_by_cells,
     colocalization_proportion,
@@ -31,6 +37,9 @@ from .source_cell import (
     adaptative_source_score,
     adaptative_source_score_optimized,
     compute_contribution_score,
+    credit_spillover_to_source,
+    decontaminate_cell_expression,
+    flag_intracellular_spillover,
     get_proportion_expressed_per_cell_type,
 )
 from .target_cell import calculate_target_cells, compute_target_score, define_target_by_celltype

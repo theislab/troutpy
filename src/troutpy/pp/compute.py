@@ -117,11 +117,11 @@ def define_urna_probability(sdata, p_threshold=0.5, copy=False):
 def define_urna(
     sdata: sd.SpatialData,
     layer: str = "transcripts",
-    method: str = "segmentation_free",
+    method: str = "sainsc",
     min_prop_of_extracellular: float = 0.8,
     unassigned_tag: str = "UNASSIGNED",
     copy: bool = False,
-    prob_threshold: float = 0.5,  # Replaces percentile_threshold for probabilistic logic
+    prob_threshold: float = 0.5,
 ):
     """Identify extracellular RNA (uRNA) transcripts by classifying each transcript based on the specified segmentation method.
 
@@ -140,7 +140,7 @@ def define_urna(
         - ``"nuclei"`` — marks transcripts outside nucleus overlap as extracellular.
         - ``"cells"`` — marks transcripts with ``cell_id == unassigned_tag`` as extracellular.
 
-        Defaults to ``"segmentation_free"``.
+        Defaults to ``"sainsc"``.
     min_prop_of_extracellular : float, optional
         Minimum proportion of transcripts in a cluster that must be outside cells for the
         cluster to be considered extracellular (used by ``"spots2regions"``). Defaults to ``0.8``.
@@ -285,7 +285,7 @@ def filter_urna(
         mask &= ~var_df[col]
 
     if min_logfoldratio_over_noise is not None:
-        col = "log2_fc_over_noise" if "log2_fc_over_noise" in var_df.columns else "logfoldratio_over_noise"
+        col = next(c for c in ("logfoldchange_over_noise", "log2_fc_over_noise", "logfoldratio_over_noise") if c in var_df.columns)
         mask &= var_df[col] > min_logfoldratio_over_noise
 
     if max_p_val_noise is not None:

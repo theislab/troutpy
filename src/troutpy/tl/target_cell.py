@@ -193,40 +193,43 @@ def compute_target_score(
     extracellular_transcripts = transcripts[transcripts["extracellular"]]
     transcript_coords = extracellular_transcripts[[xcoord, ycoord]].to_numpy()
 
-    # Output tables
-    target_scores_table = pd.DataFrame(0, index=extracellular_transcripts.index, columns=all_cell_types, dtype=float)
-    closest_cell_info = pd.DataFrame(index=extracellular_transcripts.index, columns=["distance", "closest_cell", "closest_cell_type"], dtype=object)
-
     # KDTree on cell centroids
     kdtree = KDTree(coord_cells)
+    type_codes = pd.Categorical(cell_types, categories=all_cell_types).codes
 
     n_transcripts = transcript_coords.shape[0]
+    scores = np.zeros((n_transcripts, len(all_cell_types)))
+    closest_distance = np.zeros(n_transcripts)
+    closest_idx = np.zeros(n_transcripts, dtype=int)
     print(f"Computing target scores for {n_transcripts:,} transcripts in batches of {batch_size}...")
 
     for start in tqdm(range(0, n_transcripts, batch_size)):
         end = min(start + batch_size, n_transcripts)
-        coords_batch = transcript_coords[start:end]
-        indices_batch = extracellular_transcripts.index[start:end]
 
         # Query KDTree for k nearest neighbors
-        distances, cell_indices = kdtree.query(coords_batch, k=k_neighbors)
+        distances, cell_indices = kdtree.query(transcript_coords[start:end], k=k_neighbors)
         exp_decay = np.exp(-lambda_decay * distances)
+        types_batch = type_codes[cell_indices]
 
-        for i, transcript_idx in enumerate(indices_batch):
-            cell_indices_i = cell_indices[i]
-            scores_i = exp_decay[i]
-            types_i = cell_types.iloc[cell_indices_i].to_numpy()
+        # Compute target scores per cell type
+        for j in range(len(all_cell_types)):
+            scores[start:end, j] = np.where(types_batch == j, exp_decay, 0).sum(axis=1)
 
-            # Compute target scores per cell type
-            for cell_type in all_cell_types:
-                target_scores_table.loc[transcript_idx, cell_type] = scores_i[types_i == cell_type].sum()
+        # Store closest cell info
+        rows = np.arange(end - start)
+        min_idx = distances.argmin(axis=1)
+        closest_distance[start:end] = distances[rows, min_idx]
+        closest_idx[start:end] = cell_indices[rows, min_idx]
 
-            # Store closest cell info
-            min_idx = np.argmin(distances[i])
-            closest_cell_idx = cell_indices_i[min_idx]
-            closest_cell_info.loc[transcript_idx, "distance"] = distances[i][min_idx]
-            closest_cell_info.loc[transcript_idx, "closest_cell"] = adata.obs_names[closest_cell_idx]
-            closest_cell_info.loc[transcript_idx, "closest_cell_type"] = cell_types.iloc[closest_cell_idx]
+    target_scores_table = pd.DataFrame(scores, index=extracellular_transcripts.index, columns=all_cell_types)
+    closest_cell_info = pd.DataFrame(
+        {
+            "distance": closest_distance,
+            "closest_cell": adata.obs_names[closest_idx],
+            "closest_cell_type": cell_types.iloc[closest_idx].to_numpy(),
+        },
+        index=extracellular_transcripts.index,
+    )
 
     # Normalize to probabilities
     residual = 1e-6

@@ -1,22 +1,27 @@
-# API
+# Plotting: `pl`
+
+```{eval-rst}
+.. module:: troutpy.pl
+```
+
+```{eval-rst}
+.. currentmodule:: troutpy
+```
 
 ## Basic plots
 
 ```{eval-rst}
-.. module:: troutpy.pl
-.. currentmodule:: troutpy.pl
-
 .. autosummary::
     :toctree: generated/basic_plots
 
-    crosstab
-    histogram
-    pie
-    coupled_scatter
-    point_metric_comparison
-    heatmap
-    sorted_heatmap
-    spatial_transcripts
+    pl.crosstab
+    pl.histogram
+    pl.pie
+    pl.coupled_scatter
+    pl.point_metric_comparison
+    pl.heatmap
+    pl.sorted_heatmap
+    pl.spatial_transcripts
 ```
 
 ## uRNA quantification
@@ -25,15 +30,15 @@
 .. autosummary::
     :toctree: generated/quantification
 
-    gene_metric_heatmap
-    logfoldratio_over_noise
-    metric_scatter
-    top_bottom_probes
-    genes_over_noise
-    intra_extra_density
-    moranI_histogram
-    diffusion_results
-    spatial_inout_expression
+    pl.gene_metric_heatmap
+    pl.logfoldratio_over_noise
+    pl.metric_scatter
+    pl.top_bottom_probes
+    pl.genes_over_noise
+    pl.intra_extra_density
+    pl.moranI_histogram
+    pl.diffusion_results
+    pl.spatial_inout_expression
 
 ```
 
@@ -43,18 +48,18 @@
 .. autosummary::
     :toctree: generated/communication
 
-    cell_type_contacts
-    celltype_contact_matrix
-    gene_communication
-    global_distribution_from_source
-    distributions_by_cluster
-    gene_distribution_from_source
-    source_score_by_celltype
-    target_score_by_celltype
-    spatial_transcripts_source
-    urna_vs_source_score
-    interactions_with_arrows
-    spatial_interactions
+    pl.cell_type_contacts
+    pl.celltype_contact_matrix
+    pl.gene_communication
+    pl.global_distribution_from_source
+    pl.distributions_by_cluster
+    pl.gene_distribution_from_source
+    pl.source_score_by_celltype
+    pl.target_score_by_celltype
+    pl.spatial_transcripts_source
+    pl.urna_vs_source_score
+    pl.interactions_with_arrows
+    pl.spatial_interactions
 
 ```
 
@@ -64,13 +69,13 @@
 .. autosummary::
     :toctree: generated/factor_analysis
 
-    factors_in_cells
-    rank_factor_genes_loadings
-    rank_factor_genes_loadings_matrixplot
-    nmf_factors_exrna_cells_W
-    nmf_gene_contributions
-    paired_nmf_factors
-    apply_exrnaH_to_cellular_to_create_cellularW
+    pl.factors_in_cells
+    pl.rank_factor_genes_loadings
+    pl.rank_factor_genes_loadings_matrixplot
+    pl.nmf_factors_exrna_cells_W
+    pl.nmf_gene_contributions
+    pl.paired_nmf_factors
+    pl.apply_exrnaH_to_cellular_to_create_cellularW
 
 ```
 
@@ -80,6 +85,6 @@
 .. autosummary::
     :toctree: generated/colormaps
 
-    get_colormap
-    get_palette
+    pl.get_colormap
+    pl.get_palette
 ```

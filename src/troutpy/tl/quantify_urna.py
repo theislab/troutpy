@@ -173,46 +173,62 @@ def create_urna_metadata(sdata: SpatialData, layer: str = "transcripts", gene_ke
 
 def quantify_overexpression(
     sdata: SpatialData,
-    codeword_key: str,
-    control_codewords: list,
+    codeword_key: str = "control_probe",
+    control_codewords: list | None = None,
     gene_key: str = "gene",
     layer: str = "transcripts",
+    extracellular_key: str = "extracellular",
     copy: bool = False,
-) -> SpatialData:
-    """Quantify gene overexpression relative to a Poisson noise model derived from control codewords.
+) -> SpatialData | None:
+    """Quantify uRNA gene overexpression relative to a Poisson noise model derived from control codewords.
 
-    For each gene, computes the observed count, log fold-change over the noise
-    baseline (mean control count), a one-sided Poisson survival-function p-value,
-    and Benjamini–Hochberg FDR correction. Results are stored in
+    Only extracellular (uRNA) transcripts are considered: if `extracellular_key` is
+    present in the points layer (e.g. after :func:`troutpy.pp.define_urna`), transcripts
+    with ``extracellular == False`` are dropped before counting. For each gene, computes
+    the observed uRNA count, the log fold-change over the noise baseline (mean count of
+    control probes), a one-sided Poisson survival-function p-value, and a
+    Benjamini–Hochberg FDR correction. Results are stored in
     ``sdata["xrna_metadata"].var``.
 
     Parameters
     ----------
-    sdata : spatialdata.SpatialData
-        SpatialData object containing a points layer with transcripts and an
-        ``"xrna_metadata"`` table (created if absent).
-    codeword_key : str
-        Column in the transcript points layer that holds the codeword category
-        used to identify control probes.
-    control_codewords : list of str
-        Codeword category values that identify control (noise) probes.
-    gene_key : str, optional
+    sdata
+        SpatialData object containing a points layer with transcripts. An
+        ``"xrna_metadata"`` table is created if absent.
+    codeword_key
+        Column in the transcript points layer that identifies control probes, either a
+        boolean flag (e.g. ``"control_probe"``) or a codeword category
+        (e.g. Xenium's ``"codeword_category"``).
+    control_codewords
+        Values of `codeword_key` that identify control (noise) probes. Defaults to
+        ``[True, "True"]``, matching a boolean ``"control_probe"`` column.
+    gene_key
         Column in the transcript points layer containing gene identifiers.
-        Defaults to ``"gene"``.
-    layer : str, optional
-        Key in ``sdata.points`` holding the transcript data. Defaults to ``"transcripts"``.
-    copy : bool, optional
-        If ``True``, return the updated SpatialData object; otherwise modify in
-        place and return ``None``. Defaults to ``False``.
+    layer
+        Key in ``sdata.points`` holding the transcript data.
+    extracellular_key
+        Boolean column in the points layer flagging extracellular transcripts. If
+        missing, all transcripts are used.
+    copy
+        If `True`, return the updated SpatialData object; otherwise modify in place and
+        return `None`.
 
     Returns
     -------
-    spatialdata.SpatialData or None
-        Updated SpatialData with columns ``"count"``, ``"logfoldchange_over_noise"``,
-        ``"p_val_noise"``, ``"is_control"``, and ``"fdr_noise"`` added to
-        ``sdata["xrna_metadata"].var`` if ``copy=True``; otherwise ``None``.
+    If `copy=True`, the updated `sdata`; otherwise `None`. Columns ``"count"``,
+    ``"logfoldchange_over_noise"``, ``"p_val_noise"``, ``"is_control"``, and
+    ``"fdr_noise"`` are added to ``sdata["xrna_metadata"].var``.
     """
-    data = sdata.points[layer][np.unique([codeword_key, gene_key]).tolist()].compute()
+    if control_codewords is None:
+        control_codewords = [True, "True"]
+
+    points = sdata.points[layer]
+    cols = np.unique([c for c in (codeword_key, gene_key, extracellular_key) if c in points.columns]).tolist()
+    data = points[cols].compute()
+
+    # Keep only extracellular (uRNA) transcripts
+    if extracellular_key in data.columns:
+        data = data[data[extracellular_key].astype(bool)]
 
     if isinstance(control_codewords, str):
         control_codewords = [control_codewords]
@@ -228,10 +244,7 @@ def quantify_overexpression(
 
     results = []
     for g, count in gene_counts.items():
-        # p = P(Noise >= observed_count)
         p_val = poisson.sf(count - 1, lambda_noise)
-
-        # Log fold change over noise, with a pseudocount of 1 to avoid log(0)
         lfc = np.log((count + 1) / (lambda_noise + 1))
 
         results.append(
@@ -500,6 +513,7 @@ def assess_diffusion(
     distance_key: str = "distance_to_source",
     filters: dict | None = None,
     min_transcripts: int = 15,
+    max_kde_points: int | None = 5000,
     copy: bool = False,
 ):
     """Fit a 2D Rayleigh diffusion model to transcript distances from their source cell.
@@ -525,6 +539,12 @@ def assess_diffusion(
         ``{"extracellular": True, "enrichment_class": ("High Density", False)}``.
     min_transcripts
         Minimum number of transcripts required for a gene to be fitted.
+    max_kde_points
+        Evaluating the Gaussian KDE used for ``lr_stat`` scales quadratically with the
+        number of transcripts, so for genes with more than `max_kde_points` transcripts
+        both log-likelihoods are computed on a random subsample of this size (fixed
+        seed) and rescaled to the gene's full transcript count. `None` uses all
+        transcripts.
     copy
         If `True`, return a modified copy of `sdata`. Otherwise modify in place.
 
@@ -573,6 +593,7 @@ def assess_diffusion(
 
     filtered_obs = source_obs.loc[shared_ids]
     results = []
+    rng = np.random.default_rng(0)
 
     for gene, group in filtered_obs.groupby(gene_key):
         distances = group[distance_key].dropna().values
@@ -586,9 +607,12 @@ def assess_diffusion(
             ks_stat, ks_pval = stats.kstest(distances, "rayleigh", args=param)
 
             # Likelihood ratio of the Rayleigh fit vs. a kernel density estimate
-            log_likelihood_ray = np.sum(stats.rayleigh.logpdf(distances, *param))
-            log_likelihood_emp = np.sum(stats.gaussian_kde(distances).logpdf(distances))
-            lr_stat = -2 * (log_likelihood_ray - log_likelihood_emp)
+            lr_distances = distances
+            if max_kde_points is not None and len(distances) > max_kde_points:
+                lr_distances = rng.choice(distances, size=max_kde_points, replace=False)
+            log_likelihood_ray = np.sum(stats.rayleigh.logpdf(lr_distances, *param))
+            log_likelihood_emp = np.sum(stats.gaussian_kde(lr_distances).logpdf(lr_distances))
+            lr_stat = -2 * (log_likelihood_ray - log_likelihood_emp) * len(distances) / len(lr_distances)
 
             results.append(
                 {

@@ -1,19 +1,32 @@
-# Tools
-
-## Quantification
+# Tools: `tl`
 
 ```{eval-rst}
 .. module:: troutpy.tl
+```
+
+```{eval-rst}
 .. currentmodule:: troutpy
+```
 
+## Local density
+
+```{eval-rst}
 .. autosummary::
-    :toctree: generated/quanticication
+    :toctree: generated/density
 
-    tl.colocalization_proportion
-    tl.calculate_heuristic_radius_by_cells
-    tl.identify_density_k_neighbors
     tl.density_similarity
+    tl.identify_density_k_neighbors
+    tl.calculate_heuristic_radius_by_cells
+    tl.colocalization_proportion
     tl.segment_protrusions
+```
+
+## uRNA quantification
+
+```{eval-rst}
+.. autosummary::
+    :toctree: generated/quantification
+
     tl.spatial_variability
     tl.create_urna_metadata
     tl.quantify_overexpression
@@ -45,6 +58,24 @@
     tl.gene_specific_interactions
 ```
 
+## Spillover and decontamination
+
+Correct segmented-cell expression for transcripts that spilled over from
+neighbouring cells (e.g. via protrusions) into another cell's mask.
+
+```{eval-rst}
+.. autosummary::
+    :toctree: generated/decontamination
+
+    tl.flag_intracellular_spillover
+    tl.decontaminate_cell_expression
+    tl.credit_spillover_to_source
+    tl.subtract_local_urna_background
+    tl.generalized_source_score
+    tl.apply_soft_decontamination
+    tl.iterative_soft_decontamination
+```
+
 ## Cell scores
 
 ```{eval-rst}
@@ -64,7 +95,7 @@
     tl.latent_factor
 ```
 
-## Diffusion-related
+## Diffusion
 
 ```{eval-rst}
 .. autosummary::
@@ -75,7 +106,7 @@
 
 ```
 
-## Multimodal quantication
+## Multimodal quantification
 
 ```{eval-rst}
 .. autosummary::

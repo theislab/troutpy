@@ -6,9 +6,7 @@
 :maxdepth: 2
 :caption: API
 
-Preprocessing <api/preprocessing.md>
-Tools <api/tools.md>
-Plotting  <api/plotting.md>
+api/index.md
 
 ```
 
