@@ -1,5 +1,4 @@
 import pandas as pd
-import pytest
 
 import troutpy as tp
 
@@ -45,12 +44,5 @@ def test_get_gene_interaction_strength(sdata):
     assert result.shape == (len(source_proportions.columns), len(source_proportions.columns))
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="cell_contacts_with_urna_sources reads sdata['source_score'].obs['closest_cell'], but the only "
-    "non-dead-code producers of 'source_score' (adaptative_source_score / _optimized) write "
-    "'predicted_parent' instead. 'closest_cell' is only produced by the dead store_results_in_sdata "
-    "helper (no callers) -- architectural drift, not a 1-line fix.",
-)
 def test_cell_contacts_with_urna_sources(sdata):
     tp.tl.cell_contacts_with_urna_sources(sdata, cell_type_key="leiden", distance=50, copy=False)

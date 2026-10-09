@@ -17,9 +17,58 @@ and this project adheres to [Semantic Versioning][].
   synthetic `SpatialData` fixture (`tests/conftest.py`), including
   `pytest.mark.xfail`/`skip` markers documenting known spatialdata-0.4.0
   incompatibilities and `pl/plotting.py` legacy-pipeline drift.
+- Spillover/decontamination tools for transcripts that land inside a
+  neighbouring cell's segmentation mask: `tl.flag_intracellular_spillover`,
+  `tl.decontaminate_cell_expression`, `tl.credit_spillover_to_source`, and a new
+  `tl.decontamination` module with `tl.subtract_local_urna_background`,
+  `tl.generalized_source_score`, `tl.apply_soft_decontamination` and
+  `tl.iterative_soft_decontamination`.
+- `tl.assess_diffusion`: new `max_kde_points` argument (default `5000`). The
+  KDE likelihood behind `lr_stat` is computed on a seeded subsample for genes
+  with more transcripts, rescaled to the full count; previously it scaled
+  quadratically and took hours for abundant genes on full Xenium sections.
+- `tl.compute_target_score`: vectorized the per-transcript scoring loop (identical
+  results; minutes instead of hours on a full Xenium section).
+- `tl.quantify_overexpression`: new `extracellular_key` argument; only
+  extracellular (uRNA) transcripts are counted when that column is present.
+- `docs/api/index.md` landing page; API pages reorganized by topic, following
+  scverse conventions.
+- `Basic_tutorial.ipynb`: new section on spillover correction, data download and
+  install instructions.
+
+### Changed
+
+- `tl.quantify_overexpression`: `codeword_key` and `control_codewords` now
+  default to `"control_probe"` and `[True, "True"]`.
+- `pp.define_urna`: `method` now defaults to `"sainsc"` (the previous default,
+  `"segmentation_free"`, was not a supported method and always raised).
+- `Basic_tutorial.ipynb` updated to the current API (`pp.define_urna(prob_threshold=...)`,
+  `tl.density_similarity` + `tl.adaptative_source_score_optimized` instead of the
+  removed `tl.compute_source_score`, `distance_to_source`) and re-executed.
 
 ### Fixed
 
+- `pl.logfoldratio_over_noise`, `pl.diffusion_results`, `pl.top_bottom_probes` and
+  `pp.filter_urna(min_logfoldratio_over_noise=...)` now read the
+  `logfoldchange_over_noise` / `is_control` columns written by
+  `tl.quantify_overexpression` (previously `KeyError`).
+- `tl.decontaminate_cell_expression` / `tl.credit_spillover_to_source`: group with
+  `observed=True` (categorical columns previously expanded to every
+  cell x gene combination) and accept categorical cell-type labels.
+- `tl.generalized_source_score` (and so `tl.iterative_soft_decontamination`): no longer
+  crashes when the transcripts' `gene` column is categorical.
+- Tests for the new spillover/decontamination functions (`tests/tl/test_decontamination.py`);
+  removed `xfail` markers for the naming-drift issues fixed above.
+- `pl.gene_distribution_from_source`: no longer crashes (`FitDataError`) on
+  transcripts without a source cell in range (distance `0`).
+- `tl.cell_contacts_with_urna_sources` now works with the `source_score` table
+  written by `tl.adaptative_source_score(_optimized)` (`predicted_parent`
+  instead of the removed `closest_cell` column).
+- `pl.spatial_transcripts_source` no longer converts `sdata["source_score"].obs.index` to
+  integers in place (this silently emptied `tl.cell_contacts_with_urna_sources`' uRNA
+  contacts when run afterwards).
+- `pl.spatial_transcripts_source`: cell and halo colors are now read from
+  `.uns[f"{key}_colors"]` independently for `cell_color_key` and `extra_color_key`.
 - `tl.adaptative_source_score_optimized`: `AttributeError:
 'numpy.ndarray' object has no attribute 'tocsr'` when `sdata["table"].X`
   is a dense array — now converts via `csr_matrix(...)` instead of calling

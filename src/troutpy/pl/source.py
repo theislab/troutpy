@@ -284,10 +284,12 @@ def gene_distribution_from_source(
 
         try:
             distances = sdata["source_score"].obs.query(f"{gene_key} == @gene")[distance_key].dropna().values
-            param_g = stats.rayleigh.fit(distances, floc=0)
+            # A distance of 0 marks transcripts without a source cell in range; the Rayleigh fit requires > 0
+            distances = distances[distances > 0]
             if len(distances) == 0:
                 print(f"Warning: No valid distances found for gene {gene}, skipping.")
                 continue
+            param_g = stats.rayleigh.fit(distances, floc=0)
 
             x = np.linspace(0, max(global_distances), 100)
             y = stats.rayleigh.pdf(x, *param)

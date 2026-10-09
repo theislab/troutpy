@@ -948,3 +948,202 @@ def adaptative_source_score_optimized(
 
     print(f"Success: {np.sum(valid_mask)} transcripts assigned.")
     return sdata if copy else None
+
+
+def flag_intracellular_spillover(
+    sdata: SpatialData,
+    prob_threshold: float = 0.5,
+    cell_type_col: str = "leiden",
+    layer: str = "transcripts",
+    gene_key: str = "gene",
+) -> pd.DataFrame:
+    """Flag intracellular transcripts whose local signature points to a different cell type than their own.
+
+    A transcript that diffuses out of a cell's protrusion can land inside a
+    *different* cell's segmentation mask; standard segmentation-based counting then
+    silently attributes it to the wrong cell, and none of the uRNA scoring functions
+    in this module catch it because they all restrict themselves to transcripts with
+    ``overlaps_cell == False`` (see :func:`adaptative_source_score`,
+    :func:`adaptative_source_score_optimized`, and
+    :func:`troutpy.tl.compute_target_score`).
+
+    Rather than run a new neighbor search, this reuses ``prob_is_urna`` and
+    ``closest_cell_type`` -- a per-transcript, bin-level cosine similarity to
+    cell-type expression signatures computed for *every* transcript regardless of
+    ``overlaps_cell`` by :func:`troutpy.pp.segmentation_free_sainsc` /
+    :func:`troutpy.pp.define_urna_probability`. Those functions already force
+    ``extracellular = ~overlaps_cell & (prob_is_urna > threshold)``, which hides any
+    in-cell transcript that looks extracellular-like; this function surfaces that
+    hidden case directly by comparing ``closest_cell_type`` to the transcript's own
+    containing cell's type.
+
+    Parameters
+    ----------
+    sdata
+        SpatialData object with a ``"table"`` AnnData (``.obs["cell_id"]``,
+        `cell_type_col`) and a `layer` points table with ``"overlaps_cell"``,
+        ``"cell_id"``, ``"prob_is_urna"``, and ``"closest_cell_type"`` columns (the
+        latter two produced upstream by, e.g., :func:`troutpy.pp.segmentation_free_sainsc`).
+    prob_threshold
+        Minimum ``prob_is_urna`` for an intracellular transcript to be considered
+        extracellular-like. Matches the threshold used by
+        ``define_urna_probability``'s own ``extracellular`` column.
+    cell_type_col
+        Column in ``sdata["table"].obs`` to compare against ``closest_cell_type``.
+        Must use the same label vocabulary ``closest_cell_type`` was computed
+        against (typically ``"leiden"``, since cell-type signatures are usually
+        built at cluster resolution) -- comparing against a coarser, renamed column
+        will spuriously flag every cluster sharing that coarser label.
+    layer
+        Points layer to read transcripts from.
+    gene_key
+        Column in the transcripts layer containing gene identifiers.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Indexed like the intracellular (``overlaps_cell=True``) transcript subset,
+        with columns ``gene``, ``own_cell_id``, ``own_cell_type``,
+        ``predicted_true_type``, ``prob_is_urna``, and ``is_spillover``. Note that
+        only the likely source *cell type* is recovered here, not a specific
+        neighboring cell -- there isn't enough information in a bin-level signature
+        match to say which individual cell a flagged transcript came from.
+    """
+    cells = sdata["table"]
+    transcripts = sdata.points[layer].compute()
+
+    obs = cells.obs.copy()
+    obs["cell_id"] = obs["cell_id"].astype(str)
+    own_type_map = dict(zip(obs["cell_id"], obs[cell_type_col].astype(str), strict=False))
+
+    body = transcripts[transcripts["overlaps_cell"]].copy()
+    body["cell_id"] = body["cell_id"].astype(str)
+    body["own_cell_type"] = body["cell_id"].map(own_type_map)
+    body["closest_cell_type"] = body["closest_cell_type"].astype(str)
+
+    body["is_spillover"] = (
+        body["own_cell_type"].notna() & (body["prob_is_urna"] > prob_threshold) & (body["closest_cell_type"] != body["own_cell_type"])
+    )
+
+    result = body[[gene_key, "cell_id", "own_cell_type", "closest_cell_type", "prob_is_urna", "is_spillover"]].rename(
+        columns={gene_key: "gene", "cell_id": "own_cell_id", "closest_cell_type": "predicted_true_type"}
+    )
+
+    n_flagged = int(result["is_spillover"].sum())
+    print(f"Flagged {n_flagged} / {len(result)} intracellular transcripts as likely spillover (prob_threshold={prob_threshold}).")
+
+    return result
+
+
+def credit_spillover_to_source(
+    extra_matrix: pd.DataFrame,
+    spillover_df: pd.DataFrame,
+    leiden_to_celltype: dict | None = None,
+) -> pd.DataFrame:
+    """Credit flagged spillover transcripts to their predicted source cell type's extracellular tally.
+
+    Pairs with :func:`decontaminate_cell_expression`, which removes the same
+    flagged transcripts from the receiving cell's counts. Applying both -- this
+    function on the extracellular side, decontamination on the intracellular side,
+    e.g. by recomputing intracellular counts from the decontaminated layer -- moves
+    each flagged transcript's contribution from "receiver's intracellular
+    expression" to "source cell type's extracellular signal" once, rather than
+    leaving it double-counted or dropping it entirely.
+
+    Parameters
+    ----------
+    extra_matrix
+        Gene x cell-type extracellular contribution matrix (genes as index, cell
+        types as columns).
+    spillover_df
+        Output of :func:`flag_intracellular_spillover`.
+    leiden_to_celltype
+        Optional mapping applied to ``spillover_df["predicted_true_type"]`` before
+        aggregation, needed when `spillover_df` uses leiden cluster ids but
+        `extra_matrix`'s columns use a coarser annotated cell-type vocabulary.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copy of `extra_matrix` with flagged spillover transcript counts added to
+        the appropriate ``(gene, predicted source cell type)`` entries.
+    """
+    flagged = spillover_df[spillover_df["is_spillover"]].copy()
+    if leiden_to_celltype is not None:
+        predicted = flagged["predicted_true_type"].astype(str)
+        flagged["predicted_true_type"] = predicted.map(leiden_to_celltype).fillna(predicted)
+
+    to_add = flagged.groupby(["gene", "predicted_true_type"], observed=True).size()
+
+    extra_corrected = extra_matrix.copy()
+    n_applied = 0
+    for (gene, cell_type), n in to_add.items():
+        if gene in extra_corrected.index and cell_type in extra_corrected.columns:
+            extra_corrected.loc[gene, cell_type] += n
+            n_applied += n
+
+    print(f"Credited {n_applied} spillover transcript counts to their predicted source cell type.")
+    return extra_corrected
+
+
+def decontaminate_cell_expression(
+    sdata: SpatialData,
+    spillover_df: pd.DataFrame,
+    expr_key: str = "table",
+    layer_key: str = "raw",
+    output_layer: str = "decontaminated",
+) -> SpatialData:
+    """Remove flagged spillover transcripts from segmented-cell expression counts.
+
+    :func:`flag_intracellular_spillover` identifies the likely source *cell type*
+    for a contaminating transcript, not a specific neighboring cell, so this cannot
+    repatriate counts to a precise source cell without fabricating false precision.
+    Instead, for every flagged transcript this removes one count of its gene from
+    the receiving cell -- analogous to ambient-RNA subtraction in droplet scRNA-seq
+    (e.g. SoupX) rather than a cell-to-cell reassignment. Pair with
+    :func:`credit_spillover_to_source` to credit the removed signal to the source
+    cell type's extracellular tally elsewhere, so it is corrected rather than lost.
+
+    Parameters
+    ----------
+    sdata
+        SpatialData object containing `expr_key` (an AnnData with
+        ``.obs["cell_id"]`` and a `layer_key` layer) to correct.
+    spillover_df
+        Output of :func:`flag_intracellular_spillover`.
+    expr_key
+        Key of the AnnData table to correct in `sdata`.
+    layer_key
+        Source layer to copy and subtract counts from.
+    output_layer
+        Name of the new corrected layer written to ``sdata[expr_key].layers``.
+
+    Returns
+    -------
+    spatialdata.SpatialData
+        `sdata`, with `output_layer` added to ``sdata[expr_key].layers`` (modified
+        in place).
+    """
+    adata = sdata[expr_key]
+    raw = adata.layers[layer_key]
+    corrected = raw.toarray().copy() if hasattr(raw, "toarray") else np.array(raw, copy=True)
+
+    cell_id_to_row = {cid: i for i, cid in enumerate(adata.obs["cell_id"].astype(str))}
+    gene_to_col = {g: i for i, g in enumerate(adata.var_names)}
+
+    flagged = spillover_df[spillover_df["is_spillover"]]
+    counts = flagged.groupby(["own_cell_id", "gene"], observed=True).size()
+
+    n_applied, n_skipped = 0, 0
+    for (cell_id, gene), n in counts.items():
+        row = cell_id_to_row.get(str(cell_id))
+        col = gene_to_col.get(gene)
+        if row is None or col is None:
+            n_skipped += 1
+            continue
+        corrected[row, col] = max(corrected[row, col] - n, 0)
+        n_applied += 1
+
+    adata.layers[output_layer] = csr_matrix(corrected)
+    print(f"Decontaminated '{output_layer}': applied to {n_applied} (cell, gene) pairs, skipped {n_skipped} (id/gene not found).")
+    return sdata

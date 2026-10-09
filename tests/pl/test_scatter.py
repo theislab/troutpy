@@ -41,12 +41,6 @@ def test_urna_vs_source_score_unknown_yvar_raises(sdata):
         tp.pl.urna_vs_source_score(sdata, y_var="not-a-column")
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="diffusion_results does `var_df['control_probe'].map(...)`, but sdata['xrna_metadata'].var has no "
-    "'control_probe' column -- quantify_overexpression only writes 'is_control'. Same naming drift as "
-    "pl.metric_analysis.top_bottom_probes/gene_metric_heatmap.",
-)
 def test_diffusion_results(sdata):
     tp.pl.diffusion_results(sdata, save=False)
 

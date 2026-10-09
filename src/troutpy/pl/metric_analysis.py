@@ -88,7 +88,8 @@ def top_bottom_probes(
         except ValueError:
             pass
 
-    colors = plot_df["control_probe"].map({True: control_color, False: gene_color}).tolist()
+    control_col = "is_control" if "is_control" in plot_df.columns else "control_probe"
+    colors = plot_df[control_col].map({True: control_color, False: gene_color}).tolist()
 
     plt.figure(figsize=(4, max(5, len(plot_df) * 0.4)))
     plt.barh(
@@ -318,6 +319,8 @@ def logfoldratio_over_noise(
         DataFrame.
     control_key
         Column in ``sdata["xrna_metadata"].var`` indicating which probes are controls.
+        Falls back to ``"is_control"`` (written by :func:`troutpy.tl.quantify_overexpression`)
+        if missing.
     test_method
         Statistical test to use: ``"t-test"`` (Welch's t-test), ``"mannwhitney"``
         (Mann-Whitney U test), or ``"auto"`` to choose based on a Shapiro-Wilk
@@ -337,6 +340,11 @@ def logfoldratio_over_noise(
     None
     """
     var_df = sdata["xrna_metadata"].var.copy()
+    if control_key not in var_df.columns and "is_control" in var_df.columns:
+        control_key = "is_control"
+    # tl.quantify_overexpression writes "logfoldchange_over_noise"; older versions wrote "logfoldratio_over_noise"
+    if "logfoldratio_over_noise" not in var_df.columns:
+        var_df["logfoldratio_over_noise"] = var_df["logfoldchange_over_noise"]
 
     var_df["control_probe_cat"] = var_df[control_key].map({True: "Control Probes", False: "Non-Control Probes"})
     var_df["control_probe_cat"] = pd.Categorical(var_df["control_probe_cat"], categories=["Control Probes", "Non-Control Probes"], ordered=True)
@@ -486,7 +494,8 @@ def gene_metric_heatmap(
     num_genes = heatmap_data.shape[0]
     show_ylabels = (probes_to_plot is not None) and (num_genes <= 20)
 
-    ytick_colors = ["gray" if (gene in var_df.index and var_df.loc[gene, "control_probe"]) else "black" for gene in heatmap_data.index]
+    control_col = "is_control" if "is_control" in var_df.columns else "control_probe"
+    ytick_colors = ["gray" if (gene in var_df.index and var_df.loc[gene, control_col]) else "black" for gene in heatmap_data.index]
 
     try:
         cmap = get_colormap(cmap)
@@ -551,7 +560,7 @@ def gene_metric_heatmap(
             row_order = g.dendrogram_row.reordered_ind
             new_index = heatmap_data.index[row_order]
             for tick_label, gene in zip(g.ax_heatmap.get_yticklabels(), new_index, strict=False):
-                color = "gray" if (gene in var_df.index and var_df.loc[gene, "control_probe"]) else "black"
+                color = "gray" if (gene in var_df.index and var_df.loc[gene, control_col]) else "black"
                 tick_label.set_color(color)
         else:
             for tick_label, color in zip(g.ax_heatmap.get_yticklabels(), ytick_colors, strict=False):
