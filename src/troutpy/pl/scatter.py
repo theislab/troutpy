@@ -1181,8 +1181,8 @@ def urna_vs_source_score(
     else:
         sdata["source_score"].obs["sum_source_score"] = np.sum(x_matrix, axis=1)
 
-    source_score_by_gene = sdata["source_score"].obs.groupby("gene").mean("sum_source_score")
-    count_by_gene = sdata["source_score"].obs.groupby("gene").count()
+    source_score_by_gene = sdata["source_score"].obs.groupby("gene", observed=False).mean(numeric_only=True)
+    count_by_gene = sdata["source_score"].obs.groupby("gene", observed=False).count()
     source_score_by_gene["total_counts"] = count_by_gene["distance_to_source"]
 
     combined_urna_metadata = pd.concat([source_score_by_gene, sdata["xrna_metadata"].var], axis=1)

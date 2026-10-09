@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning][].
 - `tl.cell_contacts_with_urna_sources` now works with the `source_score` table
   written by `tl.adaptative_source_score(_optimized)` (`predicted_parent`
   instead of the removed `closest_cell` column).
+- `pl.urna_vs_source_score`: fixed `groupby(...).mean("sum_source_score")`, which passed the
+  column name as `numeric_only` and raises under pandas 3.
 - `pl.spatial_transcripts_source` no longer converts `sdata["source_score"].obs.index` to
   integers in place (this silently emptied `tl.cell_contacts_with_urna_sources`' uRNA
   contacts when run afterwards).
