@@ -59,7 +59,7 @@ tp.pp.define_urna(sdata, method="sainsc")
 tp.tl.quantify_overexpression(sdata, codeword_key="control_probe")
 tp.tl.extracellular_enrichment(sdata)
 tp.tl.density_similarity(sdata)
-tp.tl.adaptative_source_score_optimized(sdata, cell_type_col="leiden")
+tp.tl.urna_source_score(sdata, cell_type_col="leiden")
 ```
 
 See the [basic tutorial][] for a complete, step-by-step walkthrough on a public Xenium mouse brain dataset.

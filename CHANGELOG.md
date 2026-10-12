@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning][].
 
 ## [Unreleased]
 
+### Changed
+
+- `tl.adaptative_source_score_optimized` renamed to `tl.urna_source_score` (the
+  source-score implementation used in the manuscript). Its default `lmbda` is now
+  0.5, the value selected by the lambda sensitivity analysis. The old name is
+  kept as a deprecated alias.
+
 ### Added
 
 - Basic tool, preprocessing and plotting functions

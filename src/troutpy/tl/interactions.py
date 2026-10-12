@@ -237,7 +237,7 @@ def cell_contacts_with_urna_sources(
         ``closest_cell`` and ``distance`` in ``.obs``, from
         :func:`troutpy.tl.compute_target_score`), and ``sdata["source_score"]``
         (AnnData with ``predicted_parent`` in ``.obs``, from
-        :func:`troutpy.tl.adaptative_source_score_optimized`).
+        :func:`troutpy.tl.urna_source_score`).
     spatial_key : str, optional
         Key in ``sdata["table"].obsm`` containing spatial coordinates. Defaults to
         ``"spatial"``.
