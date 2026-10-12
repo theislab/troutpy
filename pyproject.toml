@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "troutpy"
-version = "0.1.1"
+version = "0.2.0"
 description = "Package for the analysis of transcripts outside segmented cells in python"
 readme = "README.md"
 license = { file = "LICENSE" }
