@@ -10,18 +10,10 @@ and this project adheres to [Semantic Versioning][].
 
 ## [Unreleased]
 
-### Changed
-
-- `tl.adaptative_source_score_optimized` renamed to `tl.urna_source_score` (the
-  source-score implementation used in the manuscript). Its default `lmbda` is now
-  0.5, the value selected by the lambda sensitivity analysis. The old name is
-  kept as a deprecated alias.
-- Default distance decay is also 0.5 in `tl.compute_target_score` (`lambda_decay`)
-  and `tl.generalized_source_score` (`lmbda`), matching the source score.
+## [0.2.0] - 2026-10-12
 
 ### Added
 
-- Basic tool, preprocessing and plotting functions
 - Test suite (`tests/`) covering the public `pp`, `tl`, and `pl` APIs against a
   synthetic `SpatialData` fixture (`tests/conftest.py`), including
   `pytest.mark.xfail`/`skip` markers documenting known spatialdata-0.4.0
@@ -47,12 +39,18 @@ and this project adheres to [Semantic Versioning][].
 
 ### Changed
 
+- `tl.adaptative_source_score_optimized` renamed to `tl.urna_source_score` (the
+  source-score implementation used in the manuscript). Its default `lmbda` is now
+  0.5, the value selected by the lambda sensitivity analysis. The old name is
+  kept as a deprecated alias.
+- Default distance decay is also 0.5 in `tl.compute_target_score` (`lambda_decay`)
+  and `tl.generalized_source_score` (`lmbda`), matching the source score.
 - `tl.quantify_overexpression`: `codeword_key` and `control_codewords` now
   default to `"control_probe"` and `[True, "True"]`.
 - `pp.define_urna`: `method` now defaults to `"sainsc"` (the previous default,
   `"segmentation_free"`, was not a supported method and always raised).
 - `Basic_tutorial.ipynb` updated to the current API (`pp.define_urna(prob_threshold=...)`,
-  `tl.density_similarity` + `tl.adaptative_source_score_optimized` instead of the
+  `tl.density_similarity` + `tl.urna_source_score` instead of the
   removed `tl.compute_source_score`, `distance_to_source`) and re-executed.
 
 ### Fixed
