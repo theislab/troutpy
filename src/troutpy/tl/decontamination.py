@@ -86,7 +86,7 @@ def _build_cell_shell(assigned_df: pd.DataFrame, obs: pd.DataFrame, cell_type_co
 def generalized_source_score(
     sdata: SpatialData,
     max_dist: float = 100.0,
-    lmbda: float = 0.1,
+    lmbda: float = 0.5,
     max_k: int = 10,
     ambient_floor: float = 1.0,
     signal_threshold: float = 10.0,
