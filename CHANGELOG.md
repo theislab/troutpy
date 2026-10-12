@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning][].
 
 ## [Unreleased]
 
+### Changed
+
+- `tl.adaptative_source_score_optimized` renamed to `tl.urna_source_score` (the
+  source-score implementation used in the manuscript). Its default `lmbda` is now
+  0.5, the value selected by the lambda sensitivity analysis. The old name is
+  kept as a deprecated alias.
+- Default distance decay is also 0.5 in `tl.compute_target_score` (`lambda_decay`)
+  and `tl.generalized_source_score` (`lmbda`), matching the source score.
+
 ### Added
 
 - Basic tool, preprocessing and plotting functions

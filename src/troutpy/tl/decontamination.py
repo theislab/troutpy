@@ -1,7 +1,7 @@
 """Iterative, per-transcript soft decontamination for uRNA source scoring.
 
 Builds on :func:`troutpy.tl.density_similarity` and
-:func:`troutpy.tl.adaptative_source_score_optimized`, extending per-transcript
+:func:`troutpy.tl.urna_source_score`, extending per-transcript
 source scoring (which only covers extracellular/unassigned transcripts) to
 intracellular transcripts.
 
@@ -10,7 +10,7 @@ transcripts land inside a *neighboring* cell's segmentation mask instead of
 empty space. Standard segmentation-based counting then silently attributes
 them to the wrong cell, inflating that neighbor's raw counts -- which in turn
 makes the neighbor look like a *more plausible* uRNA source to
-``adaptative_source_score_optimized``'s expression-context matching (since
+``urna_source_score``'s expression-context matching (since
 that matching reads the cell's current, contaminated ``.X``). This is a
 compounding bias, not a static double-count: fixing it requires correcting
 expression *and* re-scoring against the corrected expression, iteratively.
@@ -44,7 +44,7 @@ from spatialdata import SpatialData
 from tqdm import tqdm
 
 from .estimate_density import density_similarity
-from .source_cell import adaptative_source_score_optimized
+from .source_cell import urna_source_score
 
 __all__ = [
     "generalized_source_score",
@@ -63,7 +63,7 @@ def _build_cell_shell(assigned_df: pd.DataFrame, obs: pd.DataFrame, cell_type_co
     """Build a per-cell boundary shell from each cell's extreme (min/max x/y) assigned transcripts.
 
     Fresh reimplementation of the same shell idea used internally by
-    :func:`troutpy.tl.adaptative_source_score_optimized` -- that function has
+    :func:`troutpy.tl.urna_source_score` -- that function has
     no standalone helper to call into, so this is deliberately separate code,
     not a modification of that file.
     """
@@ -86,7 +86,7 @@ def _build_cell_shell(assigned_df: pd.DataFrame, obs: pd.DataFrame, cell_type_co
 def generalized_source_score(
     sdata: SpatialData,
     max_dist: float = 100.0,
-    lmbda: float = 0.1,
+    lmbda: float = 0.5,
     max_k: int = 10,
     ambient_floor: float = 1.0,
     signal_threshold: float = 10.0,
@@ -101,7 +101,7 @@ def generalized_source_score(
     """Score every intracellular transcript against nearby candidate cells, including its own.
 
     Generalizes the context-gene / distance-decay matching that
-    :func:`troutpy.tl.adaptative_source_score_optimized` already applies only
+    :func:`troutpy.tl.urna_source_score` already applies only
     to extracellular (unassigned) transcripts, so intracellular transcripts
     also get a continuous measure of how well they fit their own containing
     cell vs. some other nearby cell -- the basis for detecting contamination
@@ -141,7 +141,7 @@ def generalized_source_score(
     proxy.
 
     Extracellular transcripts are not touched here -- they are already handled
-    by :func:`troutpy.tl.adaptative_source_score_optimized`.
+    by :func:`troutpy.tl.urna_source_score`.
 
     Parameters
     ----------
@@ -158,11 +158,11 @@ def generalized_source_score(
     ambient_floor, signal_threshold
         ``enrichment_over_random`` thresholds controlling adaptive context
         size, matching the convention in
-        :func:`troutpy.tl.adaptative_source_score_optimized`.
+        :func:`troutpy.tl.urna_source_score`.
     residual
         Constant added to the weight normalization denominator. Defaults to
         ``0.01`` here, deliberately much smaller than the ``0.1`` used by
-        :func:`troutpy.tl.adaptative_source_score_optimized`: that default
+        :func:`troutpy.tl.urna_source_score`: that default
         represents genuine "truly unassigned" probability mass for
         extracellular transcripts, but an intracellular transcript is always
         attributed to *some* cell, so the same constant would act as a
@@ -383,7 +383,7 @@ def apply_soft_decontamination(
         ``sdata[expr_key].X`` -- required for a subsequent round of an
         iterative loop to see the correction, since candidate-cell gene
         matching in :func:`generalized_source_score` and uRNA-to-source
-        matching in :func:`troutpy.tl.adaptative_source_score_optimized` both
+        matching in :func:`troutpy.tl.urna_source_score` both
         read `.X`. ``.layers[raw_layer]`` is never modified.
 
     Returns
@@ -450,7 +450,7 @@ def iterative_soft_decontamination(
        contamination weights against the *current* expression (skipping the
        ``enrichment_over_random`` recomputation after round 0, since it
        depends only on transcript positions, not expression).
-    2. :func:`troutpy.tl.adaptative_source_score_optimized` -- re-run uRNA-to-source assignment against the *current*
+    2. :func:`troutpy.tl.urna_source_score` -- re-run uRNA-to-source assignment against the *current*
        expression. This is the step that actually closes the feedback loop:
        a contaminated cell's inflated counts make it look like a more
        plausible uRNA source, so re-scoring against progressively cleaner
@@ -475,7 +475,7 @@ def iterative_soft_decontamination(
         Extra keyword arguments passed to :func:`generalized_source_score`.
     extracellular_score_kwargs
         Extra keyword arguments passed to
-        :func:`troutpy.tl.adaptative_source_score_optimized`.
+        :func:`troutpy.tl.urna_source_score`.
 
     Returns
     -------
@@ -500,7 +500,7 @@ def iterative_soft_decontamination(
     for it in range(n_iter):
         print(f"\n=== Iteration {it} ===")
         generalized_source_score(sdata, run_density_similarity=(it == 0), **score_kwargs)
-        adaptative_source_score_optimized(sdata, **extracellular_score_kwargs)
+        urna_source_score(sdata, **extracellular_score_kwargs)
 
         iter_layer = f"{output_layer}_iter{it}"
         apply_soft_decontamination(sdata, raw_layer=raw_layer, output_layer=iter_layer, update_X=True)

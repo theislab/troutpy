@@ -536,7 +536,9 @@ def adaptative_source_score(
     max_dist
         Maximum distance (in coordinate units) to search for candidate parent cells.
     lmbda
-        Decay rate for the exponential distance weighting.
+        Decay rate for the exponential distance weighting, ``exp(-lmbda * d)``.
+        The default (0.5) was tuned on densely packed mouse brain tissue; re-tune it
+        for tissues with very different cell density or architecture.
     max_k
         Maximum number of extracellular neighbors used to build the context gene set.
     ambient_floor
@@ -561,7 +563,7 @@ def adaptative_source_score(
     ``"normalized_urna_source_score"`` columns to ``sdata["table"].obs``; and
     ``"aggregated_source_score"`` / ``"mean_assignment_score"`` columns to
     ``sdata["xrna_metadata"].var``. This is one of two overlapping source-scoring
-    implementations in this module, alongside :func:`adaptative_source_score_optimized`.
+    implementations in this module, alongside :func:`urna_source_score`.
     """
     cells = sdata["table"]
     transcripts = sdata.points["transcripts"].compute()
@@ -694,7 +696,7 @@ def _core_scoring_engine_chunk(
     weighted by the fraction of the transcript's neighbor genes (`et_neighs`,
     truncated to `k_vals`) found in that cell's expression profile (via binary
     search over `csr_indices`) combined with exponential distance decay. Used by
-    :func:`adaptative_source_score_optimized`.
+    :func:`urna_source_score`.
 
     Returns
     -------
@@ -777,11 +779,11 @@ def _core_scoring_engine_chunk(
     return prob_mat, best_parent_rows, best_scores, best_distances
 
 
-def adaptative_source_score_optimized(
+def urna_source_score(
     sdata: SpatialData,
     chunk_size: int = 100000,
     max_dist: float = 100,
-    lmbda: float = 0.1,
+    lmbda: float = 0.5,
     max_k: int = 10,
     ambient_floor: float = 1.0,
     signal_threshold: float = 10,
@@ -789,9 +791,12 @@ def adaptative_source_score_optimized(
     cell_type_col: str = "leiden",
     copy: bool = False,
 ) -> SpatialData | None:
-    """Score extracellular transcripts against nearby cells using a chunked, numba-accelerated kernel.
+    """Compute the uRNA source score: assign each unassigned transcript to its most likely source cells.
 
-    A faster, chunked reimplementation of :func:`adaptative_source_score`. Cells are
+    This is the source-score implementation used throughout the troutpy manuscript
+    (previously named ``adaptative_source_score_optimized``, which is kept as a
+    deprecated alias). It is a faster, chunked, numba-accelerated reimplementation
+    of :func:`adaptative_source_score`. Cells are
     represented by a "shell" of their outermost assigned transcripts, and each
     extracellular transcript is scored against shell points within `max_dist` using
     `_core_scoring_engine_chunk`, processing `chunk_size` transcripts at a time.
@@ -950,6 +955,20 @@ def adaptative_source_score_optimized(
     return sdata if copy else None
 
 
+def adaptative_source_score_optimized(*args, **kwargs) -> SpatialData | None:
+    """Deprecated alias of :func:`~troutpy.tl.urna_source_score`.
+
+    Kept for backward compatibility; it forwards all arguments unchanged. Note that
+    the default ``lmbda`` is now 0.5 (it was 0.1 under this old name).
+    """
+    warnings.warn(
+        "`tl.adaptative_source_score_optimized` is deprecated; use `tl.urna_source_score` instead.",
+        FutureWarning,
+        stacklevel=2,
+    )
+    return urna_source_score(*args, **kwargs)
+
+
 def flag_intracellular_spillover(
     sdata: SpatialData,
     prob_threshold: float = 0.5,
@@ -964,7 +983,7 @@ def flag_intracellular_spillover(
     silently attributes it to the wrong cell, and none of the uRNA scoring functions
     in this module catch it because they all restrict themselves to transcripts with
     ``overlaps_cell == False`` (see :func:`adaptative_source_score`,
-    :func:`adaptative_source_score_optimized`, and
+    :func:`urna_source_score`, and
     :func:`troutpy.tl.compute_target_score`).
 
     Rather than run a new neighbor search, this reuses ``prob_is_urna`` and

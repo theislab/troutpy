@@ -41,5 +41,6 @@ from .source_cell import (
     decontaminate_cell_expression,
     flag_intracellular_spillover,
     get_proportion_expressed_per_cell_type,
+    urna_source_score,
 )
 from .target_cell import calculate_target_cells, compute_target_score, define_target_by_celltype

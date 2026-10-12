@@ -139,7 +139,7 @@ def compute_target_score(
     layer: str = "transcripts",
     gene_key: str = "gene",
     coords_key: list | None = None,
-    lambda_decay: float = 0.1,
+    lambda_decay: float = 0.5,
     copy: bool = False,
     celltype_key: str = "cell type",
     k_neighbors: int = 50,
@@ -162,7 +162,7 @@ def compute_target_score(
     coords_key : list of str, optional
         Coordinate column names, e.g. ``["x", "y"]``. Defaults to ``["x", "y"]``.
     lambda_decay : float, optional
-        Exponential decay factor applied to neighbor distances. Defaults to ``0.1``.
+        Exponential decay factor applied to neighbor distances. Defaults to ``0.5``.
     copy : bool, optional
         If ``True``, return a copy of ``sdata``. Defaults to ``False``.
     celltype_key : str, optional

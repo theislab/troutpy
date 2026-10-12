@@ -46,6 +46,7 @@
     :toctree: generated/communication
 
     tl.adaptative_source_score
+    tl.urna_source_score
     tl.adaptative_source_score_optimized
     tl.calculate_target_cells
     tl.compute_target_score
