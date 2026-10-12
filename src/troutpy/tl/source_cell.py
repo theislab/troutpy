@@ -956,7 +956,7 @@ def urna_source_score(
 
 
 def adaptative_source_score_optimized(*args, **kwargs) -> SpatialData | None:
-    """Deprecated alias of :func:`urna_source_score`.
+    """Deprecated alias of :func:`~troutpy.tl.urna_source_score`.
 
     Kept for backward compatibility; it forwards all arguments unchanged. Note that
     the default ``lmbda`` is now 0.5 (it was 0.1 under this old name).
