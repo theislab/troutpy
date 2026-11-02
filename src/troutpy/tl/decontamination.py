@@ -637,9 +637,7 @@ def subtract_local_urna_background(
     obs["cell_id"] = obs["cell_id"].astype(str).str.strip()
 
     if credit_to_urna_pool and xrna_key not in sdata.tables:
-        raise KeyError(
-            f"sdata.tables[{xrna_key!r}] not found. Run troutpy.tl.create_xrna_metadata(sdata) " "first, or pass credit_to_urna_pool=False."
-        )
+        raise KeyError(f"sdata.tables[{xrna_key!r}] not found. Run troutpy.tl.create_xrna_metadata(sdata) first, or pass credit_to_urna_pool=False.")
 
     transcripts = sdata.points[layer].compute().reset_index(drop=True)
     transcripts["cell_id"] = transcripts["cell_id"].astype(str).str.strip()
